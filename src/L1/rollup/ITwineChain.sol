@@ -1,25 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
-
 interface ITwineChain {
-    /// @notice Emitted when a new batch is committed.
-    /// @param batchIndex The index of the batch.
-    /// @param batchHash The hash of the batch.
-    event CommitBatch(uint256 indexed batchIndex, bytes32 indexed batchHash);
 
-    // @notice revert a pending batch.
-    /// @param batchIndex The index of the batch.
-    /// @param batchHash The hash of the batch
-    event RevertBatch(uint256 indexed batchIndex, bytes32 indexed batchHash);
+    /// @notice Rollup batch stored data
+    /// @param batchNumber Rollup batch number
+    /// @param batchHash Hash of L2 batch
+    /// @param numberOfLayer1Txs Number of priority operations to be processed
+    /// @param priorityOperationsHash Hash of all priority operations from this batch
+    /// @param l2LogsTreeRoot Root hash of tree that contains L2 -> L1 messages from this batch
+    /// @param timestamp Rollup batch timestamp, have the same format as Ethereum batch constant
+    struct StoredBatchInfo {
+        uint64 batchNumber;
+        bytes32 batchHash;
+        uint256 numberOfLayer1Txs;
+        bytes32 priorityOperationsHash;
+        bytes32 l2LogsTreeRoot;
+        uint256 timestamp;
+    }
 
-    /// @notice Emitted when a batch is finalized.
-    /// @param batchIndex The index of the batch.
-    /// @param batchHash The hash of the batch
-    /// @param stateRoot The state root on layer 2 after this batch.
-    /// @param withdrawRoot The merkle root on layer2 after this batch.
-    event FinalizeBatch(uint256 indexed batchIndex, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot);
+    /// @notice Data needed to commit new batch
+    /// @param batchNumber Number of the committed batch
+    /// @param timestamp Unix timestamp denoting the start of the batch execution
+    /// @param newStateRoot The state root of the full state tree
+    /// @param numberOfLayer1Txs Number of priority operations to be processed
+    /// @param priorityOperationsHash Hash of all priority operations from this batch
+    struct CommitBatchInfo {
+        uint64 batchNumber;
+        uint64 timestamp;
+        bytes32 newStateRoot;
+        uint256 numberOfLayer1Txs;
+        bytes32 priorityOperationsHash;
+    }
+
 
     /// @return The latest finalized batch index.
     function lastFinalizedBatchIndex() external view returns (uint256);
@@ -40,17 +53,40 @@ interface ITwineChain {
     /// @return Whether the batch is finalized by batch index.
     function isBatchFinalized(uint256 batchIndex) external view returns (bool);
 
-    /// @notice Commit a batch of transactions on layer 1.
-    ///
-    /// @param version The version of current batch
-    /// @param parentBatchHeader The header of parent batch, see the comments of `BatchHeaderV0Codec`.
-    /// @param chunks The list of encoded chunks, see the comments of `ChunkCodec`.
-    /// @param skippedL1MessageBitmap The bitmap indicates whether each L1 message is skipped or not.
-    function commitBatch(
-        uint8 version,
-        bytes calldata parentBatchHeader,
-        bytes[] memory chunks,
-        bytes calldata skippedL1MessageBitmap
+    
+    /// @notice Function called by the operator to commit new batches. It is responsible for:
+    /// - Verifying the correctness of their timestamps.
+    /// - Processing their L2->L1 logs.
+    /// - Storing batch commitments.
+    /// @param _lastCommittedBatchData Stored data of the last committed batch.
+    /// @param _newBatchesData Data of the new batches to be committed.
+    function commitBatches(
+        StoredBatchInfo calldata _lastCommittedBatchData,
+        CommitBatchInfo[] calldata _newBatchesData
     ) external;
 
+    /// @notice Batches commitment verification.
+    /// @dev Only verifies batch commitments without any other processing.
+    /// @param _prevBatch Stored data of the last committed batch.
+    /// @param _committedBatches Stored data of the committed batches.
+    /// @param _proofBytes The encoded proof.
+    /// @param _publicValues The encoded public values.
+    function proveBatches(
+        StoredBatchInfo calldata _prevBatch,
+        StoredBatchInfo[] calldata _committedBatches,
+        bytes calldata _publicValues, 
+        bytes calldata _proofBytes
+    ) external;
+    
+     /// @notice The function called by the operator to finalize (execute) batches. It is responsible for:
+    /// - Processing all pending operations (commpleting priority requests).
+    /// - Finalizing this batch (i.e. allowing to withdraw funds from the system)
+    /// @param _batchesData Data of the batches to be executed.
+    function executeBatches(StoredBatchInfo[] calldata _batchesData) external;
+
+    /// @notice Reverts unexecuted batches
+    /// @param _newLastBatch batch number after which batches should be reverted
+    /// NOTE: Doesn't delete the stored data about batches, but only decreases
+    /// counters that are responsible for the number of batches
+    function revertBatches(uint256 _newLastBatch) external;
 }
