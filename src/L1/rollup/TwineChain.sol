@@ -28,6 +28,7 @@ contract TwineChain is ITwineChain {
     /// @dev Thrown when committing empty batch (batch without chunks)
     error ErrorBatchIsEmpty();
 
+    uint256 internal constant BATCH_HEADER_FIXED_LENGTH = 89;
 
     /// @notice The chain id of the corresponding layer 2 chain.
     uint64 public immutable layer2ChainId;
@@ -118,6 +119,11 @@ contract TwineChain is ITwineChain {
         storeDataHash(batchPtr, _dataHash);
         storeParentBatchHash(batchPtr, _parentBatchHash);
         storeSkippedBitmap(batchPtr, _skippedL1MessageBitmap);
+
+        // compute batch hash
+        _batchHash = computeBatchHash(batchPtr, BATCH_HEADER_FIXED_LENGTH + _skippedL1MessageBitmap.length);
+
+        _afterCommitBatch(_batchIndex, _batchHash);
     }
 
     function _beforeCommitBatch(bytes calldata _parentBatchHeader, bytes[] memory _chunks)
@@ -137,6 +143,12 @@ contract TwineChain is ITwineChain {
         }
         if (committedBatches[_batchIndex] != 0) revert ErrorBatchIsAlreadyCommitted();
     }
+
+    function _afterCommitBatch(uint256 _batchIndex,bytes32 _batchHash) private {
+        committedBatches[_batchIndex] = _batchHash;
+        emit CommitBatch(_batchIndex, _batchHash);
+    } 
+
 
     function _loadBatchHeader(bytes calldata _batchHeader)
         internal
@@ -187,11 +199,45 @@ contract TwineChain is ITwineChain {
     }
 
 
+    ////// STORING INDIVIDUALM BATH INFORMATION IN MEMORY
+
     function storeBatchIndex(uint256 batchPtr, uint256 _batchIndex) internal pure {
         assembly {
             mstore(add(batchPtr, 1), shl(192, _batchIndex))
         }
     }
+
+    function storeL1MessagePopped(uint256 batchPtr, uint256 _totalL1MessagePoppedInBatch) internal pure {
+        assembly {
+            mstore(add(batchPtr, 9), shl(192, _totalL1MessagePoppedInBatch))
+        }
+    }
+    function storeTotalL1MessagePopped(uint256 batchPtr, uint256 _totalL1MessagePoppedOverall)  internal pure {
+        assembly {
+            mstore(add(batchPtr, 17), shl(192, _totalL1MessagePoppedOverall))
+        }
+    }
+    function storeDataHash(uint256 batchPtr, bytes32 _dataHash)  internal pure {
+        assembly {
+            mstore(add(batchPtr, 25), shl(192, _dataHash))
+        }
+    }
+    function storeParentBatchHash(uint256 batchPtr, bytes32 _parentBatchHash)  internal pure {
+        assembly {
+            mstore(add(batchPtr, 57), shl(192, _parentBatchHash))
+        }
+    }
+    function storeSkippedBitmap(uint256 batchPtr, bytes calldata _skippedL1MessageBitmap) internal pure {
+        assembly {
+            calldataCopy(
+                add(batchPtr, BATCH_HEADER_FIXED_LENGTH),
+                _skippedL1MessageBitmap.offset,
+                _skippedL1MessageBitmap.length
+            )
+        }
+    }
+
+
 
 }
 
