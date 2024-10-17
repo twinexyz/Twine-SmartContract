@@ -23,6 +23,12 @@ interface IL2ETHGateway {
     /*****************************
      * Public Mutating Functions *
      *****************************/
+
+    /// @notice Withdraw ETH to caller's account in L1.
+    /// @param amount The amount of ETH to be withdrawn.
+    /// @param gasLimit Optional, gas limit used to complete the withdraw on L1.
+    function withdrawETH(uint256 amount, uint256 gasLimit) external payable;
+
     /// @notice Withdraw ETH to caller's account in L1.
     /// @param to The address of recipient's account on L1.
     /// @param amount The amount of ETH to be withdrawn.

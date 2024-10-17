@@ -23,7 +23,11 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
     /*****************************
      * Public Mutating Functions *
      *****************************/
-
+     
+     /// @inheritdoc IL1ETHGateway
+    function depositETH(uint256 _amount, uint256 _gasLimit) external payable override {
+        _deposit(_msgSender(), _amount, new bytes(0), _gasLimit);
+    }
     /// @inheritdoc IL1ETHGateway
     function depositETH(
         address _to,
@@ -82,7 +86,7 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
         require(_amount > 0, "deposit zero eth");
 
         // 1. Extract real sender if this call is from L1GatewayRouter.
-        address _from = msg.sender;
+        address _from = _msgSender();
 
         // @note no rate limit here, since ETH is limited in messenger
 
