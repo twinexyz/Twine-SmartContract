@@ -8,15 +8,13 @@ interface IL1ETHGateway {
     /// @param from The address of sender in L2.
     /// @param to The address of recipient in L1.
     /// @param amount The amount of ETH withdrawn from L2 to L1.
-    /// @param data The optional calldata passed to recipient in L1.
-    event FinalizeWithdrawETH(address indexed from, address indexed to, uint256 amount, bytes data);
+    event FinalizeWithdrawETH(address indexed from, address indexed to, uint256 amount);
 
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
     /// @param amount The amount of ETH will be deposited from L1 to L2.
-    /// @param data The optional calldata passed to recipient in L2.
-    event DepositETH(address indexed from, address indexed to, uint256 amount, bytes data);
+    event DepositETH(address indexed from, address indexed to, uint256 amount);
 
     /// @notice Emitted when some ETH is refunded.
     /// @param recipient The address of receiver in L1.
@@ -43,12 +41,10 @@ interface IL1ETHGateway {
     /// @param from The address of account who withdraw ETH in L2.
     /// @param to The address of recipient in L1 to receive ETH.
     /// @param amount The amount of ETH to withdraw.
-    /// @param data Optional data to forward to recipient's account.
     function finalizeWithdrawETH(
         address from,
         address to,
-        uint256 amount,
-        bytes calldata data
+        uint256 amount
     ) external payable;
 
 

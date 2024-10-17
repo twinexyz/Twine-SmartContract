@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
-import {L2MessageQueue} from "./predeploys/L2MessageQueue.sol";
 
 contract L2TwineMessenger is IL2TwineMessenger {
     
@@ -27,11 +26,10 @@ contract L2TwineMessenger is IL2TwineMessenger {
     /// sender of a cross domain message.
     address public xDomainMessageSender;
 
-        event SentMessage(
+    event SentMessage(
         address indexed sender,
         address indexed target,
         uint256 value,
-        uint256 messageNonce,
         uint256 gasLimit,
         bytes message
     );
@@ -78,12 +76,7 @@ contract L2TwineMessenger is IL2TwineMessenger {
     ) internal {
         require(msg.value == _value, "msg.value mismatch");
 
-        uint256 _nonce = L2MessageQueue(messageQueue).nextMessageIndex();
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(msg.sender, _to, _value, _nonce, _message));
-
-        L2MessageQueue(messageQueue).appendMessage(_xDomainCalldataHash);
-
-        emit SentMessage(msg.sender, _to, _value, _nonce, _gasLimit, _message);
+        emit SentMessage(msg.sender, _to, _value, _gasLimit, _message);
     }
 
     

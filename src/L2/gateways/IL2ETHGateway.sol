@@ -10,15 +10,13 @@ interface IL2ETHGateway {
     /// @param from The address of sender in L2.
     /// @param to The address of recipient in L1.
     /// @param amount The amount of ETH will be deposited from L2 to L1.
-    /// @param data The optional calldata passed to recipient in L1.
-    event WithdrawETH(address indexed from, address indexed to, uint256 amount, bytes data);
+    event WithdrawETH(address indexed from, address indexed to, uint256 amount);
 
     /// @notice Emitted when ETH is deposited from L1 to L2 and transfer to recipient.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
     /// @param amount The amount of ETH deposited from L1 to L2.
-    /// @param data The optional calldata passed to recipient in L2.
-    event FinalizeDepositETH(address indexed from, address indexed to, uint256 amount, bytes data);
+    event FinalizeDepositETH(address indexed from, address indexed to, uint256 amount);
 
     /*****************************
      * Public Mutating Functions *
@@ -39,12 +37,10 @@ interface IL2ETHGateway {
     /// @param _from The address of account who deposit ETH in L1.
     /// @param _to The address of recipient in L2 to receive ETH.
     /// @param _amount The amount of ETH to deposit.
-    /// @param _data Optional data to forward to recipient's account.
     function finalizeDepositETH(
         address _from,
         address _to,
-        uint256 _amount,
-        bytes calldata _data
+        uint256 _amount
     ) external payable;
 
 }

@@ -43,15 +43,14 @@ contract L2ETHGateway is IL2ETHGateway {
         uint256 _amount,
         uint256 _gasLimit
     ) public payable override {
-        _withdraw(_to, _amount, new bytes(0), _gasLimit);
+        _withdraw(_to, _amount, _gasLimit);
     }
 
     /// @inheritdoc IL2ETHGateway
     function finalizeDepositETH(
         address _from,
         address _to,
-        uint256 _amount,
-        bytes calldata _data
+        uint256 _amount
     ) external payable override {
         require(msg.value == _amount, "msg.value mismatch");
 
@@ -59,29 +58,26 @@ contract L2ETHGateway is IL2ETHGateway {
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-     //   _doCallback(_to, _data);
 
-        emit FinalizeDepositETH(_from, _to, _amount, _data);
+        emit FinalizeDepositETH(_from, _to, _amount);
     }
 
     /// @dev The internal ETH withdraw implementation.
     /// @param _to The address of recipient's account on L1.
     /// @param _amount The amount of ETH to be withdrawn.
-    /// @param _data Optional data to forward to recipient's account.
     /// @param _gasLimit Optional gas limit to complete the deposit on L1.
     function _withdraw(
         address _to,
         uint256 _amount,
-        bytes memory _data,
         uint256 _gasLimit
     ) internal virtual {
         require(msg.value > 0, "withdraw zero eth");
 
         address _from = msg.sender;
 
-        bytes memory _message = abi.encodeCall(IL1ETHGateway.finalizeWithdrawETH, (_from, _to, _amount, _data));
+        bytes memory _message = abi.encodeCall(IL1ETHGateway.finalizeWithdrawETH, (_from, _to, _amount));
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, _amount, _message, _gasLimit);
 
-        emit WithdrawETH(_from, _to, _amount, _data);
+        emit WithdrawETH(_from, _to, _amount);
     }
 }

@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
-import {WithdrawTrieVerifier} from "../libraries/verifier/WithdrawTrieVerifier.sol";
 
 
 contract L1TwineMessenger is IL1TwineMessenger {
@@ -71,24 +70,17 @@ contract L1TwineMessenger is IL1TwineMessenger {
     }   
 
     function relayMessageWithProof(
+        uint256 _batchNumber,
         address _from,
         address _to,
         uint256 _value,
-        uint256 _nonce,
-        bytes memory _message,
-        L2MessageProof memory _proof
+        bytes memory _message
     ) external override {
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _nonce, _message));
+        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _message));
         require(!isL2MessageExecuted[_xDomainCalldataHash], "Message was already successfully executed");
 
-        {
-            require(ITwineChain(rollup).isBatchFinalized(_proof.batchIndex), "Batch is not finalized");
-            bytes32 _messageRoot = ITwineChain(rollup).withdrawRoots(_proof.batchIndex);
-            require(
-                WithdrawTrieVerifier.verifyMerkleProof(_messageRoot, _xDomainCalldataHash, _nonce, _proof.merkleProof),
-                "Invalid proof"
-            );
-        }
+        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not finalized");
+        require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainCalldataHash), "Transaction not present in Batch");
 
         xDomainMessageSender = _from;
         (bool success, ) = _to.call{value: _value}(_message);
@@ -110,7 +102,7 @@ contract L1TwineMessenger is IL1TwineMessenger {
     ) internal {
         // compute the actual cross domain message calldata.
         uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainMessageIndex();
-        bytes memory _xDomainCalldata = _encodeXDomainCalldata(msg.sender, _to, _value, _messageNonce, _message);
+        bytes memory _xDomainCalldata = _encodeXDomainCalldata(msg.sender, _to, _value, _message);
 
         // compute and deduct the messaging fee to fee vault.
         //uint256 _fee = IL1MessageQueue(messageQueue).estimateCrossDomainMessageFee(_gasLimit);
@@ -147,23 +139,20 @@ contract L1TwineMessenger is IL1TwineMessenger {
     /// @param _sender Message sender address.
     /// @param _target Target contract address.
     /// @param _value The amount of ETH pass to the target.
-    /// @param _messageNonce Nonce for the provided message.
     /// @param _message Message to send to the target.
     /// @return ABI encoded cross domain calldata.
     function _encodeXDomainCalldata(
         address _sender,
         address _target,
         uint256 _value,
-        uint256 _messageNonce,
         bytes memory _message
     ) internal pure returns (bytes memory) {
         return
             abi.encodeWithSignature(
-                "relayMessage(address,address,uint256,uint256,bytes)",
+                "relayMessage(address,address,uint256,bytes)",
                 _sender,
                 _target,
                 _value,
-                _messageNonce,
                 _message
             );
     }

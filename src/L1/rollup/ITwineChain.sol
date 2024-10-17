@@ -26,6 +26,22 @@ interface ITwineChain {
     /// @param withdrawRoot The merkle root on layer2 after this batch
     event FinalizeBatch(uint256 indexed batchIndex, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot);
 
+    struct StoredBatchInfo {
+        uint64 batchNumber;
+        bytes32[] transactionList;
+        bytes32 stateRoot;
+        bytes32 transactionRoot;
+        bytes publicInput;
+    }
+
+    struct CommitBatchInfo {
+        uint64 batchNumber;
+        bytes32[] transactionList;
+        bytes32 newStateRoot;
+        bytes32 transactionRoot;
+    }
+
+
     /*************************
      * Public View Functions *
      *************************/
@@ -42,30 +58,22 @@ interface ITwineChain {
     function finalizedStateRoots(uint256 batchIndex) external view returns (bytes32);
 
     /// @param batchIndex The index of the batch.
-    /// @return The message root of a committed batch.
-    function withdrawRoots(uint256 batchIndex) external view returns (bytes32);
-
-    /// @param batchIndex The index of the batch.
     /// @return Whether the batch is finalized by batch index.
     function isBatchFinalized(uint256 batchIndex) external view returns (bool);
+
+    /// @param batchNumber The index of the batch
+    /// @param transactionHash The hash of the transaction 
+    /// @return Wether the batch contains the transaction or not
+    function inTransactionList(uint256 batchNumber, bytes32 transactionHash) external view returns (bool);
 
     /*****************************
      * Public Mutating Functions *
      *****************************/
 
-
-    /// @notice Commit a batch of transactions on layer 1.
+    /// @notice Commit a batch of transactions on Layer 1.
     ///
-    /// @param parentBatchHeader The header of parent batch, see the comments of `BatchHeaderV0Codec`.
-    /// @param chunks The list of encoded chunks, see the comments of `ChunkCodec`.
-    /// @param skippedL1MessageBitmap The bitmap indicates whether each L1 message is skipped or not.
-    function commitBatch(
-        bytes calldata parentBatchHeader,
-        bytes[] memory chunks,
-        bytes calldata skippedL1MessageBitmap
-    ) external;
-
- 
+    /// @param _newBatchData The struct containing the batch's information
+    function commitBatch(CommitBatchInfo calldata _newBatchData) external;
 
 
 }

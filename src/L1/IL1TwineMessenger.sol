@@ -53,18 +53,16 @@ interface IL1TwineMessenger  {
     ) external payable;
 
     /// @notice Relay a L2 => L1 message with message proof.
+    /// @param batchNumber The index of the Batch where the message is contained.
     /// @param from The address of the sender of the message.
     /// @param to The address of the recipient of the message.
     /// @param value The msg.value passed to the message call.
-    /// @param nonce The nonce of the message to avoid replay attack.
     /// @param message The content of the message.
-    /// @param proof The proof used to verify the correctness of the transaction.
     function relayMessageWithProof(
+        uint256 batchNumber,
         address from,
         address to,
         uint256 value,
-        uint256 nonce,
-        bytes memory message,
-        L2MessageProof memory proof
+        bytes memory message
     ) external;
 }
