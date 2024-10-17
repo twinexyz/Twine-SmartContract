@@ -10,7 +10,7 @@ contract L2MessageQueue is AppendOnlyMerkleTree {
     /// @param messageHash The hash of the corresponding message.
     event AppendMessage(uint256 index, bytes32 messageHash);
 
-    /// @notice The address of L2ScrollMessenger contract.
+    /// @notice The address of L2TwineMessenger contract.
     address public messenger;
 
     function initialize(address _messenger) external {

@@ -55,7 +55,7 @@ contract TwineChain is ITwineChain {
      * Constructor *
      ***************/
 
-    /// @notice Constructor for `ScrollChain` implementation contract.
+    /// @notice Constructor for `TwineChain` implementation contract.
     ///
     /// @param _messageQueue The address of `L1MessageQueue` contract.
     /// @param _verifier The address of zkevm verifier contract.

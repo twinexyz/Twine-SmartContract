@@ -26,7 +26,7 @@ contract L1TwineMessenger is IL1TwineMessenger {
      /// @notice The address of Rollup contract.
     address public immutable rollup;
 
-    /// @notice The address of counterpart ScrollMessenger contract in L1/L2.
+    /// @notice The address of counterpart TwineMessenger contract in L1/L2.
     address public immutable counterpart;
 
     address public xDomainMessageSender;

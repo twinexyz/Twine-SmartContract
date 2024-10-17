@@ -5,14 +5,14 @@ import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 
 contract L1MessageQueue is IL1MessageQueue {
 
-    /// @notice The address of L1ScrollMessenger contract.
+    /// @notice The address of L1TwineMessenger contract.
     address public immutable messenger;
 
     /// @notice The list of queued cross domain messages.
     bytes32[] public messageQueue;
 
     modifier onlyMessenger() {
-        require(msg.sender == messenger, "Only callable by the L1ScrollMessenger");
+        require(msg.sender == messenger, "Only callable by the L1TwineMessenger");
         _;
     }
 

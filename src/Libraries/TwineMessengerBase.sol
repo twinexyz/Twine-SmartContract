@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {ITwineMessenger} from "./ITwineMessenger.sol";
 
-abstract contract ScrollMessengerBase is
+abstract contract TwineMessengerBase is
     ITwineMessenger 
 {
 
@@ -11,14 +11,14 @@ abstract contract ScrollMessengerBase is
      * Constants *
      *************/
 
-    /// @notice The address of counterpart ScrollMessenger contract in L1/L2.
+    /// @notice The address of counterpart TwineMessenger contract in L1/L2.
     address public immutable counterpart;
 
     /*************
      * Variables *
      *************/
 
-    /// @notice See {IScrollMessenger-xDomainMessageSender}
+    /// @notice See {ITwineMessenger-xDomainMessageSender}
     address public override xDomainMessageSender;
 
     /// @notice The address of fee vault, collecting cross domain messaging fee.
@@ -36,7 +36,7 @@ abstract contract ScrollMessengerBase is
         counterpart = _counterpart;
     }
 
-    function __ScrollMessengerBase_init(address, address _feeVault) internal {
+    function __TwineMessengerBase_init(address, address _feeVault) internal {
         if (_feeVault != address(0)) {
             feeVault = _feeVault;
         }

@@ -64,7 +64,7 @@ abstract contract TwineGatewayBase is ReentrancyGuardUpgradeable, ITwineGateway 
     /// @param _data The calldata passed to the contract.
     function _doCallback(address _to, bytes memory _data) internal {
         if (_data.length > 0 && _to.code.length > 0) {
-            ITwineGatewayCallback(_to).onScrollGatewayCallback(_data);
+            ITwineGatewayCallback(_to).onTwineGatewayCallback(_data);
         }
     }
 

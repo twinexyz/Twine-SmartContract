@@ -86,7 +86,7 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
 
         // @note no rate limit here, since ETH is limited in messenger
 
-        // 2. Generate message passed to L1ScrollMessenger.
+        // 2. Generate message passed to L1TwineMessenger.
         bytes memory _message = abi.encodeCall(IL2ETHGateway.finalizeDepositETH, (_from, _to, _amount, _data));
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, _amount, _message, _gasLimit, _from);

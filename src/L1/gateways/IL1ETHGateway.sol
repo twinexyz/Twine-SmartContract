@@ -38,7 +38,7 @@ interface IL1ETHGateway {
     ) external payable;
 
     /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.
-    /// @dev This function should only be called by L1ScrollMessenger.
+    /// @dev This function should only be called by L1TwineMessenger.
     ///      This function should also only be called by L1ETHGateway in L2.
     /// @param from The address of account who withdraw ETH in L2.
     /// @param to The address of recipient in L1 to receive ETH.

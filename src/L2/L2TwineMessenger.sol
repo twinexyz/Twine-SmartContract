@@ -15,7 +15,7 @@ contract L2TwineMessenger is IL2TwineMessenger {
     event FailedRelayedMessage(bytes32 indexed messageHash);
 
 
-    /// @notice The address of counterpart ScrollMessenger contract in L1.
+    /// @notice The address of counterpart TwineMessenger contract in L1.
     address public immutable counterpart;
 
     /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.

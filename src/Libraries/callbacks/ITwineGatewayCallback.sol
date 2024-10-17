@@ -2,5 +2,5 @@
 pragma solidity ^0.8.17;
 
 interface ITwineGatewayCallback {
-    function onScrollGatewayCallback(bytes memory data) external;
+    function onTwineGatewayCallback(bytes memory data) external;
 }

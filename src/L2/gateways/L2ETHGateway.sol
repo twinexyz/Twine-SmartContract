@@ -10,8 +10,8 @@ import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 /// @title L2ETHGateway
 /// @notice The `L2ETHGateway` contract is used to withdraw ETH token on layer 2 and
 /// finalize deposit ETH from layer 1.
-/// @dev The ETH are not held in the gateway. The ETH will be sent to the `L2ScrollMessenger` contract.
-/// On finalizing deposit, the Ether will be transferred from `L2ScrollMessenger`, then transfer to recipient.
+/// @dev The ETH are not held in the gateway. The ETH will be sent to the `L2TwineMessenger` contract.
+/// On finalizing deposit, the Ether will be transferred from `L2TwineMessenger`, then transfer to recipient.
 contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
 
      /***************
@@ -31,7 +31,7 @@ contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
     ///
     /// @param _counterpart The address of L1ETHGateway in L1.
     /// @param _router The address of L2GatewayRouter in L2.
-    /// @param _messenger The address of L2ScrollMessenger in L2.
+    /// @param _messenger The address of L2TwineMessenger in L2.
     function initialize(
         address _counterpart,
         address _router,
