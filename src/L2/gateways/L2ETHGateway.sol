@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import {IL1ETHGateway} from "../../L1/gateways/IL1ETHGateway.sol";
 import {IL2ETHGateway} from "./IL2ETHGateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
+import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 
 
 /// @title L2ETHGateway
@@ -11,29 +12,32 @@ import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
 /// finalize deposit ETH from layer 1.
 /// @dev The ETH are not held in the gateway. The ETH will be sent to the `L2ScrollMessenger` contract.
 /// On finalizing deposit, the Ether will be transferred from `L2ScrollMessenger`, then transfer to recipient.
-contract L2ETHGateway is IL2ETHGateway {
-
-    // Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-    
-    // The address of corresponding L1 Gateway contract.
-    address public immutable counterpart;
-    
-    // The address of corresponding L2ScrollMessenger contract.
-    address public immutable messenger;
+contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
 
      /***************
      * Constructor *
      ***************/
     constructor(
         address _counterpart,
+        address _router,
         address _messenger
-    ) {
-        if(_counterpart == address(0) || _messenger == address(0)) {
-            revert ErrorZeroAddress();
-        }
-        counterpart = _counterpart;
-        messenger = _messenger;
+    ) TwineGatewayBase(_counterpart, _router, _messenger) {
+        _disableInitializers();
+    }
+
+     /// @notice Initialize the storage of L2ETHGateway.
+    ///
+    /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
+    ///
+    /// @param _counterpart The address of L1ETHGateway in L1.
+    /// @param _router The address of L2GatewayRouter in L2.
+    /// @param _messenger The address of L2ScrollMessenger in L2.
+    function initialize(
+        address _counterpart,
+        address _router,
+        address _messenger
+    ) external initializer {
+        TwineGatewayBase._initialize(_counterpart, _router, _messenger);
     }
     
 
@@ -59,7 +63,7 @@ contract L2ETHGateway is IL2ETHGateway {
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-     //   _doCallback(_to, _data);
+       _doCallback(_to, _data);
 
         emit FinalizeDepositETH(_from, _to, _amount, _data);
     }
