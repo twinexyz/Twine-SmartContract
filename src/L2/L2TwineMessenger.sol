@@ -3,8 +3,9 @@ pragma solidity ^0.8.17;
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {L2MessageQueue} from "./predeploys/L2MessageQueue.sol";
+import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
-contract L2TwineMessenger is IL2TwineMessenger {
+contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
     
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
@@ -14,18 +15,12 @@ contract L2TwineMessenger is IL2TwineMessenger {
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
 
-
-    /// @notice The address of counterpart TwineMessenger contract in L1.
-    address public immutable counterpart;
-
     /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL1MessageExecuted;
 
     /// @notice The address of L2MessageQueue.
     address public immutable messageQueue;
 
-    /// sender of a cross domain message.
-    address public xDomainMessageSender;
 
         event SentMessage(
         address indexed sender,
@@ -75,15 +70,15 @@ contract L2TwineMessenger is IL2TwineMessenger {
         uint256 _value,
         bytes memory _message,
         uint256 _gasLimit
-    ) internal {
+    ) internal nonReentrant {
         require(msg.value == _value, "msg.value mismatch");
 
         uint256 _nonce = L2MessageQueue(messageQueue).nextMessageIndex();
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(msg.sender, _to, _value, _nonce, _message));
+        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_msgSender(), _to, _value, _nonce, _message));
 
         L2MessageQueue(messageQueue).appendMessage(_xDomainCalldataHash);
 
-        emit SentMessage(msg.sender, _to, _value, _nonce, _gasLimit, _message);
+        emit SentMessage(_msgSender(), _to, _value, _nonce, _gasLimit, _message);
     }
 
     

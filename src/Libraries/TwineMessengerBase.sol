@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {ITwineMessenger} from "./ITwineMessenger.sol";
 
 abstract contract TwineMessengerBase is
-    ITwineMessenger 
+    ContextUpgradeable,
+    ReentrancyGuardUpgradeable,
+    ITwineMessenger
 {
-
     /*************
      * Constants *
      *************/
@@ -42,7 +45,7 @@ abstract contract TwineMessengerBase is
         }
     }
 
-     /// @dev Internal function to generate the correct cross domain calldata for a message.
+    /// @dev Internal function to generate the correct cross domain calldata for a message.
     /// @param _sender Message sender address.
     /// @param _target Target contract address.
     /// @param _value The amount of ETH pass to the target.
@@ -66,5 +69,4 @@ abstract contract TwineMessengerBase is
                 _message
             );
     }
-
 }

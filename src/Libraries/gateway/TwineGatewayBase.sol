@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.24;
 
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {ITwineGateway} from "./ITwineGateway.sol";
@@ -11,7 +12,7 @@ import {ITwineGatewayCallback} from "../callbacks/ITwineGatewayCallback.sol";
 
 /// @title TwineGatewayBase
 /// @notice The `TwineGatewayBase` is a base contract for gateway contracts used in both in L1 and L2.
-abstract contract TwineGatewayBase is ReentrancyGuardUpgradeable, ITwineGateway {
+abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgradeable, ITwineGateway {
 
     /*************
      * Constants *

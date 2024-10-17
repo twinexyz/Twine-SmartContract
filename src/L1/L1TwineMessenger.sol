@@ -5,9 +5,9 @@ import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {WithdrawTrieVerifier} from "../libraries/verifier/WithdrawTrieVerifier.sol";
+import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
-
-contract L1TwineMessenger is IL1TwineMessenger {
+contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
 
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
@@ -16,20 +16,12 @@ contract L1TwineMessenger is IL1TwineMessenger {
     /// @notice Emitted when a cross domain message is failed to relay.
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
-    
-    /// @dev Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
 
     /// @notice The address of L1MessageQueue contract.
     address public immutable messageQueue;
 
      /// @notice The address of Rollup contract.
     address public immutable rollup;
-
-    /// @notice The address of counterpart TwineMessenger contract in L1/L2.
-    address public immutable counterpart;
-
-    address public xDomainMessageSender;
 
     
     /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
@@ -57,7 +49,7 @@ contract L1TwineMessenger is IL1TwineMessenger {
         bytes memory _message,
         uint256 _gasLimit
     ) external payable override {
-        _sendMessage(_to, _value, _message, _gasLimit, msg.sender);
+        _sendMessage(_to, _value, _message, _gasLimit, _msgSender());
     }
 
     function sendMessage(
@@ -110,7 +102,7 @@ contract L1TwineMessenger is IL1TwineMessenger {
     ) internal {
         // compute the actual cross domain message calldata.
         uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainMessageIndex();
-        bytes memory _xDomainCalldata = _encodeXDomainCalldata(msg.sender, _to, _value, _messageNonce, _message);
+        bytes memory _xDomainCalldata = _encodeXDomainCalldata(_msgSender(), _to, _value, _messageNonce, _message);
 
         // compute and deduct the messaging fee to fee vault.
         //uint256 _fee = IL1MessageQueue(messageQueue).estimateCrossDomainMessageFee(_gasLimit);
@@ -130,7 +122,7 @@ contract L1TwineMessenger is IL1TwineMessenger {
         //require(messageSendTimestamp[_xDomainCalldataHash] == 0, "Duplicated message");
         //messageSendTimestamp[_xDomainCalldataHash] = block.timestamp;
 
-        emit SentMessage(msg.sender, _to, _value, _messageNonce, _gasLimit, _message);
+        emit SentMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
 
         // refund fee to `_refundAddress`
         // unchecked {

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 
-contract L1MessageQueue is IL1MessageQueue {
+contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
 
     /// @notice The address of L1TwineMessenger contract.
     address public immutable messenger;
@@ -12,7 +14,7 @@ contract L1MessageQueue is IL1MessageQueue {
     bytes32[] public messageQueue;
 
     modifier onlyMessenger() {
-        require(msg.sender == messenger, "Only callable by the L1TwineMessenger");
+        require(_msgSender() == messenger, "Only callable by the L1ScrollMessenger");
         _;
     }
 
@@ -178,7 +180,7 @@ contract L1MessageQueue is IL1MessageQueue {
        // _validateGasLimit(_gasLimit, _data);
 
         // do address alias to avoid replay attack in L2.
-        address _sender = msg.sender;
+        address _sender = _msgSender();
 
         _queueTransaction(_sender, _target, 0, _gasLimit, _data);
     }
