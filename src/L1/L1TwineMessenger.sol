@@ -5,6 +5,7 @@ import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {WithdrawTrieVerifier} from "../libraries/verifier/WithdrawTrieVerifier.sol";
+import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
 contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
@@ -31,7 +32,7 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
         address _counterpart,
         address _rollup,
         address _messageQueue
-    ) {
+    )TwineMessengerBase(_counterpart) {
         if(_counterpart == address(0) || _messageQueue == address(0) ) {
             revert ErrorZeroAddress();
         }
@@ -43,6 +44,7 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
     }
 
 
+    /// @inheritdoc ITwineMessenger
     function sendMessage(
         address _to,
         uint256 _value,
@@ -132,32 +134,6 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
         //         require(_success, "Failed to refund the fee");
         //     }
         // }
-    }
-
-    
-    /// @dev Internal function to generate the correct cross domain calldata for a message.
-    /// @param _sender Message sender address.
-    /// @param _target Target contract address.
-    /// @param _value The amount of ETH pass to the target.
-    /// @param _messageNonce Nonce for the provided message.
-    /// @param _message Message to send to the target.
-    /// @return ABI encoded cross domain calldata.
-    function _encodeXDomainCalldata(
-        address _sender,
-        address _target,
-        uint256 _value,
-        uint256 _messageNonce,
-        bytes memory _message
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encodeWithSignature(
-                "relayMessage(address,address,uint256,uint256,bytes)",
-                _sender,
-                _target,
-                _value,
-                _messageNonce,
-                _message
-            );
     }
 
 }   

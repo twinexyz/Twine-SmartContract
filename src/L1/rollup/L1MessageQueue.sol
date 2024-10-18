@@ -14,7 +14,7 @@ contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
     bytes32[] public messageQueue;
 
     modifier onlyMessenger() {
-        require(_msgSender() == messenger, "Only callable by the L1ScrollMessenger");
+        require(_msgSender() == messenger, "Only callable by the L1TwineMessenger");
         _;
     }
 

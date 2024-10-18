@@ -21,19 +21,16 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
     /// @notice The address of L2MessageQueue.
     address public immutable messageQueue;
 
-
-        event SentMessage(
-        address indexed sender,
-        address indexed target,
-        uint256 value,
-        uint256 messageNonce,
-        uint256 gasLimit,
-        bytes message
-    );
-
-    constructor(address _counterpart, address _messageQueue) {
+    constructor(address _counterpart, address _messageQueue) TwineMessengerBase(_counterpart){
         counterpart = _counterpart;
+        
+        _disableInitializers();
+
         messageQueue = _messageQueue;
+    }
+
+    function initialize(address) external initializer {
+        TwineMessengerBase.__TwineMessengerBase_init(address(0), address(0));
     }
 
     function sendMessage(
@@ -41,7 +38,18 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         uint256 _value,
         bytes memory _message,
         uint256 _gasLimit
-    ) external payable {
+    ) external payable override  {
+        _sendMessage(_to, _value, _message, _gasLimit);
+    }
+
+   
+    function sendMessage(
+        address _to,
+        uint256 _value,
+        bytes calldata _message,
+        uint256 _gasLimit,
+        address
+    ) external payable override  {
         _sendMessage(_to, _value, _message, _gasLimit);
     }
 
@@ -81,31 +89,6 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         emit SentMessage(_msgSender(), _to, _value, _nonce, _gasLimit, _message);
     }
 
-    
-    /// @dev Internal function to generate the correct cross domain calldata for a message.
-    /// @param _sender Message sender address.
-    /// @param _target Target contract address.
-    /// @param _value The amount of ETH pass to the target.
-    /// @param _messageNonce Nonce for the provided message.
-    /// @param _message Message to send to the target.
-    /// @return ABI encoded cross domain calldata.
-    function _encodeXDomainCalldata(
-        address _sender,
-        address _target,
-        uint256 _value,
-        uint256 _messageNonce,
-        bytes memory _message
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encodeWithSignature(
-                "relayMessage(address,address,uint256,uint256,bytes)",
-                _sender,
-                _target,
-                _value,
-                _messageNonce,
-                _message
-            );
-    }
 
     /// @param _xDomainCalldataHash The hash of the message.
     function _executeMessage(
