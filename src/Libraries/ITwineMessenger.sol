@@ -6,22 +6,6 @@ interface ITwineMessenger {
     * Events *
     **********/
 
-    /// @notice Emitted when a cross domain message is sent.
-    /// @param sender The address of the sender who initiates the message.
-    /// @param target The address of target contract to call.
-    /// @param value The amount of value passed to the target contract.
-    /// @param messageNonce The nonce of the message.
-    /// @param gasLimit The optional gas limit passed to L1 or L2.
-    /// @param message The calldata passed to the target contract.
-    event SentMessage(
-        address indexed sender,
-        address indexed target,
-        uint256 value,
-        uint256 messageNonce,
-        uint256 gasLimit,
-        bytes message
-    );
-
     /**********
     * Errors *
     **********/

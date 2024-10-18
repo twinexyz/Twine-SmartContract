@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
-import {WithdrawTrieVerifier} from "../libraries/verifier/WithdrawTrieVerifier.sol";
+
 import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
@@ -17,6 +17,21 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
     /// @notice Emitted when a cross domain message is failed to relay.
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
+
+    /// @notice Emitted when a cross domain message is sent.
+    /// @param sender The address of the sender who initiates the message.
+    /// @param target The address of target contract to call.
+    /// @param value The amount of value passed to the target contract.
+    /// @param gasLimit The optional gas limit passed to L1 or L2.
+    /// @param message The calldata passed to the target contract.
+    event SentMessage(
+        address indexed sender,
+        address indexed target,
+        uint256 value,
+        uint256 messageNonce,
+        uint256 gasLimit,
+        bytes message
+    );
 
     /// @notice The address of L1MessageQueue contract.
     address public immutable messageQueue;
@@ -64,25 +79,18 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
         _sendMessage(_to, _value, _message, _gasLimit, _refundAddress);
     }   
 
-    function relayMessageWithProof(
+     function relayMessageWithProof(
+        uint256 _batchNumber,
         address _from,
         address _to,
         uint256 _value,
-        uint256 _nonce,
-        bytes memory _message,
-        L2MessageProof memory _proof
+        bytes memory _message
     ) external override {
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _nonce, _message));
+        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _message));
         require(!isL2MessageExecuted[_xDomainCalldataHash], "Message was already successfully executed");
 
-        {
-            require(ITwineChain(rollup).isBatchFinalized(_proof.batchIndex), "Batch is not finalized");
-            bytes32 _messageRoot = ITwineChain(rollup).withdrawRoots(_proof.batchIndex);
-            require(
-                WithdrawTrieVerifier.verifyMerkleProof(_messageRoot, _xDomainCalldataHash, _nonce, _proof.merkleProof),
-                "Invalid proof"
-            );
-        }
+        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not finalized");
+        require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainCalldataHash), "Transaction not present in Batch");
 
         xDomainMessageSender = _from;
         (bool success, ) = _to.call{value: _value}(_message);
@@ -104,7 +112,7 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
     ) internal {
         // compute the actual cross domain message calldata.
         uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainMessageIndex();
-        bytes memory _xDomainCalldata = _encodeXDomainCalldata(_msgSender(), _to, _value, _messageNonce, _message);
+        bytes memory _xDomainCalldata = _encodeXDomainCalldata(_msgSender(), _to, _value, _message);
 
         // compute and deduct the messaging fee to fee vault.
         //uint256 _fee = IL1MessageQueue(messageQueue).estimateCrossDomainMessageFee(_gasLimit);
@@ -134,6 +142,28 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
         //         require(_success, "Failed to refund the fee");
         //     }
         // }
+    }
+
+    /// @dev Internal function to generate the correct cross domain calldata for a message.
+    /// @param _sender Message sender address.
+    /// @param _target Target contract address.
+    /// @param _value The amount of ETH pass to the target.
+    /// @param _message Message to send to the target.
+    /// @return ABI encoded cross domain calldata.
+    function _encodeXDomainCalldata(
+        address _sender,
+        address _target,
+        uint256 _value,
+        bytes memory _message
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodeWithSignature(
+                "relayMessage(address,address,uint256,bytes)",
+                _sender,
+                _target,
+                _value,
+                _message
+            );
     }
 
 }   

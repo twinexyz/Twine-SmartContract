@@ -2,7 +2,7 @@
 
 pragma solidity =0.8.24;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {IL2GatewayRouter} from "./IL2GatewayRouter.sol";
 import {IL2ETHGateway} from "./IL2ETHGateway.sol";
@@ -13,7 +13,7 @@ import {IL2ERC20Gateway} from "./IL2ERC20Gateway.sol";
 /// All deposited tokens are routed to corresponding gateways.
 /// @dev One can also use this contract to query L1/L2 token address mapping.
 /// In the future, ERC-721 and ERC-1155 tokens will be added to the router too.
-contract L2GatewayRouter is OwnableUpgradeable, IL2GatewayRouter {
+contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     /*************
      * Variables *
      *************/
@@ -143,8 +143,7 @@ contract L2GatewayRouter is OwnableUpgradeable, IL2GatewayRouter {
     function finalizeDepositETH(
         address,
         address,
-        uint256,
-        bytes calldata
+        uint256
     ) external payable virtual  {
         revert("should never be called");
     }
@@ -166,7 +165,7 @@ contract L2GatewayRouter is OwnableUpgradeable, IL2GatewayRouter {
      ************************/
 
     /// @inheritdoc IL2GatewayRouter
-    function setETHGateway(address _newEthGateway) external onlyOwner {
+    function setETHGateway(address _newEthGateway) external {
         address _oldEthGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -174,7 +173,7 @@ contract L2GatewayRouter is OwnableUpgradeable, IL2GatewayRouter {
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external onlyOwner {
+    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
 
@@ -182,7 +181,7 @@ contract L2GatewayRouter is OwnableUpgradeable, IL2GatewayRouter {
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external onlyOwner {
+    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external  {
         require(_tokens.length == _gateways.length, "length mismatch");
 
         for (uint256 i = 0; i < _tokens.length; i++) {

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
-import {L2MessageQueue} from "./predeploys/L2MessageQueue.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
 contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
@@ -14,6 +13,20 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
     /// @notice Emitted when a cross domain message is failed to relay.
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
+
+    /// @notice Emitted when a cross domain message is sent.
+    /// @param sender The address of the sender who initiates the message.
+    /// @param target The address of target contract to call.
+    /// @param value The amount of value passed to the target contract.
+    /// @param gasLimit The optional gas limit passed to L1 or L2.
+    /// @param message The calldata passed to the target contract.
+    event SentMessage(
+        address indexed sender,
+        address indexed target,
+        uint256 value,
+        uint256 gasLimit,
+        bytes message
+    );
 
     /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL1MessageExecuted;
@@ -48,7 +61,7 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         uint256 _value,
         bytes calldata _message,
         uint256 _gasLimit,
-        address
+        address 
     ) external payable override  {
         _sendMessage(_to, _value, _message, _gasLimit);
     }
@@ -68,7 +81,7 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         _executeMessage(_from, _to, _value, _message, _xDomainCalldataHash);
     }
 
-    /// @dev Internal function to send cross domain message.
+     /// @dev Internal function to send cross domain message.
     /// @param _to The address of account who receive the message.
     /// @param _value The amount of ether passed when call target contract.
     /// @param _message The content of the message.
@@ -78,15 +91,10 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         uint256 _value,
         bytes memory _message,
         uint256 _gasLimit
-    ) internal nonReentrant {
+    ) internal {
         require(msg.value == _value, "msg.value mismatch");
 
-        uint256 _nonce = L2MessageQueue(messageQueue).nextMessageIndex();
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_msgSender(), _to, _value, _nonce, _message));
-
-        L2MessageQueue(messageQueue).appendMessage(_xDomainCalldataHash);
-
-        emit SentMessage(_msgSender(), _to, _value, _nonce, _gasLimit, _message);
+        emit SentMessage(_msgSender(), _to, _value, _gasLimit, _message);
     }
 
 
@@ -108,5 +116,32 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         } else {
             emit FailedRelayedMessage(_xDomainCalldataHash);
         }
+    }
+
+    /// @dev Internal function to generate the correct cross domain calldata for a message.
+    /// @param _sender Message sender address.
+    /// @param _target Target contract address.
+    /// @param _value The amount of ETH pass to the target.
+    /// @param _messageNonce Nonce for the provided message.
+    /// @param _message Message to send to the target.
+    /// @return ABI encoded cross domain calldata.
+    function _encodeXDomainCalldata(
+        address _sender,
+        address _target,
+        uint256 _value,
+        uint256 _messageNonce,
+        bytes memory _message
+    ) internal pure 
+    
+returns (bytes memory) {
+        return
+            abi.encodeWithSignature(
+                "relayMessage(address,address,uint256,uint256,bytes)",
+                _sender,
+                _target,
+                _value,
+                _messageNonce,
+                _message
+            );
     }
 }

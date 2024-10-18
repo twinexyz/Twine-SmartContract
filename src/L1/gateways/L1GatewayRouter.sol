@@ -150,8 +150,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     function finalizeWithdrawETH(
         address,
         address,
-        uint256,
-        bytes calldata
+        uint256
     ) external payable virtual override {
         revert("should never be called");
     }

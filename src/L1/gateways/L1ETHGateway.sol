@@ -26,7 +26,7 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
      
      /// @inheritdoc IL1ETHGateway
     function depositETH(uint256 _amount, uint256 _gasLimit) external payable override {
-        _deposit(_msgSender(), _amount, new bytes(0), _gasLimit);
+        _deposit(_msgSender(), _amount, _gasLimit);
     }
     /// @inheritdoc IL1ETHGateway
     function depositETH(
@@ -34,7 +34,7 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_to, _amount, new bytes(0), _gasLimit);
+        _deposit(_to, _amount, _gasLimit);
     }
 
     function onDropMessage(bytes calldata _message) external payable virtual {
@@ -57,8 +57,7 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
     function finalizeWithdrawETH(
         address _from,
         address _to,
-        uint256 _amount,
-        bytes calldata _data
+        uint256 _amount
     ) external payable override {
         require(msg.value == _amount, "msg.value mismatch");
 
@@ -67,20 +66,16 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        _doCallback(_to, _data);
-
-        emit FinalizeWithdrawETH(_from, _to, _amount, _data);
+        emit FinalizeWithdrawETH(_from, _to, _amount);
     }
 
      /// @dev The internal ETH deposit implementation.
     /// @param _to The address of recipient's account on L2.
     /// @param _amount The amount of ETH to be deposited.
-    /// @param _data Optional data to forward to recipient's account.
     /// @param _gasLimit Gas limit required to complete the deposit on L2.
     function _deposit(
         address _to,
         uint256 _amount,
-        bytes memory _data,
         uint256 _gasLimit
     ) internal virtual {
         require(_amount > 0, "deposit zero eth");
@@ -91,11 +86,11 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
         // @note no rate limit here, since ETH is limited in messenger
 
         // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encodeCall(IL2ETHGateway.finalizeDepositETH, (_from, _to, _amount, _data));
+        bytes memory _message = abi.encodeCall(IL2ETHGateway.finalizeDepositETH, (_from, _to, _amount));
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, _amount, _message, _gasLimit, _from);
 
-        emit DepositETH(_from, _to, _amount, _data);
+        emit DepositETH(_from, _to, _amount);
     }
 
 }
