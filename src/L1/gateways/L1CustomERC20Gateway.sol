@@ -2,13 +2,11 @@
 
 pragma solidity =0.8.24;
 
-import {IL2ERC20Gateway} from "../../L2/gateways/IL2ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {IL1ERC20Gateway} from "./IL1ERC20Gateway.sol";
-
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
-
+import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 
 /// @title L1CustomERC20Gateway
 /// @notice The `L1CustomERC20Gateway` is used to deposit ERC20 compatible tokens on layer 1 and

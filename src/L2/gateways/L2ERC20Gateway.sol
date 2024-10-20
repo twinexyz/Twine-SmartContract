@@ -2,8 +2,7 @@
 
 pragma solidity ^0.8.24;
 
-import {IL2ERC20Gateway} from "./IL2ERC20Gateway.sol";
-
+import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 
 abstract contract L2ERC20Gateway is TwineGatewayBase, IL2ERC20Gateway {

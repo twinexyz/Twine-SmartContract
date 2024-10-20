@@ -4,9 +4,9 @@ pragma solidity =0.8.24;
 
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
-import {IL2GatewayRouter} from "./IL2GatewayRouter.sol";
-import {IL2ETHGateway} from "./IL2ETHGateway.sol";
-import {IL2ERC20Gateway} from "./IL2ERC20Gateway.sol";
+import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
+import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
+import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
 
 /// @title L2GatewayRouter
 /// @notice The `L2GatewayRouter` is the main entry for withdrawing Ether and ERC20 tokens.

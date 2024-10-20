@@ -6,9 +6,9 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IL1ETHGateway} from "./IL1ETHGateway.sol";
-import {IL1ERC20Gateway} from "./IL1ERC20Gateway.sol";
-import {IL1GatewayRouter} from "./IL1GatewayRouter.sol";
+import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
+import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
+import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 
 /// @title L1GatewayRouter
 /// @notice The `L1GatewayRouter` is the main entry for depositing Ether and ERC20 tokens.

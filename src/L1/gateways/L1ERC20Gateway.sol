@@ -5,10 +5,9 @@ pragma solidity ^0.8.24;
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IL1ERC20Gateway} from "./IL1ERC20Gateway.sol";
-import {IL1GatewayRouter} from "./IL1GatewayRouter.sol";
-
-import {IL2ERC20Gateway} from "../../L2/gateways/IL2ERC20Gateway.sol";
+import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
+import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
+import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 import {IMessageDropCallback} from "../../libraries/callbacks/IMessageDropCallback.sol";
 
