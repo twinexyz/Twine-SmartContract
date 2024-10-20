@@ -20,8 +20,9 @@ contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
     constructor(
         address _counterpart,
         address _router,
-        address _messenger
-    ) TwineGatewayBase(_counterpart, _router, _messenger) {
+        address _messenger,
+        address _roleManagerAddress
+    ) TwineGatewayBase(_counterpart, _router, _messenger,_roleManagerAddress){
         _disableInitializers();
     }
 

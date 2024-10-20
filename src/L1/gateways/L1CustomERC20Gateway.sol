@@ -5,6 +5,7 @@ pragma solidity =0.8.24;
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 
@@ -42,9 +43,9 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     constructor(
         address _counterpart,
         address _router,
-        address _messenger
-    ) TwineGatewayBase(_counterpart, _router, _messenger) {
-        if (_router == address(0)) revert ErrorZeroAddress();
+        address _messenger,
+        address _roleManagerAddress
+    ) TwineGatewayBase(_counterpart, _router, _messenger,_roleManagerAddress){
         _disableInitializers();
     }
 
@@ -79,7 +80,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
-    function updateTokenMapping(address _l1Token, address _l2Token) external payable {
+    function updateTokenMapping(address _l1Token, address _l2Token) external payable onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         require(_l2Token != address(0), "token address cannot be 0");
 
         address _oldL2Token = tokenMapping[_l1Token];

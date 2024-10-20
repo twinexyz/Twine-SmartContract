@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 
 contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
@@ -14,8 +15,9 @@ contract L1ETHGateway is TwineGatewayBase,IL1ETHGateway{
     constructor(
         address _counterpart,
         address _router,
-        address _messenger
-    ) TwineGatewayBase(_counterpart, _router, _messenger){
+        address _messenger,
+        address _roleManagerAddress
+    ) TwineGatewayBase(_counterpart, _router, _messenger,_roleManagerAddress){
         _disableInitializers();
     }
     

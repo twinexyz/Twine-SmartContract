@@ -7,7 +7,9 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 
 import {ITwineGateway} from "./ITwineGateway.sol";
 import {ITwineMessenger} from "../ITwineMessenger.sol";
+import {IRoleManager} from "../access/IRoleManager.sol";
 import {ITwineGatewayCallback} from "../callbacks/ITwineGatewayCallback.sol";
+
 
 
 /// @title TwineGatewayBase
@@ -27,8 +29,19 @@ abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgrad
     /// @inheritdoc ITwineGateway
     address public immutable override messenger;
 
+    address public roleManagerAddress;
+
     /// @dev The storage slots for future usage.
     uint256[46] private __gap;
+
+    /**********************
+     * Function Modifiers *
+     **********************/
+     
+    modifier onlyRoles(bytes32 role) {
+        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        _;
+    }
 
     /***************
      * Constructor *
@@ -37,15 +50,17 @@ abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgrad
     constructor(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManagerAddress
     ) {
-        if (_counterpart == address(0) || _messenger == address(0) || _router == address(0)) {
+        if (_counterpart == address(0) || _messenger == address(0) || _router == address(0) ||  _roleManagerAddress == address(0)) {
             revert ErrorZeroAddress();
         }
 
         counterpart = _counterpart;
         router = _router;
         messenger = _messenger;
+        roleManagerAddress = _roleManagerAddress;
     }
 
     function _initialize(
@@ -54,6 +69,12 @@ abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgrad
         address
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
+    }
+
+    function setRoleManagerAddress(
+        address _roleManagerAddress
+    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+        roleManagerAddress = _roleManagerAddress;
     }
 
     /**********************
