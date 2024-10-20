@@ -13,3 +13,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/xERC20"]
+	path = lib/xERC20
+	url = https://github.com/defi-wonderland/xERC20
