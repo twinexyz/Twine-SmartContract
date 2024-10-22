@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity =0.8.24;
+pragma solidity ^0.8.24;
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";

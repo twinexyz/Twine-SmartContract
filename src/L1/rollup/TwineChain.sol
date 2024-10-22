@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";

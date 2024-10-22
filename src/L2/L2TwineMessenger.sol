@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
