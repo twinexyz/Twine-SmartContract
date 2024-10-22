@@ -3,14 +3,18 @@
 pragma solidity ^0.8.24;
 
 import {IXERC20} from "@xtoken/contracts/interfaces/IXERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IL2XERC20Gateway} from "../../L2/gateways/interfaces/IL2XERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
 
 contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
+    using SafeERC20 for IERC20;
      /**********
      * Events *
      **********/
@@ -26,10 +30,10 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
      *************/
     struct XTokenConfig {
         address l2Token;
-        address l1xtokenAddress;
-        address l2xtokenAddress;
-        address l1LockboxAddress;
-        address l2LockboxAddress;
+        address l1xToken;
+        address l2xToken;
+        address l1LockBox;
+        address l2LockBox;
     }
     /// @notice Mapping from l1 token address to l2 token address for XERC20 token.
     mapping(address => XTokenConfig) public tokenMapping;
@@ -129,11 +133,20 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         bytes calldata _data
     ) external payable virtual override nonReentrant {
         _beforeFinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
-
-        // @note can possible trigger reentrant call to this contract or messenger,
-        // but it seems not a big problem.
-        IXERC20(_l1Token).mint(_to, _amount);
-
+        XTokenConfig memory xTokenInfo = tokenMapping[_l1Token];
+        if(_l1Token != xTokenInfo.l1xToken){
+            bool isNative = IXERC20Lockbox(xTokenInfo.l1LockBox).IS_NATIVE();
+            IERC20(xTokenInfo.l1xToken).approve(xTokenInfo.l1LockBox, _amount);
+            IXERC20Lockbox(xTokenInfo.l1LockBox).withdraw(_amount);
+            if (isNative) {
+                (bool _success, ) = payable(_to).call{value: _amount}("");
+                require(_success, "Transfer failed");
+            } else {
+                SafeERC20.safeTransfer(IERC20(_l1Token), _to, _amount);
+            }
+        }else{
+            IXERC20(_l2Token).mint(_to, _amount);
+        }
         _doCallback(_to, _data);
 
         emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
@@ -172,11 +185,23 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         bytes memory _data,
         uint256 _gasLimit
     ) internal {
-        address _l2Token = tokenMapping[_token].l2Token;
+        XTokenConfig memory xTokenInfo = tokenMapping[_token];
+        address _l2Token = xTokenInfo.l2Token;
         require(_l2Token != address(0), "no corresponding l2 token");
-
+        if (_token != xTokenInfo.l1xToken) {
+            bool isNative = IXERC20Lockbox(xTokenInfo.l1LockBox).IS_NATIVE();
+            if (isNative) {
+                 IXERC20Lockbox(xTokenInfo.l1LockBox).depositNative{value: _amount}();
+            } else {
+                SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+                SafeERC20.safeIncreaseAllowance(IERC20(_token), xTokenInfo.l1LockBox, _amount);
+                IXERC20Lockbox(xTokenInfo.l1LockBox).deposit(_amount);
+            }
+        }else{
+        SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+        }
         IXERC20(_token).burn(_to, _amount);
-         bytes memory _message = abi.encodeCall(
+        bytes memory _message = abi.encodeCall(
             IL2XERC20Gateway.finalizeDepositXERC20,
             (_token, _l2Token, _msgSender(), _to, _amount, _data)
         );
