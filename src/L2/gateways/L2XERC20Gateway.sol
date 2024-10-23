@@ -13,7 +13,7 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
 
-contract L1XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
+contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
      /**********
      * Events *
      **********/
