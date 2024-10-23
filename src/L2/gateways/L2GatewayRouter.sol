@@ -32,6 +32,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
      * Constructor *
      ***************/
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
