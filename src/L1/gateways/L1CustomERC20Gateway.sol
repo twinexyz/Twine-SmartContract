@@ -13,7 +13,6 @@ import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol"
 /// @notice The `L1CustomERC20Gateway` is used to deposit ERC20 compatible tokens on layer 1 and
 /// finalize withdraw the tokens from layer 2
 contract L1CustomERC20Gateway is L1ERC20Gateway {
-
     /**********
      * Events *
      **********/
@@ -22,7 +21,11 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @param l1Token The address of ERC20 token in layer 1.
     /// @param oldL2Token The address of the old corresponding ERC20 token in layer 2.
     /// @param newL2Token The address of the new corresponding ERC20 token in layer 2.
-    event UpdateTokenMapping(address indexed l1Token, address indexed oldL2Token, address indexed newL2Token);
+    event UpdateTokenMapping(
+        address indexed l1Token,
+        address indexed oldL2Token,
+        address indexed newL2Token
+    );
 
     /*************
      * Variables *
@@ -35,17 +38,8 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
      * Constructor *
      ***************/
 
-    /// @notice Constructor for `L1CustomERC20Gateway` implementation contract.
-    ///
-    /// @param _counterpart The address of `L2CustomERC20Gateway` contract in L2.
-    /// @param _router The address of `L1GatewayRouter` contract in L1.
-    /// @param _messenger The address of `L1TwineMessenger` contract L1.
-    constructor(
-        address _counterpart,
-        address _router,
-        address _messenger,
-        address _roleManagerAddress
-    ) TwineGatewayBase(_counterpart, _router, _messenger,_roleManagerAddress){
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
         _disableInitializers();
     }
 
@@ -69,7 +63,12 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
      *************************/
 
     /// @inheritdoc IL1ERC20Gateway
-    function getL2ERC20Address(address _l1Token) public view override returns (address) {
+    function getL2ERC20Address(address _l1Token)
+        public
+        view
+        override
+        returns (address)
+    {
         return tokenMapping[_l1Token];
     }
 
@@ -80,7 +79,11 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
-    function updateTokenMapping(address _l1Token, address _l2Token) external payable onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function updateTokenMapping(address _l1Token, address _l2Token)
+        external
+        payable
+        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+    {
         require(_l2Token != address(0), "token address cannot be 0");
 
         address _oldL2Token = tokenMapping[_l1Token];
@@ -89,8 +92,17 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         emit UpdateTokenMapping(_l1Token, _oldL2Token, _l2Token);
 
         // update corresponding mapping in L2, 1000000 gas limit should be enough
-        bytes memory _message = abi.encodeCall(L1CustomERC20Gateway.updateTokenMapping, (_l2Token, _l1Token));
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, 1000000, _msgSender());
+        bytes memory _message = abi.encodeCall(
+            L1CustomERC20Gateway.updateTokenMapping,
+            (_l2Token, _l1Token)
+        );
+        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            counterpart,
+            0,
+            _message,
+            1000000,
+            _msgSender()
+        );
     }
 
     /**********************
@@ -142,7 +154,13 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         );
 
         // 3. Send message to L1TwineMessenger.
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, _gasLimit, _from);
+        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            counterpart,
+            0,
+            _message,
+            _gasLimit,
+            _from
+        );
 
         emit DepositERC20(_token, _l2Token, _from, _to, _amount, _data);
     }

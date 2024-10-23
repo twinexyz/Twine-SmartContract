@@ -37,17 +37,8 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
      * Constructor *
      ***************/
 
-    /// @notice Constructor for `L2CustomERC20Gateway` implementation contract.
-    ///
-    /// @param _counterpart The address of `L1CustomERC20Gateway` contract in L1.
-    /// @param _router The address of `L2GatewayRouter` contract in L2.
-    /// @param _messenger The address of `L2TwineMessenger` contract in L2.
-    constructor(
-        address _counterpart,
-        address _router,
-        address _messenger,
-        address _roleManagerAddress
-    ) TwineGatewayBase(_counterpart, _router, _messenger,_roleManagerAddress){
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
         _disableInitializers();
     }
 

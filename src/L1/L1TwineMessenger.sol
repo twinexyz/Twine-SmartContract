@@ -34,28 +34,41 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
     );
 
     /// @notice The address of L1MessageQueue contract.
-    address public immutable messageQueue;
+    address public  messageQueue;
 
      /// @notice The address of Rollup contract.
-    address public immutable rollup;
+    address public  rollup;
 
     
     /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL2MessageExecuted;
 
-    constructor(
-        address _counterpart,
-        address _rollup,
-        address _messageQueue
-    )TwineMessengerBase(_counterpart) {
-        if(_counterpart == address(0) || _messageQueue == address(0) ) {
-            revert ErrorZeroAddress();
-        }
+    /***************
+     * Constructor *
+     ***************/
 
-        counterpart = _counterpart;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the storage of L1TwineMessenger.
+    /// @param _counterpart The address of L2TwineMessenger in L2.
+    /// @param _messageQueue The address of `L1MessageQueue` contract.
+    /// @param _rollup The address of rollup contract.
+    function initialize(address _counterpart, address _messageQueue, address _rollup)
+        external
+        initializer
+    {
+        __TwineMessengerBase_init(_counterpart);
+   
         messageQueue = _messageQueue;
         rollup = _rollup;
+    }
 
+    function setAddressMessenger(address _messageQueue, address _rollup) external {
+        messageQueue = _messageQueue;
+        rollup = _rollup;
     }
 
 

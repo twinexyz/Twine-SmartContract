@@ -15,7 +15,7 @@ abstract contract TwineMessengerBase is
      *************/
 
     /// @notice The address of counterpart TwineMessenger contract in L1/L2.
-    address public immutable counterpart;
+    address public counterpart;
 
     /*************
      * Variables *
@@ -31,18 +31,21 @@ abstract contract TwineMessengerBase is
      * Constructor *
      ***************/
 
-    constructor(address _counterpart) {
-        if (_counterpart == address(0)) {
-            revert ErrorZeroAddress();
-        }
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
+    function __TwineMessengerBase_init(address _counterpart) internal {
+        __Context_init();
+        __ReentrancyGuard_init();
         counterpart = _counterpart;
     }
 
-    function __TwineMessengerBase_init(address, address _feeVault) internal {
-        if (_feeVault != address(0)) {
-            feeVault = _feeVault;
-        }
+    function setAddressMessengerBase(address _counterpart, address _feeVault)
+        external
+    {
+        counterpart = _counterpart;
+        feeVault = _feeVault;
     }
-    
 }

@@ -10,24 +10,25 @@ import {ITwineMessenger} from "../ITwineMessenger.sol";
 import {IRoleManager} from "../access/IRoleManager.sol";
 import {ITwineGatewayCallback} from "../callbacks/ITwineGatewayCallback.sol";
 
-
-
 /// @title TwineGatewayBase
 /// @notice The `TwineGatewayBase` is a base contract for gateway contracts used in both in L1 and L2.
-abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgradeable, ITwineGateway {
-
+abstract contract TwineGatewayBase is
+    ContextUpgradeable,
+    ReentrancyGuardUpgradeable,
+    ITwineGateway
+{
     /*************
      * Constants *
      *************/
 
     /// @inheritdoc ITwineGateway
-    address public immutable override counterpart;
+    address public override counterpart;
 
     /// @inheritdoc ITwineGateway
-    address public immutable override router;
+    address public override router;
 
     /// @inheritdoc ITwineGateway
-    address public immutable override messenger;
+    address public override messenger;
 
     address public roleManagerAddress;
 
@@ -37,44 +38,36 @@ abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgrad
     /**********************
      * Function Modifiers *
      **********************/
-     
+
     modifier onlyRoles(bytes32 role) {
         IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
         _;
     }
 
-    /***************
-     * Constructor *
-     ***************/
-
-    constructor(
+    function _initialize(
         address _counterpart,
         address _router,
-        address _messenger,
-        address _roleManagerAddress
-    ) {
-        if (_counterpart == address(0) || _messenger == address(0) || _router == address(0) ||  _roleManagerAddress == address(0)) {
-            revert ErrorZeroAddress();
-        }
-
+        address _messenger
+    ) internal {
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         counterpart = _counterpart;
         router = _router;
         messenger = _messenger;
+    }
+
+    function setRoleManagerAddress(address _roleManagerAddress)
+        external
+    {
         roleManagerAddress = _roleManagerAddress;
     }
 
-    function _initialize(
-        address,
-        address,
-        address
-    ) internal {
-        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-    }
-
-    function setRoleManagerAddress(
-        address _roleManagerAddress
-    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
-        roleManagerAddress = _roleManagerAddress;
+    function setAddress(address _counterpart, address _router, address _messenger)
+        external
+        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+    {
+        counterpart = _counterpart;
+        router = _router;
+        messenger = _messenger;
     }
 
     /**********************
@@ -89,5 +82,4 @@ abstract contract TwineGatewayBase is  ContextUpgradeable, ReentrancyGuardUpgrad
             ITwineGatewayCallback(_to).onTwineGatewayCallback(_data);
         }
     }
-
 }

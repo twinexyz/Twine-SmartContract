@@ -4,8 +4,7 @@ pragma solidity ^0.8.24;
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
-contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
-    
+contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
     event RelayedMessage(bytes32 indexed messageHash);
@@ -32,18 +31,27 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
     mapping(bytes32 => bool) public isL1MessageExecuted;
 
     /// @notice The address of L2MessageQueue.
-    address public immutable messageQueue;
+    address public messageQueue;
 
-    constructor(address _counterpart, address _messageQueue) TwineMessengerBase(_counterpart){
-        counterpart = _counterpart;
-        
+    /***************
+     * Constructor *
+     ***************/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
         _disableInitializers();
+    }
 
+    function initialize(address _counterpart, address _messageQueue)
+        external
+        initializer
+    {
+        TwineMessengerBase.__TwineMessengerBase_init(_counterpart);
         messageQueue = _messageQueue;
     }
 
-    function initialize(address) external initializer {
-        TwineMessengerBase.__TwineMessengerBase_init(address(0), address(0));
+    function setAddress(address _messageQueue) external {
+        messageQueue = _messageQueue;
     }
 
     function sendMessage(
@@ -51,18 +59,17 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         uint256 _value,
         bytes memory _message,
         uint256 _gasLimit
-    ) external payable override  {
+    ) external payable override {
         _sendMessage(_to, _value, _message, _gasLimit);
     }
 
-   
     function sendMessage(
         address _to,
         uint256 _value,
         bytes calldata _message,
         uint256 _gasLimit,
-        address 
-    ) external payable override  {
+        address
+    ) external payable override {
         _sendMessage(_to, _value, _message, _gasLimit);
     }
 
@@ -74,14 +81,19 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         uint256 _nonce,
         bytes memory _message
     ) external override {
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _nonce, _message));
+        bytes32 _xDomainCalldataHash = keccak256(
+            _encodeXDomainCalldata(_from, _to, _value, _nonce, _message)
+        );
 
-        require(!isL1MessageExecuted[_xDomainCalldataHash], "Message was already successfully executed");
+        require(
+            !isL1MessageExecuted[_xDomainCalldataHash],
+            "Message was already successfully executed"
+        );
 
         _executeMessage(_from, _to, _value, _message, _xDomainCalldataHash);
     }
 
-     /// @dev Internal function to send cross domain message.
+    /// @dev Internal function to send cross domain message.
     /// @param _to The address of account who receive the message.
     /// @param _value The amount of ether passed when call target contract.
     /// @param _message The content of the message.
@@ -96,7 +108,6 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
 
         emit SentMessage(_msgSender(), _to, _value, _gasLimit, _message);
     }
-
 
     /// @param _xDomainCalldataHash The hash of the message.
     function _executeMessage(
@@ -131,9 +142,7 @@ contract L2TwineMessenger is TwineMessengerBase,IL2TwineMessenger {
         uint256 _value,
         uint256 _messageNonce,
         bytes memory _message
-    ) internal pure 
-    
-returns (bytes memory) {
+    ) internal pure returns (bytes memory) {
         return
             abi.encodeWithSignature(
                 "relayMessage(address,address,uint256,uint256,bytes)",

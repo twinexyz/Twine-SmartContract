@@ -3,7 +3,7 @@
 pragma solidity =0.8.24;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
@@ -14,9 +14,8 @@ import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 /// @notice The `L1GatewayRouter` is the main entry for depositing Ether and ERC20 tokens.
 /// All deposited tokens are routed to corresponding gateways.
 contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
-
-     using SafeERC20 for IERC20;
-      /// @notice The address of L1ETHGateway.
+    using SafeERC20 for IERC20;
+    /// @notice The address of L1ETHGateway.
     address public ethGateway;
 
     /// @notice The addess of default ERC20 gateway, normally the L1StandardERC20Gateway contract.
@@ -29,6 +28,11 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     /// @notice The address of gateway in current execution context.
     address public gatewayInContext;
 
+    /***************
+     * Constructor *
+     ***************/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
@@ -36,8 +40,11 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     /// @notice Initialize the storage of L1GatewayRouter.
     /// @param _ethGateway The address of L1ETHGateway contract.
     /// @param _defaultERC20Gateway The address of default ERC20 Gateway contract.
-    function initialize(address _ethGateway, address _defaultERC20Gateway) external initializer {
-        // OwnableUpgradeable.__Ownable_init();
+    function initialize(address _ethGateway, address _defaultERC20Gateway)
+        external
+        initializer
+    {
+        OwnableUpgradeable.__Ownable_init(_msgSender());
 
         // it can be zero during initialization
         if (_defaultERC20Gateway != address(0)) {
@@ -52,8 +59,19 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         }
     }
 
+    function setAddress(address _ethGateway, address _defaultERC20Gateway)
+        external
+    {
+        ethGateway = _ethGateway;
+        defaultERC20Gateway = _defaultERC20Gateway;
+    }
+
     /// @inheritdoc IL1ERC20Gateway
-    function getL2ERC20Address(address _l1Address) external view returns (address) {
+    function getL2ERC20Address(address _l1Address)
+        external
+        view
+        returns (address)
+    {
         address _gateway = getERC20Gateway(_l1Address);
         if (_gateway == address(0)) {
             return address(0);
@@ -71,7 +89,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         return _gateway;
     }
 
-     /// @inheritdoc IL1GatewayRouter
+    /// @inheritdoc IL1GatewayRouter
     /// @dev All the gateways should have reentrancy guard to prevent potential attack though this function.
     function requestERC20(
         address _sender,
@@ -85,8 +103,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         return _amount;
     }
 
-
-     /// @inheritdoc IL1ERC20Gateway
+    /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address _token,
         uint256 _amount,
@@ -97,7 +114,12 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
 
         // enter deposit context
         gatewayInContext = _gateway;
-        IL1ERC20Gateway(_gateway).depositERC20{value: msg.value}(_token, _msgSender(), _amount, _gasLimit);
+        IL1ERC20Gateway(_gateway).depositERC20{value: msg.value}(
+            _token,
+            _msgSender(),
+            _amount,
+            _gasLimit
+        );
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -112,9 +134,14 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
 
         // enter deposit context
         gatewayInContext = _gateway;
-        IL1ERC20Gateway(_gateway).depositERC20{value: msg.value}(_token, _to, _amount, _gasLimit);
+        IL1ERC20Gateway(_gateway).depositERC20{value: msg.value}(
+            _token,
+            _to,
+            _amount,
+            _gasLimit
+        );
     }
- 
+
     /// @inheritdoc IL1ERC20Gateway
     function finalizeWithdrawERC20(
         address,
@@ -131,7 +158,11 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         // depositETHAndCall(_msgSender(), _amount, new bytes(0), _gasLimit);
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
-         IL1ETHGateway(_gateway).depositETH{value: msg.value}(_msgSender(), _amount, _gasLimit);
+        IL1ETHGateway(_gateway).depositETH{value: msg.value}(
+            _msgSender(),
+            _amount,
+            _gasLimit
+        );
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -143,7 +174,11 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         // depositETHAndCall(_to, _amount, new bytes(0), _gasLimit);
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
-         IL1ETHGateway(_gateway).depositETH{value: msg.value}(_to, _amount, _gasLimit);
+        IL1ETHGateway(_gateway).depositETH{value: msg.value}(
+            _to,
+            _amount,
+            _gasLimit
+        );
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -155,8 +190,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         revert("should never be called");
     }
 
-
-     function setETHGateway(address _newEthGateway) external onlyOwner {
+    function setETHGateway(address _newEthGateway) external onlyOwner {
         address _oldETHGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -164,15 +198,24 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     }
 
     /// @inheritdoc IL1GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external onlyOwner {
+    function setDefaultERC20Gateway(address _newDefaultERC20Gateway)
+        external
+        onlyOwner
+    {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
 
-        emit SetDefaultERC20Gateway(_oldDefaultERC20Gateway, _newDefaultERC20Gateway);
+        emit SetDefaultERC20Gateway(
+            _oldDefaultERC20Gateway,
+            _newDefaultERC20Gateway
+        );
     }
 
     /// @inheritdoc IL1GatewayRouter
-    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external onlyOwner {
+    function setERC20Gateway(
+        address[] memory _tokens,
+        address[] memory _gateways
+    ) external onlyOwner {
         require(_tokens.length == _gateways.length, "length mismatch");
 
         for (uint256 i = 0; i < _tokens.length; i++) {
@@ -182,6 +225,4 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
             emit SetERC20Gateway(_tokens[i], _oldGateway, _gateways[i]);
         }
     }
-
-
 }

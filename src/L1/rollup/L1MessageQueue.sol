@@ -5,25 +5,37 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 
-contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
-
+contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The address of L1TwineMessenger contract.
-    address public immutable messenger;
+    address public messenger;
 
     /// @notice The list of queued cross domain messages.
     bytes32[] public messageQueue;
 
     modifier onlyMessenger() {
-        require(_msgSender() == messenger, "Only callable by the L1TwineMessenger");
+        require(
+            _msgSender() == messenger,
+            "Only callable by the L1TwineMessenger"
+        );
         _;
     }
 
-    constructor(
-        address _messenger
-    ) {
-        if(_messenger == address(0)) {
-            revert ErrorZeroAddress();
-        }
+    /***************
+     * Constructor *
+     ***************/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // @notice Initialize the storage of L1MessageQueue.
+    /// @param _messenger The address of L1TwineMessenger in L1.
+    function initialize(address _messenger) external initializer {
+        messenger = _messenger;
+    }
+
+    function setAddress(address _messenger) external {
         messenger = _messenger;
     }
 
@@ -32,11 +44,15 @@ contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
         return messageQueue.length;
     }
 
-    function getCrossDomainMessage(uint256 _queueIndex) external view returns (bytes32) {
+    function getCrossDomainMessage(uint256 _queueIndex)
+        external
+        view
+        returns (bytes32)
+    {
         return messageQueue[_queueIndex];
     }
 
-   /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageQueue
     function computeTransactionHash(
         address _sender,
         uint256 _queueIndex,
@@ -118,7 +134,11 @@ contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
             switch eq(_data.length, 1)
             case 1 {
                 // single byte
-                ptr := store_uint_or_byte(ptr, byte(0, calldataload(_data.offset)), 0)
+                ptr := store_uint_or_byte(
+                    ptr,
+                    byte(0, calldataload(_data.offset)),
+                    0
+                )
             }
             default {
                 switch lt(_data.length, 56)
@@ -162,7 +182,10 @@ contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
             value := or(value, shl(mul(8, value_bytes), transactionType))
             value_bytes := add(value_bytes, 1)
             let value_bits := mul(8, value_bytes)
-            value := or(shl(sub(256, value_bits), value), shr(value_bits, mload(start_ptr)))
+            value := or(
+                shl(sub(256, value_bits), value),
+                shr(value_bits, mload(start_ptr))
+            )
             start_ptr := sub(start_ptr, value_bytes)
             mstore(start_ptr, value)
             hash := keccak256(start_ptr, sub(ptr, start_ptr))
@@ -177,7 +200,7 @@ contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
         bytes calldata _data
     ) external override onlyMessenger {
         // validate gas limit
-       // _validateGasLimit(_gasLimit, _data);
+        // _validateGasLimit(_gasLimit, _data);
 
         // do address alias to avoid replay attack in L2.
         address _sender = _msgSender();
@@ -195,18 +218,29 @@ contract L1MessageQueue is ContextUpgradeable,IL1MessageQueue {
         address _sender,
         address _target,
         uint256 _value,
-        uint256 _gasLimit,   
+        uint256 _gasLimit,
         bytes calldata _data
     ) internal {
         // compute transaction hash
         uint256 _queueIndex = messageQueue.length;
-        bytes32 _hash = computeTransactionHash(_sender, _queueIndex, _value, _target, _gasLimit, _data);
+        bytes32 _hash = computeTransactionHash(
+            _sender,
+            _queueIndex,
+            _value,
+            _target,
+            _gasLimit,
+            _data
+        );
         messageQueue.push(_hash);
 
         // emit event
-        emit QueueTransaction(_sender, _target, _value, uint64(_queueIndex), _gasLimit, _data);
+        emit QueueTransaction(
+            _sender,
+            _target,
+            _value,
+            uint64(_queueIndex),
+            _gasLimit,
+            _data
+        );
     }
-
-    
-
 }

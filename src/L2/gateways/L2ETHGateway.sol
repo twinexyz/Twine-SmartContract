@@ -6,27 +6,22 @@ import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 
-
 /// @title L2ETHGateway
 /// @notice The `L2ETHGateway` contract is used to withdraw ETH token on layer 2 and
 /// finalize deposit ETH from layer 1.
 /// @dev The ETH are not held in the gateway. The ETH will be sent to the `L2TwineMessenger` contract.
 /// On finalizing deposit, the Ether will be transferred from `L2TwineMessenger`, then transfer to recipient.
-contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
-
-     /***************
+contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
+    /***************
      * Constructor *
      ***************/
-    constructor(
-        address _counterpart,
-        address _router,
-        address _messenger,
-        address _roleManagerAddress
-    ) TwineGatewayBase(_counterpart, _router, _messenger,_roleManagerAddress){
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
         _disableInitializers();
     }
 
-     /// @notice Initialize the storage of L2ETHGateway.
+    /// @notice Initialize the storage of L2ETHGateway.
     ///
     /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
     ///
@@ -46,11 +41,15 @@ contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
      *****************************/
 
     /// @inheritdoc IL2ETHGateway
-    function withdrawETH(uint256 _amount, uint256 _gasLimit) external payable override {
+    function withdrawETH(uint256 _amount, uint256 _gasLimit)
+        external
+        payable
+        override
+    {
         _withdraw(_msgSender(), _amount, _gasLimit);
     }
-    
-     /// @inheritdoc IL2ETHGateway
+
+    /// @inheritdoc IL2ETHGateway
     function withdrawETH(
         address _to,
         uint256 _amount,
@@ -59,7 +58,7 @@ contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
         _withdraw(_to, _amount, _gasLimit);
     }
 
-   /// @inheritdoc IL2ETHGateway
+    /// @inheritdoc IL2ETHGateway
     function finalizeDepositETH(
         address _from,
         address _to,
@@ -70,7 +69,6 @@ contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
         // solhint-disable-next-line avoid-low-level-calls
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
-
 
         emit FinalizeDepositETH(_from, _to, _amount);
     }
@@ -88,8 +86,16 @@ contract L2ETHGateway is TwineGatewayBase,IL2ETHGateway {
 
         address _from = msg.sender;
 
-        bytes memory _message = abi.encodeCall(IL1ETHGateway.finalizeWithdrawETH, (_from, _to, _amount));
-        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, _amount, _message, _gasLimit);
+        bytes memory _message = abi.encodeCall(
+            IL1ETHGateway.finalizeWithdrawETH,
+            (_from, _to, _amount)
+        );
+        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
+            counterpart,
+            _amount,
+            _message,
+            _gasLimit
+        );
 
         emit WithdrawETH(_from, _to, _amount);
     }
