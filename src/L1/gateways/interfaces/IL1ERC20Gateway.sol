@@ -48,17 +48,6 @@ interface IL1ERC20Gateway {
     /// @param amount The amount of token refunded to receiver.
     event RefundERC20(address indexed token, address indexed recipient, uint256 amount);
 
-     /// @notice Deposit some token to a caller's account on L2.
-    /// @dev Make this function payable to send relayer fee in Ether.
-    /// @param _token The address of token in L1.
-    /// @param _amount The amount of token to transfer.
-    /// @param _gasLimit Gas limit required to complete the deposit on L2.
-    function depositERC20(
-        address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable;
-
     /// @notice Deposit some token to a recipient's account on L2.
     /// @dev Make this function payable to send relayer fee in Ether.
     /// @param _token The address of token in L1.
@@ -71,8 +60,35 @@ interface IL1ERC20Gateway {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable;
-    
 
+    /// @notice Deposit some token to a recipient's account on L2 and call.
+    /// @dev Make this function payable to send relayer fee in Ether.
+    /// @param _token The address of token in L1.
+    /// @param _to The address of recipient's account on L2.
+    /// @param _amount The amount of token to transfer.
+    /// @param _data Optional data to forward to recipient's account.
+    /// @param _gasLimit Gas limit required to complete the deposit on L2.
+    function depositERC20AndCall(
+        address _token,
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) external payable;
+
+    /// @notice Withdraw ERC20 form the user account in L2
+    /// @param _l1Token The address of corresponding L1 token.
+    /// @param _l2Token The address of corresponding L2 token.
+    /// @param _to The address of recipient in L1 to receive the token.
+    /// @param _amount The amount of the token to withdraw.
+    /// @param _gasLimit Gas limit required to complete the withdrawal.
+    function forcedWithdrawalERC20(
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) external payable;
 
     /// @notice Complete ERC20 withdraw from L2 to L1 and send fund to recipient's account in L1.
     /// @dev Make this function payable to handle WETH deposit/withdraw.

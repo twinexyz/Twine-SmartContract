@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity =0.8.24;
+pragma solidity ^0.8.24;
 
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
@@ -89,15 +89,6 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20(
         address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable  {
-        withdrawERC20AndCall(_token, _msgSender(), _amount, new bytes(0), _gasLimit);
-    }
-
-    /// @inheritdoc IL2ERC20Gateway
-    function withdrawERC20(
-        address _token,
         address _to,
         uint256 _amount,
         uint256 _gasLimit
@@ -138,27 +129,6 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
         IL2ETHGateway(_gateway).withdrawETH{value: msg.value}(_to, _amount, _gasLimit);
-    }
-
-    /// @inheritdoc IL2ETHGateway
-    function finalizeDepositETH(
-        address,
-        address,
-        uint256
-    ) external payable virtual  {
-        revert("should never be called");
-    }
-
-    /// @inheritdoc IL2ERC20Gateway
-    function finalizeDepositERC20(
-        address,
-        address,
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external payable virtual  {
-        revert("should never be called");
     }
 
     /************************

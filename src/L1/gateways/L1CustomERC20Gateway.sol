@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
@@ -90,19 +91,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         tokenMapping[_l1Token] = _l2Token;
 
         emit UpdateTokenMapping(_l1Token, _oldL2Token, _l2Token);
-
-        // update corresponding mapping in L2, 1000000 gas limit should be enough
-        bytes memory _message = abi.encodeCall(
-            L1CustomERC20Gateway.updateTokenMapping,
-            (_l2Token, _l1Token)
-        );
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
-            counterpart,
-            0,
-            _message,
-            1000000,
-            _msgSender()
-        );
+        
     }
 
     /**********************
@@ -148,13 +137,14 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
 
         // 2. Generate message passed to L2CustomERC20Gateway.
-        bytes memory _message = abi.encodeCall(
-            IL2ERC20Gateway.finalizeDepositERC20,
-            (_token, _l2Token, _from, _to, _amount, _data)
-        );
+        bytes memory _message = abi.encode(_token, _l2Token, _from, _to, _amount, _data);
+        
+        // 3. Calculate the type of transaction
+        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.deposit;
 
-        // 3. Send message to L1TwineMessenger.
+        // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            _type,
             counterpart,
             0,
             _message,
@@ -163,5 +153,32 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         );
 
         emit DepositERC20(_token, _l2Token, _from, _to, _amount, _data);
+    }
+
+     function _forcedWithdrawalERC20(
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) internal virtual override nonReentrant {
+         // 1. Extract real sender if this call is from L1GatewayRouter
+        address _from = _msgSender();
+
+        // 2. Generate message passed to L1TwineMessenger.
+        bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
+
+        // 3. Calculate the type of transaction
+        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.withdrawal;
+
+         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            _type,
+            counterpart,
+            0,
+            _message,
+            _gasLimit,
+            _from
+        );
+
     }
 }

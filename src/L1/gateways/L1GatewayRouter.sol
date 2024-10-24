@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity =0.8.24;
+pragma solidity ^0.8.24;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -106,40 +106,34 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable override {
-        address _gateway = getERC20Gateway(_token);
-        require(_gateway != address(0), "no gateway available");
-
-        // enter deposit context
-        gatewayInContext = _gateway;
-        IL1ERC20Gateway(_gateway).depositERC20{value: msg.value}(
-            _token,
-            _msgSender(),
-            _amount,
-            _gasLimit
-        );
-    }
-
-    /// @inheritdoc IL1ERC20Gateway
-    function depositERC20(
-        address _token,
         address _to,
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
+        depositERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
+    }
+
+    /// @inheritdoc IL1ERC20Gateway
+    function depositERC20AndCall(
+        address _token,
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) public payable override  {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
 
         // enter deposit context
         gatewayInContext = _gateway;
-        IL1ERC20Gateway(_gateway).depositERC20{value: msg.value}(
-            _token,
-            _to,
-            _amount,
-            _gasLimit
-        );
+
+        // encode msg.sender with _data
+        bytes memory _routerData = abi.encode(_msgSender(), _data);
+
+        IL1ERC20Gateway(_gateway).depositERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+
+        // leave deposit context
+        gatewayInContext = address(0);
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -154,15 +148,15 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         revert("should never be called");
     }
 
-    function depositETH(uint256 _amount, uint256 _gasLimit) external payable {
-        // depositETHAndCall(_msgSender(), _amount, new bytes(0), _gasLimit);
-        address _gateway = ethGateway;
-        require(_gateway != address(0), "eth gateway available");
-        IL1ETHGateway(_gateway).depositETH{value: msg.value}(
-            _msgSender(),
-            _amount,
-            _gasLimit
-        );
+    /// @inheritdoc IL1ERC20Gateway
+    function forcedWithdrawalERC20(
+        address ,
+        address ,
+        address ,
+        uint256 ,
+        uint256 
+    ) external payable virtual override {
+        revert("should never be called");
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -171,14 +165,32 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        // depositETHAndCall(_to, _amount, new bytes(0), _gasLimit);
+        depositETHAndCall(_to, _amount, new bytes(0), _gasLimit);
+    }
+
+   /// @inheritdoc IL1ETHGateway
+    function depositETHAndCall(
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) public payable override {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
-        IL1ETHGateway(_gateway).depositETH{value: msg.value}(
-            _to,
-            _amount,
-            _gasLimit
-        );
+
+        // encode msg.sender with _data
+        bytes memory _routerData = abi.encode(_msgSender(), _data);
+
+        IL1ETHGateway(_gateway).depositETHAndCall{value: msg.value}(_to, _amount, _routerData, _gasLimit);
+    }
+    
+    /// @inheritdoc IL1ETHGateway
+    function forcedWithdrawalETH(
+        address ,
+        uint256 ,
+        uint256 
+    ) external payable virtual override{
+        revert("should never be called");
     }
 
     /// @inheritdoc IL1ETHGateway

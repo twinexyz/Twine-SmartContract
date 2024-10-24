@@ -6,6 +6,8 @@ import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
+import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
@@ -14,7 +16,7 @@ import {IMessageDropCallback} from "../../libraries/callbacks/IMessageDropCallba
 /// @title L1ERC20Gateway
 /// @notice The `L1ERC20Gateway` as a base contract for ERC20 gateways in L1.
 /// It has implementation of common used functions for ERC20 gateways.
-abstract contract L1ERC20Gateway is IL1ERC20Gateway, IMessageDropCallback, TwineGatewayBase {
+abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
     
     using SafeERC20 for IERC20;
 
@@ -32,20 +34,33 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, IMessageDropCallback, Twine
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable override {
-        _deposit(_token, _msgSender(), _amount, new bytes(0), _gasLimit);
-    }
-
-    /// @inheritdoc IL1ERC20Gateway
-    function depositERC20(
-        address _token,
         address _to,
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
         _deposit(_token, _to, _amount, new bytes(0), _gasLimit);
+    }
+
+    /// @inheritdoc IL1ERC20Gateway
+    function depositERC20AndCall(
+        address _token,
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) external payable override {
+        _deposit(_token, _to, _amount, _data, _gasLimit);
+    }
+
+    /// @inheritdoc IL1ERC20Gateway
+    function forcedWithdrawalERC20(
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) external payable override {
+        _forcedWithdrawalERC20(_l1Token,_l2Token,_to, _amount, _gasLimit);
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -69,23 +84,23 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, IMessageDropCallback, Twine
     }
 
     /// @inheritdoc IMessageDropCallback
-    function onDropMessage(bytes calldata _message) external payable virtual nonReentrant {
+    // function onDropMessage(bytes calldata _message) external payable virtual nonReentrant {
         // _message should start with 0x8431f5c1  =>  finalizeDepositERC20(address,address,address,address,uint256,bytes)
-        require(bytes4(_message[0:4]) == IL2ERC20Gateway.finalizeDepositERC20.selector, "invalid selector");
+        // require(bytes4(_message[0:4]) == IL2ERC20Gateway.finalizeDepositERC20.selector, "invalid selector");
 
         // decode (token, receiver, amount)
-        (address _token, , address _receiver, , uint256 _amount, ) = abi.decode(
-            _message[4:],
-            (address, address, address, address, uint256, bytes)
-        );
+    //     (address _token, , address _receiver, , uint256 _amount, ) = abi.decode(
+    //         _message[4:],
+    //         (address, address, address, address, uint256, bytes)
+    //     );
 
-        // do dome check for each custom gateway
-        _beforeDropMessage(_token, _receiver, _amount);
+    //     // do dome check for each custom gateway
+    //     _beforeDropMessage(_token, _receiver, _amount);
 
-        IERC20(_token).safeTransfer(_receiver, _amount);
+    //     IERC20(_token).safeTransfer(_receiver, _amount);
 
-        emit RefundERC20(_token, _receiver, _amount);
-    }
+    //     emit RefundERC20(_token, _receiver, _amount);
+    // }
 
     /**********************
      * Internal Functions *
@@ -165,6 +180,14 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, IMessageDropCallback, Twine
         address _to,
         uint256 _amount,
         bytes memory _data,
+        uint256 _gasLimit
+    ) internal virtual;
+
+    function _forcedWithdrawalERC20(
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
         uint256 _gasLimit
     ) internal virtual;
 }

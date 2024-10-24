@@ -39,18 +39,19 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
      *****************************/
 
     /// @inheritdoc IL1ETHGateway
-    function depositETH(uint256 _amount, uint256 _gasLimit)
-        external
-        payable
-        override
-    {
-        _deposit(_msgSender(), _amount, _gasLimit);
-    }
-
-    /// @inheritdoc IL1ETHGateway
     function depositETH(
         address _to,
         uint256 _amount,
+        uint256 _gasLimit
+    ) external payable override {
+        _deposit(_to, _amount, _gasLimit);
+    }
+
+    /// @inheritdoc IL1ETHGateway
+    function depositETHAndCall(
+        address _to,
+        uint256 _amount,
+        bytes calldata _data,
         uint256 _gasLimit
     ) external payable override {
         _deposit(_to, _amount, _gasLimit);
@@ -65,26 +66,26 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         _forcedWithdrawalEth(_to, _amount, _gasLimit);
     }
 
-    function onDropMessage(bytes calldata _message) external payable virtual {
-        // _message should start with 0x232e8748  =>  finalizeDepositETH(address,address,uint256,bytes)
-        require(
-            bytes4(_message[0:4]) == IL2ETHGateway.finalizeDepositETH.selector,
-            "invalid selector"
-        );
+    // function onDropMessage(bytes calldata _message) external payable virtual {
+    //     // _message should start with 0x232e8748  =>  finalizeDepositETH(address,address,uint256,bytes)
+    //     require(
+    //         bytes4(_message[0:4]) == IL2ETHGateway.finalizeDepositETH.selector,
+    //         "invalid selector"
+    //     );
 
         // decode (receiver, amount)
-        (address _receiver, , uint256 _amount, ) = abi.decode(
-            _message[4:],
-            (address, address, uint256, bytes)
-        );
+    //     (address _receiver, , uint256 _amount, ) = abi.decode(
+    //         _message[4:],
+    //         (address, address, uint256, bytes)
+    //     );
 
-        require(_amount == msg.value, "msg.value mismatch");
+    //     require(_amount == msg.value, "msg.value mismatch");
 
-        (bool _success, ) = _receiver.call{value: _amount}("");
-        require(_success, "ETH transfer failed");
+    //     (bool _success, ) = _receiver.call{value: _amount}("");
+    //     require(_success, "ETH transfer failed");
 
-        emit RefundETH(_receiver, _amount);
-    }
+    //     emit RefundETH(_receiver, _amount);
+    // }
 
     /// @inheritdoc IL1ETHGateway
     function finalizeWithdrawETH(

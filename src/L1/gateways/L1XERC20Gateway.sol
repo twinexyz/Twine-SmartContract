@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {IL2XERC20Gateway} from "../../L2/gateways/interfaces/IL2XERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
@@ -88,21 +89,13 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
 
         // update corresponding mapping in L2, 1000000 gas limit should be enough
         bytes memory _message = abi.encodeCall(L1XERC20Gateway.updateTokenMapping, ( _l1Token,_newXTokenConfig));
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, 1000000, _msgSender());
+        // IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, 1000000, _msgSender());
     }
 
      /*****************************
      * Public Mutating Functions *
      *****************************/
 
-    /// @inheritdoc IL1XERC20Gateway
-    function depositXERC20(
-        address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable override {
-        _deposit(_token, _msgSender(), _amount, new bytes(0), _gasLimit);
-    }
 
     /// @inheritdoc IL1XERC20Gateway
     function depositXERC20(
@@ -112,6 +105,28 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         uint256 _gasLimit
     ) external payable override {
         _deposit(_token, _to, _amount, new bytes(0), _gasLimit);
+    }
+
+     /// @inheritdoc IL1XERC20Gateway
+    function depositXERC20AndCall(
+        address _token,
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) external payable override {
+        _deposit(_token, _to, _amount, _data, _gasLimit);
+    }
+
+     /// @inheritdoc IL1XERC20Gateway
+    function forcedWithdrawalXERC20(
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) external payable override {
+        _forcedWithdrawalXERC20(_l1Token,_l2Token,_to, _amount, _gasLimit);
     }
 
      /// @inheritdoc IL1XERC20Gateway
@@ -127,19 +142,22 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         XTokenConfig memory xTokenInfo = tokenMapping[_l1Token];
         if(_l1Token != xTokenInfo.l1xToken){
             bool isNative = IXERC20Lockbox(xTokenInfo.l1LockBox).IS_NATIVE();
-            IERC20(xTokenInfo.l1xToken).approve(xTokenInfo.l1LockBox, _amount);
-            IXERC20Lockbox(xTokenInfo.l1LockBox).withdraw(_amount);
             if (isNative) {
+                IXERC20(xTokenInfo.l1xToken).mint(address(this), _amount);
+                SafeERC20.safeIncreaseAllowance(IERC20(xTokenInfo.l1xToken), xTokenInfo.l1LockBox, _amount);
+                IXERC20Lockbox(xTokenInfo.l1LockBox).withdrawTo(address(this),_amount);
                 (bool _success, ) = payable(_to).call{value: _amount}("");
                 require(_success, "Transfer failed");
             } else {
+                IXERC20(xTokenInfo.l1xToken).mint(address(this), _amount);
+                IERC20(xTokenInfo.l1xToken).approve (xTokenInfo.l1LockBox, _amount);
+                IXERC20Lockbox(xTokenInfo.l1LockBox).withdrawTo(address(this),_amount);
                 SafeERC20.safeTransfer(IERC20(_l1Token), _to, _amount);
             }
         }else{
-            IXERC20(_l2Token).mint(_to, _amount);
+            IXERC20(xTokenInfo.l1xToken).mint(_to, _amount);
         }
         _doCallback(_to, _data);
-
         emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
     }
 
@@ -186,20 +204,53 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
             } else {
                 SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
                 SafeERC20.safeIncreaseAllowance(IERC20(_token), xTokenInfo.l1LockBox, _amount);
-                IXERC20Lockbox(xTokenInfo.l1LockBox).deposit(_amount);
+                IXERC20Lockbox(xTokenInfo.l1LockBox).depositTo(address(this),_amount);
+               
             }
         }else{
-        SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+            SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
         }
-        IXERC20(_token).burn(_to, _amount);
-        bytes memory _message = abi.encodeCall(
-            IL2XERC20Gateway.finalizeDepositXERC20,
-            (_token, _l2Token, _msgSender(), _to, _amount, _data)
+         IXERC20(xTokenInfo.l1xToken).burn(address(this), _amount);
+         
+        bytes memory _message = abi.encode(_token, _l2Token,_msgSender(), _to, _amount);
+
+         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            ITwineMessenger.TransactionType.deposit,
+            counterpart,
+            0,
+            _message,
+            _gasLimit,
+            _msgSender()
         );
 
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, _gasLimit, _msgSender());
-
         emit DepositXERC20(_token, _l2Token, _msgSender(), _to, _amount, _data);
+
+    }
+
+    function _forcedWithdrawalXERC20(
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) internal  nonReentrant {
+         // 1. Extract real sender if this call is from L1GatewayRouter
+        address _from = _msgSender();
+
+        // 2. Generate message passed to L1TwineMessenger.
+        bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
+
+        // 3. Calculate the type of transaction
+        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.withdrawal;
+
+         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            _type,
+            counterpart,
+            0,
+            _message,
+            _gasLimit,
+            _from
+        );
 
     }
 

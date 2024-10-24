@@ -30,11 +30,6 @@ interface IL1ETHGateway {
     /*****************************
     * Public Mutating Functions *
     *****************************/
-
-    /// @notice Deposit ETH to caller's account in L2.
-    /// @param amount The amount of ETH to be deposited.
-    /// @param gasLimit Gas limit required to complete the deposit on L2.
-    function depositETH(uint256 amount, uint256 gasLimit) external payable;
     
     /// @notice Deposit ETH to some recipient's account in L2.
     /// @param to The address of recipient's account on L2.
@@ -43,6 +38,18 @@ interface IL1ETHGateway {
     function depositETH(
         address to,
         uint256 amount,
+        uint256 gasLimit
+    ) external payable;
+
+    /// @notice Deposit ETH to some recipient's account in L2 and call the target contract.
+    /// @param to The address of recipient's account on L2.
+    /// @param amount The amount of ETH to be deposited.
+    /// @param data Optional data to forward to recipient's account.
+    /// @param gasLimit Gas limit required to complete the deposit on L2.
+    function depositETHAndCall(
+        address to,
+        uint256 amount,
+        bytes calldata data,
         uint256 gasLimit
     ) external payable;
 

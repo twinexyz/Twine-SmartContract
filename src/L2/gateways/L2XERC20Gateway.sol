@@ -12,6 +12,7 @@ import {IL2XERC20Gateway} from "./interfaces/IL2XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 
 contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
      /**********
@@ -100,15 +101,6 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
     /// @inheritdoc IL2XERC20Gateway
     function withdrawXERC20(
         address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable override {
-        _withdraw(_token, _msgSender(), _amount, new bytes(0), _gasLimit);
-    }
-
-    /// @inheritdoc IL2XERC20Gateway
-    function withdrawXERC20(
-        address _token,
         address _to,
         uint256 _amount,
         uint256 _gasLimit
@@ -116,35 +108,16 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         _withdraw(_token, _to, _amount, new bytes(0), _gasLimit);
     }
 
-     /// @inheritdoc IL2XERC20Gateway
-    function finalizeDepositXERC20(
-        address _l1Token,
-        address _l2Token,
-        address _from,
+    /// @inheritdoc IL2XERC20Gateway
+    function withdrawXERC20AndCall(
+        address _token,
         address _to,
         uint256 _amount,
-        bytes calldata _data
-    ) external payable virtual override nonReentrant {
-        XTokenConfig memory xTokenInfo = tokenMapping[_l1Token];
-        if(_l2Token != xTokenInfo.l2xToken){
-            bool isNative;// = IXERC20Lockbox(xTokenInfo.l2LockBox).IS_NATIVE();
-            IERC20(xTokenInfo.l2xToken).approve(xTokenInfo.l2LockBox, _amount);
-            IXERC20Lockbox(xTokenInfo.l2LockBox).withdraw(_amount);
-            if (isNative) {
-                (bool _success, ) = payable(_to).call{value: _amount}("");
-                require(_success, "Transfer failed");
-            } else {
-                SafeERC20.safeTransfer(IERC20(_l2Token), _to, _amount);
-            }
-        }else {
-            IXERC20(_l2Token).mint(_to, _amount);
-        }
-
-        _doCallback(_to, _data);
-
-        emit FinalizeDepositXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
+        bytes calldata _data,
+        uint256 _gasLimit
+    ) external payable override {
+        _withdraw(_token, _to, _amount, _data, _gasLimit);
     }
-
 
     /**********************
      * Internal Functions *
@@ -167,25 +140,31 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         }
         require(_amount > 0, "withdraw zero amount");
 
-        if (_token != xTokenInfo.l2xToken) {
+         if (_token != xTokenInfo.l2xToken) {
             bool isNative = IXERC20Lockbox(xTokenInfo.l2LockBox).IS_NATIVE();
             if (isNative) {
                  IXERC20Lockbox(xTokenInfo.l2LockBox).depositNative{value: _amount}();
             } else {
-            SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
-            SafeERC20.safeIncreaseAllowance(IERC20(_token), xTokenInfo.l2LockBox, _amount);
-            IXERC20Lockbox(xTokenInfo.l2LockBox).deposit(_amount);
+                SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+                SafeERC20.safeIncreaseAllowance(IERC20(_token), xTokenInfo.l2LockBox, _amount);
+                IXERC20Lockbox(xTokenInfo.l2LockBox).depositTo(address(this),_amount);
+               
             }
-        } else{
+        }else{
             SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
         }
-        IXERC20(_token).burn(_to, _amount);
-          bytes memory _message = abi.encodeCall(
-            IL1XERC20Gateway.finalizeWithdrawXERC20,
-            (_l1Token, _token, _from, _to, _amount, _data)
+         IXERC20(xTokenInfo.l2xToken).burn(address(this), _amount);
+
+        bytes memory _message = abi.encode(_l1Token,_token, _from, _to, _amount, _data);
+
+        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
+            ITwineMessenger.TransactionType.withdrawal,
+            counterpart,
+            0,
+            _message,
+            _gasLimit,
+            _from
         );
-        // send message to L2TwineMessenger
-        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, _gasLimit);
         emit WithdrawXERC20(_l1Token, _token, _from, _to, _amount, _data);
 
     }

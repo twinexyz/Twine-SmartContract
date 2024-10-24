@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity =0.8.24;
+pragma solidity ^0.8.24;
 
 import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
@@ -8,6 +8,7 @@ import {IL1ERC20Gateway} from "../../L1/gateways/interfaces/IL1ERC20Gateway.sol"
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 
 /// @title L2CustomERC20Gateway
 /// @notice The `L2CustomERC20Gateway` is used to withdraw custom ERC20 compatible tokens on layer 2 and
@@ -71,30 +72,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         revert("unimplemented");
     }
 
-    /*****************************
-     * Public Mutating Functions *
-     *****************************/
-
-    /// @inheritdoc IL2ERC20Gateway
-    function finalizeDepositERC20(
-        address _l1Token,
-        address _l2Token,
-        address _from,
-        address _to,
-        uint256 _amount,
-        bytes calldata _data
-    ) external payable virtual override  nonReentrant {
-        require(msg.value == 0, "nonzero msg.value");
-        require(_l1Token != address(0), "token address cannot be 0");
-        require(_l1Token == tokenMapping[_l2Token], "l1 token mismatch");
-
-        ITwineERC20(_l2Token).mint(_to, _amount);
-
-        _doCallback(_to, _data);
-
-        emit FinalizeDepositERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
-    }
-
     /************************
      * Restricted Functions *
      ************************/
@@ -139,14 +116,18 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         ITwineERC20(_token).burn(_from, _amount);
 
         // 3. Generate message passed to L1CustomERC20Gateway.
-        bytes memory _message = abi.encodeCall(
-            IL1ERC20Gateway.finalizeWithdrawERC20,
-            (_l1Token, _token, _from, _to, _amount, _data)
+        bytes memory _message = abi.encode(_l1Token,_token, _from, _to, _amount, _data);
+
+        // 4. Send message to L12wineMessenger.
+        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
+            ITwineMessenger.TransactionType.withdrawal,
+            counterpart,
+            0,
+            _message,
+            _gasLimit,
+            _from
         );
-
-        // 4. send message to L2TwineMessenger
-        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, _gasLimit);
-
+        
         emit WithdrawERC20(_l1Token, _token, _from, _to, _amount, _data);
     }
 }
