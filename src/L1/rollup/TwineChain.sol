@@ -32,6 +32,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The mapping of batchIndex => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
 
+
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
 
