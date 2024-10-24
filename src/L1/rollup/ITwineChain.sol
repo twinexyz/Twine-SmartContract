@@ -63,7 +63,7 @@ interface ITwineChain {
         uint256 batchNumber;
         bytes32 stateRoot;
         bytes32 transactionRoot;
-        bytes32[] depositTransactionHashes;
+        bytes32 depositTransactionHash;
         bytes32[] withdrawalTransactionHashes;
         uint256[] withdrawalStatus;
         bytes32[] otherTransactionHashes;
@@ -80,10 +80,6 @@ interface ITwineChain {
 
      /// @return The latest committed finalized batch index.
     function lastCommittedBatchIndex() external view returns (uint256);
-
-    /// @param batchIndex The index of the batch.
-    /// @return The batch hash of a committed batch.
-    function committedBatches(uint256 batchIndex) external view returns (bytes32);
 
     /// @param batchIndex The index of the batch.
     /// @return The state root of a committed batch.

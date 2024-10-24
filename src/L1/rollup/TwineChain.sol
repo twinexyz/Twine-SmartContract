@@ -29,8 +29,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The index of Last Batch Finalized
     uint256 public override lastFinalizedBatchIndex;
 
-    /// @inheritdoc ITwineChain
-    mapping(uint256 => bytes32) public override committedBatches;
+    /// @notice The mapping of batchIndex => CommittedBatches
+    mapping(uint256 => StoredBatchInfo) public committedBatches;
 
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
@@ -78,14 +78,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32[] memory otherTransactionHash;
         bytes32[] memory withdrawalTransactionHash;
 
-        bytes32 depositTransactionHash = keccak256(_newBatchData.depositTransactionObjects);
+        bytes32 depositTransactionHash = keccak256(abi.encode(_newBatchData.depositTransactionObject));
 
         for(uint i = 0; i < _newBatchData.withdrawalTransactionObjects.length; i++) {
-            withdrawalTransactionHash[i] = keccak256(_newBatchData.withdrawalTransactionObjects[i]);
+            withdrawalTransactionHash[i] = keccak256(abi.encode(_newBatchData.withdrawalTransactionObjects[i]));
         }
 
         for(uint j = 0; j < _newBatchData.otherTransactions.length; j++) {
-            otherTransactionHash[j] = keccak256(_newBatchData.otherTransactions[j]);
+            otherTransactionHash[j] = keccak256(abi.encode(_newBatchData.otherTransactions[j]));
         }
 
         return
@@ -93,7 +93,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 batchNumber: _newBatchData.batchNumber,
                 stateRoot: _newBatchData.stateRoot,
                 transactionRoot: _newBatchData.transactionRoot,
-                depositTransactionHashes: depositTransactionHash,
+                depositTransactionHash: depositTransactionHash,
                 withdrawalTransactionHashes: withdrawalTransactionHash,
                 withdrawalStatus: _newBatchData.withdrawalStatus,
                 otherTransactionHashes: otherTransactionHash,
