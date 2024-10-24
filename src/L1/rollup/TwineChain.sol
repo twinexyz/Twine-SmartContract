@@ -23,6 +23,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The address of RollupVerifier.
     address public verifier;
 
+    /// @notice The index of Last Batch Committed
+    uint256 public override lastCommittedBatchIndex;
+
     /// @notice The index of Last Batch Finalized
     uint256 public override lastFinalizedBatchIndex;
 
@@ -31,11 +34,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
-
-    /// @notice Mapping of batchnumber => CommittedBatch
-    mapping(uint256 => StoredBatchInfo) public CommittedBatch;
-
-    StoredBatchInfo public lastBatchData;
 
     /***************
      * Constructor *
@@ -67,26 +65,38 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         ProgramVKey = _programVKey;
     }
 
+     /// @inheritdoc ITwineChain
     function commitBatch(CommitBatchInfo calldata _newBatchData) external {
-        lastBatchData = _commitBatch(_newBatchData);
-        CommittedBatch[lastBatchData.batchNumber] = lastBatchData;
+        require(_newBatchData.batchNumber == lastCommittedBatchIndex + 1, "Only next batch can be committed.");
+        StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
+        committedBatches[batchToCommit.batchNumber] = batchToCommit;
+        lastCommittedBatchIndex = batchToCommit.batchNumber;
     }
 
-    function _commitBatch(CommitBatchInfo calldata _newBatchData)
-        internal
-        returns (StoredBatchInfo memory)
-    {
-        require(
-            _newBatchData.batchNumber == lastBatchData.batchNumber + 1,
-            "Only next batch can be committed."
-        );
+    function _commitBatch(CommitBatchInfo calldata _newBatchData) internal returns (StoredBatchInfo memory) {
         bytes memory proofInput = _calculateProofInput(_newBatchData);
+        bytes32[] memory otherTransactionHash;
+        bytes32[] memory withdrawalTransactionHash;
+
+        bytes32 depositTransactionHash = keccak256(_newBatchData.depositTransactionObjects);
+
+        for(uint i = 0; i < _newBatchData.withdrawalTransactionObjects.length; i++) {
+            withdrawalTransactionHash[i] = keccak256(_newBatchData.withdrawalTransactionObjects[i]);
+        }
+
+        for(uint j = 0; j < _newBatchData.otherTransactions.length; j++) {
+            otherTransactionHash[j] = keccak256(_newBatchData.otherTransactions[j]);
+        }
+
         return
             StoredBatchInfo({
                 batchNumber: _newBatchData.batchNumber,
-                transactionList: _newBatchData.transactionList,
-                stateRoot: _newBatchData.newStateRoot,
+                stateRoot: _newBatchData.stateRoot,
                 transactionRoot: _newBatchData.transactionRoot,
+                depositTransactionHashes: depositTransactionHash,
+                withdrawalTransactionHashes: withdrawalTransactionHash,
+                withdrawalStatus: _newBatchData.withdrawalStatus,
+                otherTransactionHashes: otherTransactionHash,
                 publicInput: proofInput
             });
     }
@@ -109,24 +119,20 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return inputs;
     }
 
-    function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes)
-        external
-    {
-        bytes memory publicValues = CommittedBatch[batchNumber].publicInput;
-        ISP1Verifier(verifier).verifyProof(
-            ProgramVKey,
-            publicValues,
-            _proofBytes
-        );
+    /// @inheritdoc ITwineChain
+    function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external {
+        require(isBatchCommitted(batchNumber), "Batch Needs to be committed before finalization");
 
-        finalizedStateRoots[batchNumber] = CommittedBatch[batchNumber]
-            .stateRoot;
+        bytes memory publicValues = committedBatches[batchNumber].publicInput;
+        ISP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, _proofBytes);
+
+        finalizedStateRoots[batchNumber] = committedBatches[batchNumber].stateRoot;
         lastFinalizedBatchIndex = batchNumber;
-    }
+    }  
 
     /// @inheritdoc ITwineChain
     function isBatchFinalized(uint256 _batchIndex)
-        external
+        public
         view
         override
         returns (bool)
@@ -134,16 +140,32 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return _batchIndex <= lastFinalizedBatchIndex;
     }
 
-    /// @inheritdoc ITwineChain
-    function inTransactionList(uint256 batchNumber, bytes32 transactionHash)
-        external
+    function isBatchCommitted(uint256 _batchIndex)
+        public
         view
         returns (bool)
     {
-        bytes32[] memory transactions = CommittedBatch[batchNumber]
-            .transactionList;
-        for (uint256 i = 0; i < transactions.length; i++) {
-            if (transactionHash == transactions[i]) {
+        return _batchIndex <= lastCommittedBatchIndex;
+    }
+
+
+
+    /// @inheritdoc ITwineChain
+    function inTransactionList(uint256 batchNumber, bytes32 transactionHash, bool _fromL1)
+        external
+        view
+        returns (bool)
+    {   
+        bytes32[] memory transactions;
+        // If the transaction is forcedInclusion, check in withdrawal transaction hash otherwise in other transaction hash
+        if(_fromL1) {
+            transactions = committedBatches[batchNumber].withdrawalTransactionHashes;
+        } else {
+            transactions = committedBatches[batchNumber].otherTransactionHashes;
+        }
+
+        for(uint256 i = 0; i < transactions.length; i++) {
+            if(transactionHash == transactions[i]){
                 return true;
             }
         }

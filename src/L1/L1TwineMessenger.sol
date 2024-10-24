@@ -8,7 +8,7 @@ import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
-contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
+contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
 
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
@@ -18,13 +18,28 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
 
-    /// @notice Emitted when a cross domain message is sent.
+    /// @notice Emitted when a cross domain Deposit message is sent.
     /// @param sender The address of the sender who initiates the message.
     /// @param target The address of target contract to call.
     /// @param value The amount of value passed to the target contract.
     /// @param gasLimit The optional gas limit passed to L1 or L2.
     /// @param message The calldata passed to the target contract.
-    event SentMessage(
+    event SentDepositMessage(
+        address indexed sender,
+        address indexed target,
+        uint256 value,
+        uint256 messageNonce,
+        uint256 gasLimit,
+        bytes message
+    );
+
+    /// @notice Emitted when a cross domain withdrawal message is sent.
+    /// @param sender The address of the sender who initiates the message.
+    /// @param target The address of target contract to call.
+    /// @param value The amount of value passed to the target contract.
+    /// @param gasLimit The optional gas limit passed to L1 or L2.
+    /// @param message The calldata passed to the target contract.
+    event SentWithdrawalMessage(
         address indexed sender,
         address indexed target,
         uint256 value,
@@ -71,112 +86,83 @@ contract L1TwineMessenger is TwineMessengerBase,IL1TwineMessenger {
         rollup = _rollup;
     }
 
-
     /// @inheritdoc ITwineMessenger
     function sendMessage(
+        TransactionType _type,
         address _to,
         uint256 _value,
         bytes memory _message,
         uint256 _gasLimit
     ) external payable override {
-        _sendMessage(_to, _value, _message, _gasLimit, _msgSender());
+        _sendMessage(_type, _to, _value, _message, _gasLimit, _msgSender());
     }
 
     function sendMessage(
+        TransactionType _type,
         address _to,
         uint256 _value,
         bytes calldata _message,
         uint256 _gasLimit,
         address _refundAddress
     ) external payable override {
-        _sendMessage(_to, _value, _message, _gasLimit, _refundAddress);
+        _sendMessage(_type, _to, _value, _message, _gasLimit, _refundAddress);
     }   
 
-     function relayMessageWithProof(
+   function relayWithdrawal(
         uint256 _batchNumber,
-        address _from,
-        address _to,
-        uint256 _value,
-        bytes memory _message
-    ) external override {
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _message));
-        require(!isL2MessageExecuted[_xDomainCalldataHash], "Message was already successfully executed");
+        ITwineChain.WithdrawalTransactionObject memory _withdrawalTransactionObject,
+        bool _fromL1
+    )external {
+        bytes32 _xDomainWithdrawalHash = keccak256(abi.encode(_withdrawalTransactionObject));
+        require(!isL2MessageExecuted[_xDomainWithdrawalHash], "Message was already successfully executed");
 
-        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not finalized");
-        require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainCalldataHash), "Transaction not present in Batch");
-
-        xDomainMessageSender = _from;
-        (bool success, ) = _to.call{value: _value}(_message);
-    
-        if (success) {
-            isL2MessageExecuted[_xDomainCalldataHash] = true;
-            emit RelayedMessage(_xDomainCalldataHash);
+        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
+        
+        if(_fromL1){
+            require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainWithdrawalHash, true), "Transaction not present in Batch");
         } else {
-            emit FailedRelayedMessage(_xDomainCalldataHash);
+            require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainWithdrawalHash, false), "Transaction not present in Batch");
+        }
+        
+        (bool success, ) = _withdrawalTransactionObject.transaction.to.call{value: _withdrawalTransactionObject.transaction.amount}(_withdrawalTransactionObject.transaction.message);
+        if(success) {
+            isL2MessageExecuted[_xDomainWithdrawalHash] = true;
+            emit RelayedMessage(_xDomainWithdrawalHash);
+        } else {
+            emit FailedRelayedMessage(_xDomainWithdrawalHash);
         }
     }
 
-     function _sendMessage(
+    function _sendMessage(
+        TransactionType _type,
         address _to,
         uint256 _value,
         bytes memory _message,
         uint256 _gasLimit,
-        address _refundAddress
+        address _from
     ) internal {
-        // compute the actual cross domain message calldata.
-        uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainMessageIndex();
-        bytes memory _xDomainCalldata = _encodeXDomainCalldata(_msgSender(), _to, _value, _message);
 
-        // compute and deduct the messaging fee to fee vault.
-        //uint256 _fee = IL1MessageQueue(messageQueue).estimateCrossDomainMessageFee(_gasLimit);
-        //require(msg.value >= _fee + _value, "Insufficient msg.value");
-       // if (_fee > 0) {
-       //     (bool _success, ) = feeVault.call{value: _fee}("");
-       //     require(_success, "Failed to deduct the fee");
-       // }
+        // If transaction type is Deposit
+        if(_type == TransactionType.deposit) {
+            require(msg.value >= _value, "Insufficient msg.value");
 
-        // append message to L1MessageQueue
-        IL1MessageQueue(messageQueue).appendCrossDomainMessage(counterpart, _gasLimit, _xDomainCalldata);
+            // compute the actual cross domain message calldata.
+            uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainDepositMessageIndex();
 
-        // record the message hash for future use.
-        //bytes32 _xDomainCalldataHash = keccak256(_xDomainCalldata);
+            // append message to L1 depositMessageQueue
+            IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(counterpart, _gasLimit, _message);
 
-        // normally this won't happen, since each message has different nonce, but just in case.
-        //require(messageSendTimestamp[_xDomainCalldataHash] == 0, "Duplicated message");
-        //messageSendTimestamp[_xDomainCalldataHash] = block.timestamp;
+            emit SentDepositMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
+        }
+        else {
+                        
+            uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainWithdrawalMessageIndex();
 
-        emit SentMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
+            // append message to L1 withdrawalMessageQueue
+            IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(counterpart, _gasLimit, _message);
 
-        // refund fee to `_refundAddress`
-        // unchecked {
-        //     uint256 _refund = msg.value - _value;
-        //     if (_refund > 0) {
-        //         (bool _success, ) = _refundAddress.call{value: _refund}("");
-        //         require(_success, "Failed to refund the fee");
-        //     }
-        // }
-    }
-
-    /// @dev Internal function to generate the correct cross domain calldata for a message.
-    /// @param _sender Message sender address.
-    /// @param _target Target contract address.
-    /// @param _value The amount of ETH pass to the target.
-    /// @param _message Message to send to the target.
-    /// @return ABI encoded cross domain calldata.
-    function _encodeXDomainCalldata(
-        address _sender,
-        address _target,
-        uint256 _value,
-        bytes memory _message
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encodeWithSignature(
-                "relayMessage(address,address,uint256,bytes)",
-                _sender,
-                _target,
-                _value,
-                _message
-            );
+            emit SentWithdrawalMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
+        }
     }
 
 }   

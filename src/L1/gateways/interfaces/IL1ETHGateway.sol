@@ -16,6 +16,12 @@ interface IL1ETHGateway {
     /// @param amount The amount of ETH will be deposited from L1 to L2.
     event DepositETH(address indexed from, address indexed to, uint256 amount);
 
+    /// @notice Emitted when someone deposit ETH from L1 to L2.
+    /// @param from The address of sender in L1.
+    /// @param to The address of recipient in L2.
+    /// @param amount The amount of ETH will be deposited from L1 to L2.
+    event ForcedWithdrawalInclusion(address indexed from, address indexed to, uint256 amount);
+
     /// @notice Emitted when some ETH is refunded.
     /// @param recipient The address of receiver in L1.
     /// @param amount The amount of ETH refunded to receiver.
@@ -52,5 +58,14 @@ interface IL1ETHGateway {
         uint256 amount
     ) external payable;
 
+    /// @notice Withdraw ETH form the user account in L2
+    /// @param  to The address of recipient's account on L1.
+    /// @param amount The amount of ETH to be withdrawan.
+    /// @param gasLimit Gas limit required to complete the withdrawal.
+    function forcedWithdrawalETH(
+        address to,
+        uint256 amount,
+        uint256 gasLimit
+    ) external payable;
 
 }

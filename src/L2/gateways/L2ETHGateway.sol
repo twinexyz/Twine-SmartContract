@@ -5,6 +5,8 @@ import {IL1ETHGateway} from "../../L1/gateways/interfaces/IL1ETHGateway.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
+
 
 /// @title L2ETHGateway
 /// @notice The `L2ETHGateway` contract is used to withdraw ETH token on layer 2 and
@@ -58,21 +60,6 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
         _withdraw(_to, _amount, _gasLimit);
     }
 
-    /// @inheritdoc IL2ETHGateway
-    function finalizeDepositETH(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) external payable override {
-        require(msg.value == _amount, "msg.value mismatch");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool _success, ) = _to.call{value: _amount}("");
-        require(_success, "ETH transfer failed");
-
-        emit FinalizeDepositETH(_from, _to, _amount);
-    }
-
     /// @dev The internal ETH withdraw implementation.
     /// @param _to The address of recipient's account on L1.
     /// @param _amount The amount of ETH to be withdrawn.
@@ -91,6 +78,7 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
             (_from, _to, _amount)
         );
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
+            ITwineMessenger.TransactionType.withdrawal,
             counterpart,
             _amount,
             _message,

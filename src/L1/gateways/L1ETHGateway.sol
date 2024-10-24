@@ -6,6 +6,8 @@ import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
+
 
 contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
     /***************
@@ -52,6 +54,15 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         uint256 _gasLimit
     ) external payable override {
         _deposit(_to, _amount, _gasLimit);
+    }
+
+    /// @inheritdoc IL1ETHGateway
+    function forcedWithdrawalETH(
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) external payable override {
+        _forcedWithdrawalEth(_to, _amount, _gasLimit);
     }
 
     function onDropMessage(bytes calldata _message) external payable virtual {
@@ -108,12 +119,13 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         // @note no rate limit here, since ETH is limited in messenger
 
         // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encodeCall(
-            IL2ETHGateway.finalizeDepositETH,
-            (_from, _to, _amount)
-        );
+        bytes memory _message = abi.encode(_from, _to, _amount);
+
+        // 3. Calculate the type of transaction
+        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.deposit;
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            _type,
             counterpart,
             _amount,
             _message,
@@ -123,4 +135,35 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
 
         emit DepositETH(_from, _to, _amount);
     }
+
+    /// @dev The internal ETH forced withdrawal implementation.
+    /// @param _to The address of recipient's account in L1.
+    /// @param _amount The amount of ETH to be withdrawn.
+    /// @param _gasLimit Gas limit required to complete withdrawal.
+    function _forcedWithdrawalEth(
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) internal virtual {
+        // 1. Extract real sender if this call is from L1GatewayRouter
+        address _from = _msgSender();
+
+        // 2. Generate message passed to L1TwineMessenger.
+        bytes memory _message = abi.encode(_from, _to, _amount);
+
+        // 3. Calculate the type of transaction
+        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.withdrawal;
+
+        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            _type, 
+            counterpart, 
+            _amount, 
+            _message, 
+            _gasLimit, 
+            _from
+        );
+
+        emit ForcedWithdrawalInclusion(_from, _to, _amount);
+    }
+
 }
