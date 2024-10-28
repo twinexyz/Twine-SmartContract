@@ -43,21 +43,21 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
      *****************************/
 
     /// @inheritdoc IL2ETHGateway
-    function withdrawETH(uint256 _amount, uint256 _gasLimit)
-        external
-        payable
-        override
-    {
-        _withdraw(_msgSender(), _amount, _gasLimit);
-    }
-
-    /// @inheritdoc IL2ETHGateway
     function withdrawETH(
         address _to,
         uint256 _amount,
         uint256 _gasLimit
     ) public payable override {
-        _withdraw(_to, _amount, _gasLimit);
+        _withdraw(_to, _amount, new bytes(0), _gasLimit);
+    }
+
+    function withdrawETHAndCall(
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) public payable  {
+        _withdraw(_to, _amount, _data, _gasLimit);
     }
 
     /// @dev The internal ETH withdraw implementation.
@@ -67,11 +67,16 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
     function _withdraw(
         address _to,
         uint256 _amount,
+        bytes memory _data,
         uint256 _gasLimit
     ) internal virtual {
         require(msg.value > 0, "withdraw zero eth");
 
-        address _from = msg.sender;
+        address _from = _msgSender();
+
+        if (router == _from) {
+            (_from, _data) = abi.decode(_data, (address, bytes));
+        }
 
         bytes memory _message = abi.encodeCall(
             IL1ETHGateway.finalizeWithdrawETH,

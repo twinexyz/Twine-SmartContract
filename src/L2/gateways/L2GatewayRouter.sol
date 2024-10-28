@@ -7,6 +7,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
+import {IL2XERC20Gateway} from "./interfaces/IL2XERC20Gateway.sol";
 
 /// @title L2GatewayRouter
 /// @notice The `L2GatewayRouter` is the main entry for withdrawing Ether and ERC20 tokens.
@@ -113,22 +114,57 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
     }
 
-    function withdrawETH(uint256 _amount, uint256 _gasLimit) external payable  {
-        address _gateway = ethGateway;
-        require(_gateway != address(0), "eth gateway available");
-        IL2ETHGateway(_gateway).withdrawETH{value: msg.value}(_msgSender(), _amount, _gasLimit);
-
+     /// @inheritdoc IL2XERC20Gateway
+     function withdrawXERC20(
+        address _token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) external payable  {
+        withdrawXERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
     }
 
+    /// @inheritdoc IL2XERC20Gateway
+    function withdrawXERC20AndCall(
+        address _token,
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) public payable override {
+        address _gateway = getERC20Gateway(_token);
+        require(_gateway != address(0), "no gateway available");
+
+        // encode msg.sender with _data
+        bytes memory _routerData = abi.encode(_msgSender(), _data);
+
+        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+    }
+
+    
     /// @inheritdoc IL2ETHGateway
     function withdrawETH(
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable  {
+    ) external payable override {
+        withdrawETHAndCall(_to, _amount, new bytes(0), _gasLimit);
+    }
+
+    /// @inheritdoc IL2ETHGateway
+    function withdrawETHAndCall(
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) public payable override {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
-        IL2ETHGateway(_gateway).withdrawETH{value: msg.value}(_to, _amount, _gasLimit);
+
+        // encode msg.sender with _data
+        bytes memory _routerData = abi.encode(_msgSender(), _data);
+
+        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(_to, _amount, _routerData, _gasLimit);
     }
 
     /************************
@@ -144,7 +180,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external {
+    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external  {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
 

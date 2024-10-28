@@ -7,7 +7,9 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
+import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 
 /// @title L1GatewayRouter
@@ -60,7 +62,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     }
 
     function setAddress(address _ethGateway, address _defaultERC20Gateway)
-        external
+        external 
     {
         ethGateway = _ethGateway;
         defaultERC20Gateway = _defaultERC20Gateway;
@@ -78,6 +80,20 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         }
 
         return IL1ERC20Gateway(_gateway).getL2ERC20Address(_l1Address);
+    }
+
+    /// @inheritdoc IL1XERC20Gateway
+    function getL2XERC20Address(address _l1Address)
+        external
+        view
+        returns (address)
+    {
+        address _gateway = getERC20Gateway(_l1Address);
+        if (_gateway == address(0)) {
+            return address(0);
+        }
+
+        return IL1XERC20Gateway(_gateway).getL2XERC20Address(_l1Address);
     }
 
     /// @inheritdoc IL1GatewayRouter
@@ -131,6 +147,40 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
         IL1ERC20Gateway(_gateway).depositERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+
+        // leave deposit context
+        gatewayInContext = address(0);
+    }
+
+    /// @inheritdoc IL1XERC20Gateway
+    function depositXERC20(
+        address _token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
+    ) external payable override{
+        depositXERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
+    }
+
+   
+   /// @inheritdoc IL1XERC20Gateway
+    function depositXERC20AndCall(
+        address _token,
+        address _to,
+        uint256 _amount,
+        bytes memory _data,
+        uint256 _gasLimit
+    ) public payable override {
+        address _gateway = getERC20Gateway(_token);
+        require(_gateway != address(0), "no gateway available");
+
+        // enter deposit context
+        gatewayInContext = _gateway;
+
+        // encode msg.sender with _data
+        bytes memory _routerData = abi.encode(_msgSender(), _data);
+
+        IL1XERC20Gateway(_gateway).depositXERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
 
         // leave deposit context
         gatewayInContext = address(0);
@@ -198,6 +248,29 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         address,
         address,
         uint256
+    ) external payable virtual override {
+        revert("should never be called");
+    }
+
+    /// @inheritdoc IL1XERC20Gateway
+      function forcedWithdrawalXERC20(
+        address ,
+        address,
+        address,
+        uint256 ,
+        uint256 
+    ) external payable virtual override{
+        revert("should never be called");
+    }
+
+    /// @inheritdoc IL1XERC20Gateway
+    function finalizeWithdrawXERC20(
+        address,
+        address,
+        address,
+        address,
+        uint256,
+        bytes calldata
     ) external payable virtual override {
         revert("should never be called");
     }

@@ -23,17 +23,24 @@ interface IL2ETHGateway {
      *****************************/
 
     /// @notice Withdraw ETH to caller's account in L1.
-    /// @param amount The amount of ETH to be withdrawn.
-    /// @param gasLimit Optional, gas limit used to complete the withdraw on L1.
-    function withdrawETH(uint256 amount, uint256 gasLimit) external payable;
-
-    /// @notice Withdraw ETH to caller's account in L1.
     /// @param to The address of recipient's account on L1.
     /// @param amount The amount of ETH to be withdrawn.
     /// @param gasLimit Optional, gas limit used to complete the withdraw on L1.
     function withdrawETH(
         address to,
         uint256 amount,
+        uint256 gasLimit
+    ) external payable;
+
+    /// @notice Withdraw ETH to caller's account in L1.
+    /// @param to The address of recipient's account on L1.
+    /// @param amount The amount of ETH to be withdrawn.
+    /// @param data Optional data to forward to recipient's account.
+    /// @param gasLimit Optional, gas limit used to complete the withdraw on L1.
+    function withdrawETHAndCall(
+        address to,
+        uint256 amount,
+        bytes calldata data,
         uint256 gasLimit
     ) external payable;
 

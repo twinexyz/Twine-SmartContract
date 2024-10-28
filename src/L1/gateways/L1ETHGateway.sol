@@ -44,7 +44,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_to, _amount, _gasLimit);
+        _deposit(_to, _amount, new bytes(0), _gasLimit);
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -54,7 +54,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         bytes calldata _data,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_to, _amount, _gasLimit);
+        _deposit(_to, _amount, _data, _gasLimit);
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -110,12 +110,16 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
     function _deposit(
         address _to,
         uint256 _amount,
+        bytes memory _data,
         uint256 _gasLimit
     ) internal virtual {
         require(_amount > 0, "deposit zero eth");
 
         // 1. Extract real sender if this call is from L1GatewayRouter.
         address _from = _msgSender();
+        if (router == _from) {
+            (_from, _data) = abi.decode(_data, (address, bytes));
+        }
 
         // @note no rate limit here, since ETH is limited in messenger
 

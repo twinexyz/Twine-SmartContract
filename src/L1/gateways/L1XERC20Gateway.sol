@@ -13,6 +13,7 @@ import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
 import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
+import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 
 contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
     using SafeERC20 for IERC20;
@@ -194,25 +195,29 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         bytes memory _data,
         uint256 _gasLimit
     ) internal {
+        address _from;
         XTokenConfig memory xTokenInfo = tokenMapping[_token];
         address _l2Token = xTokenInfo.l2Token;
         require(_l2Token != address(0), "no corresponding l2 token");
         if (_token != xTokenInfo.l1xToken) {
             bool isNative = IXERC20Lockbox(xTokenInfo.l1LockBox).IS_NATIVE();
             if (isNative) {
-                 IXERC20Lockbox(xTokenInfo.l1LockBox).depositNative{value: _amount}();
+                _from = _msgSender();
+                if (router == _from) {
+                    (_from, _data) = abi.decode(_data, (address, bytes));
+                }
+            IXERC20Lockbox(xTokenInfo.l1LockBox).depositNative{value: _amount}();
             } else {
-                SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+                (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
                 SafeERC20.safeIncreaseAllowance(IERC20(_token), xTokenInfo.l1LockBox, _amount);
-                IXERC20Lockbox(xTokenInfo.l1LockBox).depositTo(address(this),_amount);
-               
+                IXERC20Lockbox(xTokenInfo.l1LockBox).depositTo(address(this),_amount); 
             }
         }else{
-            SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+           (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
         }
          IXERC20(xTokenInfo.l1xToken).burn(address(this), _amount);
          
-        bytes memory _message = abi.encode(_token, _l2Token,_msgSender(), _to, _amount);
+        bytes memory _message = abi.encode(_token, _l2Token,_from, _to, _amount);
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineMessenger.TransactionType.deposit,
@@ -220,10 +225,10 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
             0,
             _message,
             _gasLimit,
-            _msgSender()
+            _from
         );
 
-        emit DepositXERC20(_token, _l2Token, _msgSender(), _to, _amount, _data);
+        emit DepositXERC20(_token, _l2Token, _from, _to, _amount, _data);
 
     }
 
@@ -253,6 +258,39 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         );
 
     }
+
+    function _transferERC20In(
+        address _token,
+        uint256 _amount,
+        bytes memory _data
+    )
+        internal
+        returns (
+            address,
+            uint256,
+            bytes memory
+        )
+    {
+        address _sender = _msgSender();
+        address _from = _sender;
+        if (router == _sender) {
+            // Extract real sender if this call is from L1GatewayRouter.
+            (_from, _data) = abi.decode(_data, (address, bytes));
+            _amount = IL1GatewayRouter(_sender).requestERC20(_from, _token, _amount);
+        } else {
+            // common practice to handle fee on transfer token.
+            uint256 _before = IERC20(_token).balanceOf(address(this));
+            IERC20(_token).safeTransferFrom(_from, address(this), _amount);
+            uint256 _after = IERC20(_token).balanceOf(address(this));
+            // no unchecked here, since some weird token may return arbitrary balance.
+            _amount = _after - _before;
+        }
+        // ignore weird fee on transfer token
+        require(_amount > 0, "deposit zero amount");
+
+        return (_from, _amount, _data);
+    }
+      
 
 
 }

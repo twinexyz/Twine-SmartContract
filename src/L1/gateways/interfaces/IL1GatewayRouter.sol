@@ -4,8 +4,9 @@ pragma solidity ^0.8.24;
 
 import {IL1ETHGateway} from "./IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "./IL1ERC20Gateway.sol";
+import {IL1XERC20Gateway} from "./IL1XERC20Gateway.sol";
 
-interface IL1GatewayRouter is IL1ETHGateway, IL1ERC20Gateway {
+interface IL1GatewayRouter is IL1ETHGateway, IL1ERC20Gateway,IL1XERC20Gateway {
     /**********
      * Events *
      **********/

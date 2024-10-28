@@ -145,13 +145,13 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
             if (isNative) {
                  IXERC20Lockbox(xTokenInfo.l2LockBox).depositNative{value: _amount}();
             } else {
-                SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+                SafeERC20.safeTransferFrom(IERC20(_token), _from, address(this), _amount);
                 SafeERC20.safeIncreaseAllowance(IERC20(_token), xTokenInfo.l2LockBox, _amount);
                 IXERC20Lockbox(xTokenInfo.l2LockBox).depositTo(address(this),_amount);
                
             }
         }else{
-            SafeERC20.safeTransferFrom(IERC20(_token), _msgSender(), address(this), _amount);
+            SafeERC20.safeTransferFrom(IERC20(_token), _from, address(this), _amount);
         }
          IXERC20(xTokenInfo.l2xToken).burn(address(this), _amount);
 
