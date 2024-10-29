@@ -94,9 +94,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 batchNumber: _newBatchData.batchNumber,
                 stateRoot: _newBatchData.stateRoot,
                 transactionRoot: _newBatchData.transactionRoot,
+                receiptRoot: _newBatchData.receiptRoot,
                 depositTransactionHash: depositTransactionHash,
                 withdrawalTransactionHashes: withdrawalTransactionHash,
-                withdrawalStatus: _newBatchData.withdrawalStatus,
                 otherTransactionHashes: otherTransactionHash,
                 publicInput: proofInput
             });

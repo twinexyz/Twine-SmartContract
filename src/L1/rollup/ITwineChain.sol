@@ -53,9 +53,9 @@ interface ITwineChain {
         uint256 batchNumber;
         bytes32 stateRoot;
         bytes32 transactionRoot;
+        bytes32 receiptRoot;
         TransactionObject depositTransactionObject;
         WithdrawalTransactionObject[] withdrawalTransactionObjects;
-        uint256[] withdrawalStatus;
         TransactionObject[] otherTransactions;
     }
 
@@ -63,9 +63,9 @@ interface ITwineChain {
         uint256 batchNumber;
         bytes32 stateRoot;
         bytes32 transactionRoot;
+        bytes32 receiptRoot;
         bytes32 depositTransactionHash;
         bytes32[] withdrawalTransactionHashes;
-        uint256[] withdrawalStatus;
         bytes32[] otherTransactionHashes;
         bytes publicInput;
     }
