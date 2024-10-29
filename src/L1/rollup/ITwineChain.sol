@@ -70,6 +70,17 @@ interface ITwineChain {
         bytes publicInput;
     }
 
+    struct Log{
+        address sender; // Address that emitted the log
+        bytes32[] topics; // Indexed parameters from the event
+        bytes data; // Non-indexed data associated with the event
+    }
+
+    struct ReceiptObject{
+        bool status; // Status of the transaction ( 1 for success, 0 for failure)
+        uint128 cumulativeGasUsed; // Total gas used for the transaction
+        Log[] logs; // Array of logs generated during the transaction
+    }
 
     /*************************
      * Public View Functions *

@@ -7,12 +7,12 @@ import {ITwineChain} from "./rollup/ITwineChain.sol";
 interface IL1TwineMessenger is ITwineMessenger {
 
     /// @notice Relay a L2 => L1 message with message proof.
-    /// @param batchNumber The index of the Batch where the message is contained.
-    /// @param _withdrawalTransactionObject The transaction object for the withdrawal transaction.
-    /// @param _fromL1 To identify if the withdrawal was initiated from L1 or L2.
+    /// @param _batchNumber The index of the Batch where the message is contained.
+    /// @param _receiptObject The object for the receipt of withdrawal transaction.
+    /// @param _merkleProof The merkle proof of the receiptObject in receiptRoot
     function relayWithdrawal(
-        uint256 batchNumber,
-        ITwineChain.WithdrawalTransactionObject memory _withdrawalTransactionObject,
-        bool _fromL1
+        uint256 _batchNumber,
+        ITwineChain.ReceiptObject memory _receiptObject,
+        bytes32[] memory _merkleProof
     ) external;
 }

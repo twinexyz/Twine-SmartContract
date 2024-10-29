@@ -7,6 +7,7 @@ import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 
 import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
 
@@ -108,23 +109,25 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
         _sendMessage(_type, _to, _value, _message, _gasLimit, _refundAddress);
     }   
 
-   function relayWithdrawal(
+    function relayWithdrawal(
         uint256 _batchNumber,
-        ITwineChain.WithdrawalTransactionObject memory _withdrawalTransactionObject,
-        bool _fromL1
-    )external {
-        bytes32 _xDomainWithdrawalHash = keccak256(abi.encode(_withdrawalTransactionObject));
+        ITwineChain.ReceiptObject memory _receiptObject,
+        bytes32[] memory _merkleProof
+    ) external {
+        bytes32 _xDomainWithdrawalHash = keccak256(abi.encode(_receiptObject));
         require(!isL2MessageExecuted[_xDomainWithdrawalHash], "Message was already successfully executed");
-
         require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
+        require(_receiptObject.status == true, "Failed transaction");
+        require(MerkleProof.verify(_merkleProof, ITwineChain(rollup).getReceiptRoot(_batchNumber), _xDomainWithdrawalHash), "Invalid Merkle proof");
+
+        // Check if there are any logs in the ReceiptObject
+        require(_receiptObject.logs.length > 0, "No logs available");
+        // Fetch the first log
+        ITwineChain.Log memory firstLog = _receiptObject.logs[0];
+        // Decoding the log data using abi.decode
+        (, address to, uint256 amount,, bytes memory message) = abi.decode(firstLog.data, (address, address, uint256, uint256, bytes));
+        (bool success, ) = to.call{value: amount}(message);
         
-        if(_fromL1){
-            require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainWithdrawalHash, true), "Transaction not present in Batch");
-        } else {
-            require(ITwineChain(rollup).inTransactionList(_batchNumber, _xDomainWithdrawalHash, false), "Transaction not present in Batch");
-        }
-        
-        (bool success, ) = _withdrawalTransactionObject.transaction.to.call{value: _withdrawalTransactionObject.transaction.amount}(_withdrawalTransactionObject.transaction.message);
         if(success) {
             isL2MessageExecuted[_xDomainWithdrawalHash] = true;
             emit RelayedMessage(_xDomainWithdrawalHash);
