@@ -155,7 +155,8 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         }
          IXERC20(xTokenInfo.l2xToken).burn(address(this), _amount);
 
-        bytes memory _message = abi.encode(_l1Token,_token, _from, _to, _amount, _data);
+        bytes memory _message = abi.encodeCall(
+            IL1XERC20Gateway.finalizeWithdrawXERC20,(_l1Token,_token, _from, _to, _amount, _data));
 
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineMessenger.TransactionType.withdrawal,

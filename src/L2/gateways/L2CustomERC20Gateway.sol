@@ -116,7 +116,8 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         ITwineERC20(_token).burn(_from, _amount);
 
         // 3. Generate message passed to L1CustomERC20Gateway.
-        bytes memory _message = abi.encode(_l1Token,_token, _from, _to, _amount, _data);
+        bytes memory _message = abi.encodeCall(
+            IL1ERC20Gateway.finalizeWithdrawERC20,(_l1Token,_token, _from, _to, _amount, _data));
 
         // 4. Send message to L12wineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
