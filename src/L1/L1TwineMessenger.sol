@@ -150,7 +150,7 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
             uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainDepositMessageIndex();
 
             // append message to L1 depositMessageQueue
-            IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(counterpart, _gasLimit, _message);
+            IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(counterpart,_to,_value, _gasLimit, _message);
 
             emit SentDepositMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
         }
@@ -159,7 +159,7 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
             uint256 _messageNonce = IL1MessageQueue(messageQueue).nextCrossDomainWithdrawalMessageIndex();
 
             // append message to L1 withdrawalMessageQueue
-            IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(counterpart, _gasLimit, _message);
+            IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(counterpart,_to,_value, _gasLimit, _message);
 
             emit SentWithdrawalMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
         }

@@ -45,6 +45,16 @@ contract L1XERC20GatewayTest is Test {
 
         lockBox = new MockLockBox(address(l1XToken), address(l1Token), false);
 
+        //setup the rolemanager
+        address roleManagerAddress = Upgrades.deployTransparentProxy(
+            "RoleManager.sol",
+            msg.sender,
+            abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
+        roleManager = RoleManager(roleManagerAddress);
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
+
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
             msg.sender,
@@ -55,7 +65,7 @@ contract L1XERC20GatewayTest is Test {
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
             "L1MessageQueue.sol",
             msg.sender,
-            abi.encodeCall(L1MessageQueue.initialize, (address(0)))
+            abi.encodeCall(L1MessageQueue.initialize, (address(0),0,address(roleManager)))
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 
@@ -106,15 +116,6 @@ contract L1XERC20GatewayTest is Test {
         l1XToken.setLimits(address(gateway), 1000000, 1000000);
         l1XToken.setLimits(address(lockBox), 1000000, 1000000);
         l1XToken.setLockbox(address(lockBox));
-        //setup the rolemanager
-        address roleManagerAddress = Upgrades.deployTransparentProxy(
-            "RoleManager.sol",
-            msg.sender,
-            abi.encodeCall(RoleManager.initialize, (initialOwner))
-        );
-        roleManager = RoleManager(roleManagerAddress);
-        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
-        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
 
         address[] memory tokens = new address[](2);
         address[] memory gateways = new address[](2);
@@ -137,6 +138,7 @@ contract L1XERC20GatewayTest is Test {
         gateway.updateTokenMapping(address(l1Token), xConfig);
         gateway.updateTokenMapping(address(l1XToken), xConfig);
         gateway.setRoleManagerAddress(address(roleManager));
+        vm.startPrank(initialOwner);
         messageQueue.setAddress(address(l1Messenger));
     }
 
@@ -144,7 +146,8 @@ contract L1XERC20GatewayTest is Test {
         vm.startPrank(initialOwner);
         assertEq(l1Token.balanceOf(initialOwner),10000000);
         l1Token.approve(address(gateway), 100000);
-        gateway.depositXERC20(address(l1Token), address(this), 10, 10);
+        l1Token.approve(address(router), 100000);
+        router.depositXERC20{value: 0}(address(l1Token), address(this), 10, 0);
         assertEq(l1Token.balanceOf(initialOwner),9999990);
     }
 
@@ -153,10 +156,12 @@ contract L1XERC20GatewayTest is Test {
         vm.startPrank(initialOwner);
         assertEq(l1Token.balanceOf(initialOwner),10000000);
         l1Token.approve(address(lockBox), 100000);
-        IXERC20Lockbox(address(lockBox)).depositTo(initialOwner, 10);
-        assertEq(l1Token.balanceOf(initialOwner),9999990);
+        IXERC20Lockbox(address(lockBox)).depositTo(initialOwner, 20);
+        assertEq(l1Token.balanceOf(initialOwner),9999980);
         l1XToken.approve(address(gateway), 100000);
-        assertEq(l1XToken.balanceOf(initialOwner),10);
+        l1XToken.approve(address(router), 100000);
+        assertEq(l1XToken.balanceOf(initialOwner),20);
+        router.depositXERC20{value: 0}(address(l1XToken), address(this), 10, 0);
         gateway.depositXERC20(address(l1XToken), address(this), 10,10);
         assertEq(l1XToken.balanceOf(initialOwner),0);
       

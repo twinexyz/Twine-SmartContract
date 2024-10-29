@@ -36,6 +36,16 @@ contract L1CustomERC20GatewayTest is Test {
         l2Token = new MockERC20("Mock L2", "ML2");
         l1Token.mint(initialOwner, 100000);
 
+         //setup the rolemanager
+        address roleManagerAddress = Upgrades.deployTransparentProxy(
+            "RoleManager.sol",
+            msg.sender,
+            abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
+        roleManager = RoleManager(roleManagerAddress);
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
+
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
             msg.sender,
@@ -46,7 +56,7 @@ contract L1CustomERC20GatewayTest is Test {
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
             "L1MessageQueue.sol",
             msg.sender,
-            abi.encodeCall(L1MessageQueue.initialize, (address(0)))
+            abi.encodeCall(L1MessageQueue.initialize, (address(0),0,address(roleManager)))
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 
@@ -92,15 +102,7 @@ contract L1CustomERC20GatewayTest is Test {
         );
         gateway = L1CustomERC20Gateway(L1CustomERC20GatewayAddress);
 
-        //setup the rolemanager
-        address roleManagerAddress = Upgrades.deployTransparentProxy(
-            "RoleManager.sol",
-            msg.sender,
-            abi.encodeCall(RoleManager.initialize, (initialOwner))
-        );
-        roleManager = RoleManager(roleManagerAddress);
-        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
-        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
+       
 
         address[] memory tokens = new address[](1);
         address[] memory gateways = new address[](1);
@@ -113,6 +115,7 @@ contract L1CustomERC20GatewayTest is Test {
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));
+        vm.startPrank(initialOwner);
         messageQueue.setAddress(address(l1Messenger));
     }
 
