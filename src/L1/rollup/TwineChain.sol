@@ -149,7 +149,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return _batchIndex <= lastCommittedBatchIndex;
     }
 
-
+    function getReceiptRoot(uint256 _batchIndex) public view returns (bytes32) {
+        require(isBatchCommitted(_batchIndex), "Batch Needs to be commited");
+        return committedBatches[_batchIndex].stateRoot;
+    }
 
     /// @inheritdoc ITwineChain
     function inTransactionList(uint256 batchNumber, bytes32 transactionHash, bool _fromL1)

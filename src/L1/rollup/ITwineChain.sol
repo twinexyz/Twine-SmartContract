@@ -89,6 +89,10 @@ interface ITwineChain {
     /// @return Whether the batch is finalized by batch index.
     function isBatchFinalized(uint256 batchIndex) external view returns (bool);
 
+    /// @param batchIndex The index of the batch.
+    /// @return The receiptRoot of the batch
+    function getReceiptRoot(uint256 batchIndex) external view returns (bytes32);
+
     /// @param batchNumber The index of the batch
     /// @param transactionHash The hash of the transaction 
     /// @param _fromL1 Represents weather the txn is initiated from L1 or L2
