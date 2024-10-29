@@ -1,0 +1,43 @@
+name: Solidity Contracts tests
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+env:
+  FOUNDRY_PROFILE: ci
+
+defaults:
+  run:
+    working-directory: src/
+
+jobs:
+  check:
+    strategy:
+      fail-fast: true
+
+    name: Twine Solidity Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge remappings
+          forge build --sizes
+        id: build
+
+      - name: Run Forge tests
+        run: |
+          forge clean
+          forge test -vvv
+        id: test
