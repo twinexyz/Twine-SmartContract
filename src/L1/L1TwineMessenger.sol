@@ -8,8 +8,11 @@ import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 import {MerklePatriciaProofVerifier} from "../libraries/mpt/MerklePatriciaProofVerifier.sol";
+import {RLPEncodeStruct, Types} from "../libraries/rlp/RLPEncodeStruct.sol";
 
 contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
+    using MerklePatriciaProofVerifier for bytes;
+    using RLPEncodeStruct for Types.ReceiptObject;
 
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
@@ -111,29 +114,30 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
 
     function relayWithdrawal(
         uint256 _batchNumber,
-        ITwineChain.ReceiptObject memory _receiptObject,
-        bytes32[] memory _merkleProof
+        Types.ReceiptObject memory _receiptObject,
+        bytes32 _mptKey,
+        bytes memory _rlpProof
     ) external {
-        bytes32 _xDomainWithdrawalHash = keccak256(abi.encode(_receiptObject));
-        require(!isL2MessageExecuted[_xDomainWithdrawalHash], "Message was already successfully executed");
+        bytes32 _receiptObjectHash = keccak256(_receiptObject.encodeReceiptObject());
+        require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
         require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
-        require(_receiptObject.status == true, "Failed transaction");
-        // @note do MerklePatriciaProofVerifier.verify(proof, ITwineChain(rollup).getReceiptRoot(_batchNumber), mptKey) then check the value with rlp encoded _receiptObject;
+        require(_receiptObject.receipt.success == true, "Failed transaction");
+        // MerklePatriciaProofVerification
+        bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
+        require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
         
-        // require(MerkleProof.verify(_merkleProof, ITwineChain(rollup).getReceiptRoot(_batchNumber), _xDomainWithdrawalHash), "Invalid Merkle proof");
         // Check if there are any logs in the ReceiptObject
-        require(_receiptObject.logs.length > 0, "No logs available");
+        require(_receiptObject.receipt.logs.length > 0, "No logs available");
         // Fetch the first log
-        ITwineChain.Log memory firstLog = _receiptObject.logs[0];
         // Decoding the log data using abi.decode
-        (, address to, uint256 amount,, bytes memory message) = abi.decode(firstLog.data, (address, address, uint256, uint256, bytes));
+        (, address to, uint256 amount,, bytes memory message) = abi.decode(_receiptObject.receipt.logs[0].logData.data, (address, address, uint256, uint256, bytes));
         (bool success, ) = to.call{value: amount}(message);
         
         if(success) {
-            isL2MessageExecuted[_xDomainWithdrawalHash] = true;
-            emit RelayedMessage(_xDomainWithdrawalHash);
+            isL2MessageExecuted[_receiptObjectHash] = true;
+            emit RelayedMessage(_receiptObjectHash);
         } else {
-            emit FailedRelayedMessage(_xDomainWithdrawalHash);
+            emit FailedRelayedMessage(_receiptObjectHash);
         }
     }
 
