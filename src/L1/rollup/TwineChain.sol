@@ -75,28 +75,22 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     function _commitBatch(CommitBatchInfo calldata _newBatchData) internal returns (StoredBatchInfo memory) {
-        bytes memory proofInput = _calculateProofInput(_newBatchData);
+        bytes memory proofInput;
+        bytes32 depositTransactionHash;
         bytes32[] memory otherTransactionHash;
-        bytes32[] memory withdrawalTransactionHash;
+        bytes32[] memory forcedTransactionHash;
 
-        bytes32 depositTransactionHash = keccak256(abi.encode(_newBatchData.depositTransactionObject));
-
-        for(uint i = 0; i < _newBatchData.withdrawalTransactionObjects.length; i++) {
-            withdrawalTransactionHash[i] = keccak256(abi.encode(_newBatchData.withdrawalTransactionObjects[i]));
-        }
-
-        for(uint j = 0; j < _newBatchData.otherTransactions.length; j++) {
-            otherTransactionHash[j] = keccak256(abi.encode(_newBatchData.otherTransactions[j]));
-        }
+        (proofInput,depositTransactionHash,otherTransactionHash,forcedTransactionHash)= _calculateProofInput(_newBatchData);
 
         return
             StoredBatchInfo({
                 batchNumber: _newBatchData.batchNumber,
+                batchHash: _newBatchData.batchHash,
                 stateRoot: _newBatchData.stateRoot,
                 transactionRoot: _newBatchData.transactionRoot,
                 receiptRoot: _newBatchData.receiptRoot,
                 depositTransactionHash: depositTransactionHash,
-                withdrawalTransactionHashes: withdrawalTransactionHash,
+                forcedTransactionHashes: forcedTransactionHash,
                 otherTransactionHashes: otherTransactionHash,
                 publicInput: proofInput
             });
@@ -104,7 +98,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function _calculateProofInput(CommitBatchInfo calldata _newBatchData)
         internal
-        returns (bytes memory)
+        returns (bytes memory,bytes32,bytes32[] memory,bytes32[] memory)
     {
         // // First we have to seperate out (L1 transaction object) and (L2 trasnactions + L1 transaction object of other L1s)
         // bytes32 L1transactions = _extractL1Transaction(_newBatchData.transactionList);
@@ -116,8 +110,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // // We will append (stateroot + l1txnobject + l2txns) and that is our public input
         // bytes inputs = _calculateProof(_newBatchData.newStateRoot, L1transactionObject, L2transactions);
         // return inputs;
-        bytes memory inputs;
-        return inputs;
+        bytes memory proofInput;
+        bytes32 depositTransactionHash;
+        bytes32[] memory otherTransactionHash;
+        bytes32[] memory forcedTransactionHash;
+        return (proofInput,depositTransactionHash,otherTransactionHash,forcedTransactionHash);
     }
 
     /// @inheritdoc ITwineChain
@@ -151,28 +148,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function getReceiptRoot(uint256 _batchIndex) public view returns (bytes32) {
         require(isBatchCommitted(_batchIndex), "Batch Needs to be commited");
-        return committedBatches[_batchIndex].stateRoot;
+        return committedBatches[_batchIndex].receiptRoot;
     }
 
-    /// @inheritdoc ITwineChain
-    function inTransactionList(uint256 batchNumber, bytes32 transactionHash, bool _fromL1)
-        external
-        view
-        returns (bool)
-    {   
-        bytes32[] memory transactions;
-        // If the transaction is forcedInclusion, check in withdrawal transaction hash otherwise in other transaction hash
-        if(_fromL1) {
-            transactions = committedBatches[batchNumber].withdrawalTransactionHashes;
-        } else {
-            transactions = committedBatches[batchNumber].otherTransactionHashes;
-        }
-
-        for(uint256 i = 0; i < transactions.length; i++) {
-            if(transactionHash == transactions[i]){
-                return true;
-            }
-        }
-        return false;
-    }
 }

@@ -34,38 +34,39 @@ interface ITwineChain {
     }
 
     struct TransactionObject{
-        uint256 gas;
+        address from;
         address to;
-        Transaction[] transactions;
-        bytes signature;
-        // .....
+        uint256 nonce;
+        uint256 value;
+        uint256 gasLimit;
+        uint256 maxFeePerGas;
+        uint256 maxPriorityFeePerGas;
+        bytes data;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
     }
 
-    struct WithdrawalTransactionObject{
-        uint256 gas;
-        address to;
-        Transaction transaction;
-        bytes signature;
-        // ....
-    }
 
     struct CommitBatchInfo{
-        uint256 batchNumber;
+        uint64 batchNumber;
+        bytes32 batchHash;
         bytes32 stateRoot;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
         TransactionObject depositTransactionObject;
-        WithdrawalTransactionObject[] withdrawalTransactionObjects;
+        TransactionObject[] forcedTransactionObjects;
         TransactionObject[] otherTransactions;
     }
 
     struct StoredBatchInfo{
-        uint256 batchNumber;
+        uint64 batchNumber;
+        bytes32 batchHash;
         bytes32 stateRoot;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
         bytes32 depositTransactionHash;
-        bytes32[] withdrawalTransactionHashes;
+        bytes32[] forcedTransactionHashes;
         bytes32[] otherTransactionHashes;
         bytes publicInput;
     }
@@ -103,12 +104,6 @@ interface ITwineChain {
     /// @param batchIndex The index of the batch.
     /// @return The receiptRoot of the batch
     function getReceiptRoot(uint256 batchIndex) external view returns (bytes32);
-
-    /// @param batchNumber The index of the batch
-    /// @param transactionHash The hash of the transaction 
-    /// @param _fromL1 Represents weather the txn is initiated from L1 or L2
-    /// @return Whether the batch contains the transaction or not
-    function inTransactionList(uint256 batchNumber, bytes32 transactionHash, bool _fromL1) external view returns (bool);
 
     /*****************************
      * Public Mutating Functions *
