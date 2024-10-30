@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+
 import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
-
 import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {MerklePatriciaProofVerifier} from "../libraries/mpt/MerklePatriciaProofVerifier.sol";
 
 contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
 
@@ -118,8 +118,9 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
         require(!isL2MessageExecuted[_xDomainWithdrawalHash], "Message was already successfully executed");
         require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
         require(_receiptObject.status == true, "Failed transaction");
-        require(MerkleProof.verify(_merkleProof, ITwineChain(rollup).getReceiptRoot(_batchNumber), _xDomainWithdrawalHash), "Invalid Merkle proof");
-
+        // @note do MerklePatriciaProofVerifier.verify(proof, ITwineChain(rollup).getReceiptRoot(_batchNumber), mptKey) then check the value with rlp encoded _receiptObject;
+        
+        // require(MerkleProof.verify(_merkleProof, ITwineChain(rollup).getReceiptRoot(_batchNumber), _xDomainWithdrawalHash), "Invalid Merkle proof");
         // Check if there are any logs in the ReceiptObject
         require(_receiptObject.logs.length > 0, "No logs available");
         // Fetch the first log

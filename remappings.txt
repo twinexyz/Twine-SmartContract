@@ -2,3 +2,4 @@
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts
 @sp1-contracts/=lib/sp1-contracts/contracts/src/
 @xtoken/contracts/=lib/xERC20/solidity/
+@solidity-rlp/=lib/Solidity-RLP/
