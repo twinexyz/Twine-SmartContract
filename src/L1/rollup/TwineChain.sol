@@ -23,13 +23,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The address of RollupVerifier.
     address public verifier;
 
-    /// @notice The index of Last Batch Committed
-    uint256 public override lastCommittedBatchIndex;
+    /// @notice The Number of Last Batch Committed
+    uint256 public override lastCommittedBatchNumber;
 
-    /// @notice The index of Last Batch Finalized
-    uint256 public override lastFinalizedBatchIndex;
+    /// @notice The Number of Last Batch Finalized
+    uint256 public override lastFinalizedBatchNumber;
 
-    /// @notice The mapping of batchIndex => CommittedBatches
+    /// @notice The mapping of batchNumber => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
 
 
@@ -68,10 +68,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
      /// @inheritdoc ITwineChain
     function commitBatch(CommitBatchInfo calldata _newBatchData) external {
-        require(_newBatchData.batchNumber == lastCommittedBatchIndex + 1, "Only next batch can be committed.");
+        require(_newBatchData.batchNumber == lastCommittedBatchNumber + 1, "Only next batch can be committed.");
         StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
         committedBatches[batchToCommit.batchNumber] = batchToCommit;
-        lastCommittedBatchIndex = batchToCommit.batchNumber;
+        lastCommittedBatchNumber = batchToCommit.batchNumber;
     }
 
     function _commitBatch(CommitBatchInfo calldata _newBatchData) internal returns (StoredBatchInfo memory) {
@@ -125,30 +125,30 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         ISP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, _proofBytes);
 
         finalizedStateRoots[batchNumber] = committedBatches[batchNumber].stateRoot;
-        lastFinalizedBatchIndex = batchNumber;
+        lastFinalizedBatchNumber = batchNumber;
     }  
 
     /// @inheritdoc ITwineChain
-    function isBatchFinalized(uint256 _batchIndex)
+    function isBatchFinalized(uint256 _batchNumber)
         public
         view
         override
         returns (bool)
     {
-        return _batchIndex <= lastFinalizedBatchIndex;
+        return _batchNumber <= lastFinalizedBatchNumber;
     }
 
-    function isBatchCommitted(uint256 _batchIndex)
+    function isBatchCommitted(uint256 _batchNumber)
         public
         view
         returns (bool)
     {
-        return _batchIndex <= lastCommittedBatchIndex;
+        return _batchNumber <= lastCommittedBatchNumber;
     }
 
-    function getReceiptRoot(uint256 _batchIndex) public view returns (bytes32) {
-        require(isBatchCommitted(_batchIndex), "Batch Needs to be commited");
-        return committedBatches[_batchIndex].receiptRoot;
+    function getReceiptRoot(uint256 _batchNumber) public view returns (bytes32) {
+        require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
+        return committedBatches[_batchNumber].receiptRoot;
     }
 
 }
