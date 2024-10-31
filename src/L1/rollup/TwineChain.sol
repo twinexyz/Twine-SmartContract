@@ -7,7 +7,7 @@ import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
-import {Types} from "../../libraries/rlp/types.sol";
+import {Types} from "../../libraries/rlp/Types.sol";
 
 
 /// @title TwineChain

@@ -118,7 +118,7 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
         bytes32 _mptKey,
         bytes memory _rlpProof
     ) external {
-        bytes32 _receiptObjectHash = keccak256(_receiptObject.encodeReceiptObject());
+        bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
         require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
         require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
         require(_receiptObject.receipt.success == true, "Failed transaction");
@@ -171,6 +171,10 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
 
             emit SentWithdrawalMessage(_msgSender(), _to, _value, _messageNonce, _gasLimit, _message);
         }
+    }
+
+    function getReceiptObjectRLP(Types.ReceiptObject memory _ro) public pure returns(bytes memory){
+        return abi.encodePacked(_ro.receipt.txType, _ro.encodeReceiptObject());
     }
 
 }   

@@ -71,7 +71,7 @@ library RLPEncodeStruct {
             .encodePacked(addLength(_rlp.length, false), _rlp)
             .encodeBytes();
 
-        _rlp = abi.encodePacked(abi.encodePacked(_r.txType).encodeBytes(),_r.success.encodeBool(),uint256(_r.cumulativeGasUsed).encodeUint(),_rlp);
+        _rlp = abi.encodePacked(_r.success.encodeBool(),uint256(_r.cumulativeGasUsed).encodeUint(),_rlp);
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
         
 
