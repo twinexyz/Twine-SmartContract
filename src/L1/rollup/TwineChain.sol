@@ -7,12 +7,17 @@ import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
+import {Types} from "../../libraries/rlp/types.sol";
+
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
+
+    ///@notice The chai ID for the L1 where this contract is deployed
+    uint256 public chainID;
 
     /// @notice The verification key.
     bytes32 public ProgramVKey;
@@ -96,26 +101,129 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             });
     }
 
-    function _calculateProofInput(CommitBatchInfo calldata _newBatchData)
+    function _calculateProofInput(CommitBatchInfo memory _newBatchData)
         internal
         returns (bytes memory,bytes32,bytes32[] memory,bytes32[] memory)
     {
-        // // First we have to seperate out (L1 transaction object) and (L2 trasnactions + L1 transaction object of other L1s)
-        // bytes32 L1transactions = _extractL1Transaction(_newBatchData.transactionList);
-        // bytes32[] L2transactions = _extractL2Transaction(_newBatchData.transactionList);
-
-        // // We need to calculate L1TransactionObject just like how relayer is calculating.
-        // bytes32 L1transactionObject = _calculateTransactionObject(L1transactions);
-
-        // // We will append (stateroot + l1txnobject + l2txns) and that is our public input
-        // bytes inputs = _calculateProof(_newBatchData.newStateRoot, L1transactionObject, L2transactions);
-        // return inputs;
         bytes memory proofInput;
         bytes32 depositTransactionHash;
         bytes32[] memory otherTransactionHash;
         bytes32[] memory forcedTransactionHash;
+        
+        depositTransactionHash = _handleDeposit(_newBatchData.depositTransactionObject);
+        forcedTransactionHash = _handleForcedTransaction(_newBatchData.forcedTransactionObjects);
+        otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
+
+        proofInput = abi.encodePacked(
+            _newBatchData.batchNumber,
+            _newBatchData.batchHash,
+            _newBatchData.stateRoot,
+            _newBatchData.transactionRoot,
+            _newBatchData.receiptRoot,
+            depositTransactionHash,
+            forcedTransactionHash.length
+        );
+
+        for (uint256 i = 0; i < forcedTransactionHash.length; i++) {
+            proofInput = abi.encodePacked(proofInput, forcedTransactionHash[i]);
+        }
+
+        // Append the number of `otherTransactionHash`
+        proofInput = abi.encodePacked(proofInput, otherTransactionHash.length);
+        
+        // Append each `otherTransactionHash` element
+        for (uint256 i = 0; i < otherTransactionHash.length; i++) {
+            proofInput = abi.encodePacked(proofInput, otherTransactionHash[i]);
+        }
+
         return (proofInput,depositTransactionHash,otherTransactionHash,forcedTransactionHash);
     }
+
+    function _handleDeposit(TransactionObject memory _depositTransactionObject)
+        internal  
+        returns (bytes32) 
+    {
+        // Array that contains the receipt object for individual deposit Transactions
+        Types.ReceiptObject[] memory depositReceiptObject = abi.decode(_depositTransactionObject.data, (Types.ReceiptObject[]));
+
+        // loop to do processing on individual deposit receipt
+        for(uint256 i = 0; i < depositReceiptObject.length; i++)  {
+            Types.Receipt memory depositReceipts = depositReceiptObject[i].receipt;
+
+            // Extract the datas from the log
+            ReceiptData memory receiptData = abi.decode(depositReceipts.logs[0].logData.data, (ReceiptData));
+            uint256 messageIndex = 0;
+
+            // Check to see if the message was initiated from this L1
+            if(receiptData.chainID == chainID) {
+                //Extract the ith transaction from deposit Queue
+                bytes memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(messageIndex);
+
+                // Pop the first Element from the Queue
+                IL1MessageQueue(messageQueue).popFirstDepositElement();
+
+                // Replace the _data with the transaction from Queue
+                receiptData.data = dataFromQueue;  
+                depositReceipts.logs[0].logData.data = abi.encode(receiptData);
+                depositReceiptObject[i].receipt = depositReceipts;
+                messageIndex += 1;
+            }                 
+
+        }
+        // Replace the data field with the modified one.
+        _depositTransactionObject.data = (abi.encode(depositReceiptObject));
+        bytes32 depositTransactionHash = keccak256(abi.encode(_depositTransactionObject));
+        return depositTransactionHash;
+    }
+
+    function _handleForcedTransaction(TransactionObject[] memory _forcedTransactionObject) 
+        internal  
+        returns (bytes32[] memory)
+    {
+        bytes32[] memory forcedTransactionHash;
+
+        // For individual forced transaction object
+        for(uint256 i = 0; i < _forcedTransactionObject.length; i++) {
+            Types.ReceiptObject memory withdrawalReceipt =  abi.decode(_forcedTransactionObject[i].data, (Types.ReceiptObject));
+            Types.Receipt memory receipt = withdrawalReceipt.receipt;
+
+             // Extract the datas from the log
+            ReceiptData memory receiptData = abi.decode(receipt.logs[0].logData.data, (ReceiptData));
+            uint256 messageIndex = 0;
+
+            // Check to see if the message was initiated from this L1
+            if(receiptData.chainID == chainID) {
+                //Extract the ith transaction from withdrawal Queue
+                bytes memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(messageIndex);
+
+                // Pop the first Element from the Queue
+                IL1MessageQueue(messageQueue).popFirstWithdrawalElement();
+                // Replace the _data with the transaction from Queue  
+                receiptData.data = dataFromQueue;
+                receipt.logs[0].logData.data = abi.encode(receiptData);
+                withdrawalReceipt.receipt = receipt;
+                messageIndex += 1;
+            }  
+            // Replace the data field with the modified one.
+
+            _forcedTransactionObject[i].data = (abi.encode(withdrawalReceipt));
+            forcedTransactionHash[i] = keccak256(abi.encode(_forcedTransactionObject[i])); 
+        }            
+        return forcedTransactionHash;
+    }
+
+    function _handleOtherTransaction(TransactionObject[] memory _otherTransactionObject)
+        internal 
+        pure 
+        returns (bytes32[] memory) 
+    {
+        bytes32[] memory otherTransactionHash;    
+        for(uint256 i = 0; i < _otherTransactionObject.length; i++){
+            otherTransactionHash[i] = keccak256(abi.encode(_otherTransactionObject));
+        }
+        return otherTransactionHash;
+    }
+
 
     /// @inheritdoc ITwineChain
     function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external {

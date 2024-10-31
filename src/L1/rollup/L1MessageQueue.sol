@@ -73,6 +73,33 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return withdrawalMessageQueue.length;
     }
 
+    /// @inheritdoc IL1MessageQueue
+    function popFirstDepositElement() external {
+        require(depositMessageQueue.length > 0, "Array is empty");
+
+        // Shift elements to the left
+        for (uint256 i = 0; i < depositMessageQueue.length - 1; i++) {
+            depositMessageQueue[i] = depositMessageQueue[i + 1];
+        }
+
+        // Remove the last element (since it's now a duplicate of the second-to-last element)
+        depositMessageQueue.pop();
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function popFirstWithdrawalElement() external {
+        require(withdrawalMessageQueue.length > 0, "Array is empty");
+
+        // Shift elements to the left
+        for (uint256 i = 0; i < withdrawalMessageQueue.length - 1; i++) {
+            withdrawalMessageQueue[i] = withdrawalMessageQueue[i + 1];
+        }
+
+        // Remove the last element (since it's now a duplicate of the second-to-last element)
+        withdrawalMessageQueue.pop();
+    }
+
+
     function getCrossDomainDepositMessage(uint256 _queueIndex)
         external
         view
