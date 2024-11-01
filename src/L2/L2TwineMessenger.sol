@@ -34,13 +34,13 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
     address public messageQueue;
 
     /// @notice The address of Consensus Proving Precompile
-    address public consensusPrecompile_address;
+    address public consensusPrecompileAddress;
 
     /// @notice The address of deposit Proving and executing Precompile
-    address public depositPrecompile_address;
+    address public depositPrecompileAddress;
 
     /// @notice The address of withdrawal Proving Precompile
-    address public withdrawalPrecompile_address;
+    address public withdrawalPrecompileAddress;
 
     /***************
      * Constructor *
@@ -59,8 +59,10 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         messageQueue = _messageQueue;
     }
 
-    function setAddress(address _messageQueue) external {
-        messageQueue = _messageQueue;
+    function setPrecompileAddress(address _consensusPrecompileAddress,address _depositPrecompileAddress,address _withdrawalPrecompileAddress) external {
+        consensusPrecompileAddress = _consensusPrecompileAddress;
+        depositPrecompileAddress = _depositPrecompileAddress;
+        withdrawalPrecompileAddress = _withdrawalPrecompileAddress;
     }
 
     function sendMessage(
@@ -89,7 +91,7 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory proof
     ) public {
         bytes memory data = abi.encode(headers, proof);
-        (bool success, bytes memory output) = consensusPrecompile_address.call(data);
+        (bool success, bytes memory output) = consensusPrecompileAddress.call(data);
         require(success, "Consensus proof Failed!");
         
     }
@@ -99,7 +101,7 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory proof
     ) public {
         bytes memory data = abi.encode(depositTransactions, proof);
-        (bool success, bytes memory output) = depositPrecompile_address.call(data);
+        (bool success, bytes memory output) = depositPrecompileAddress.call(data);
         require(success, "Deposits failed!");
     }
 
@@ -108,7 +110,7 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory proof
     ) public {
         bytes memory data = abi.encode(withdrawalTransaction, proof);
-        (bool success, bytes memory output) = withdrawalPrecompile_address.call(data);
+        (bool success, bytes memory output) = withdrawalPrecompileAddress.call(data);
         require(success, "Withdrawal failed!");
     }
 
