@@ -13,9 +13,7 @@ library RLPEncodeStruct {
     using RLPEncode for address;
     using RLPEncode for bool;
 
-    using RLPEncodeStruct for Types.Log;
     using RLPEncodeStruct for Types.LogData;
-    using RLPEncodeStruct for Types.Receipt;
     using RLPEncodeStruct for Types.ReceiptObject;
 
     uint8 internal constant LIST_SHORT_START = 0xc0;
@@ -35,46 +33,13 @@ library RLPEncodeStruct {
             _rlp = abi.encodePacked(_rlp, temp);
         }
 
-        _rlp = abi
-            .encodePacked(addLength(_rlp.length, false), _rlp)
-            .encodeBytes();
-        _rlp = abi.encodePacked(_rlp, _ld.data.encodeBytes());
-        return abi.encodePacked(addLength(_rlp.length, false), _rlp);
-    }
-
-    function encodeLog(Types.Log memory _l)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        bytes memory _rlp;
+        _rlp = abi.encodePacked(addLength(_rlp.length, false), _rlp);
         _rlp = abi.encodePacked(
-            _l.logAddress.encodeAddress(),
-            _l.logData.encodeLogData().encodeBytes()
+            _ld.logAddress.encodeAddress(),
+            _rlp,
+            _ld.data.encodeBytes()
         );
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
-    }
-
-    function encodeReceipt(Types.Receipt memory _r)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        bytes memory _rlp;
-        bytes memory temp;
-
-        for (uint256 i = 0; i < _r.logs.length; i++) {
-            temp = _r.logs[i].encodeLog();
-            _rlp = abi.encodePacked(_rlp, temp);
-        }
-        _rlp = abi
-            .encodePacked(addLength(_rlp.length, false), _rlp)
-            .encodeBytes();
-
-        _rlp = abi.encodePacked(_r.success.encodeBool(),uint256(_r.cumulativeGasUsed).encodeUint(),_rlp);
-        return abi.encodePacked(addLength(_rlp.length, false), _rlp);
-        
-
     }
 
     function encodeReceiptObject(Types.ReceiptObject memory _ro)
@@ -83,9 +48,19 @@ library RLPEncodeStruct {
         returns (bytes memory)
     {
         bytes memory _rlp;
+        bytes memory temp;
+
+        for (uint256 i = 0; i < _ro.logs.length; i++) {
+            temp = _ro.logs[i].encodeLogData();
+            _rlp = abi.encodePacked(_rlp, temp);
+        }
+        _rlp = abi.encodePacked(addLength(_rlp.length, false), _rlp);
+
         _rlp = abi.encodePacked(
+            _ro.success.encodeBool(),
+            uint256(_ro.cumulativeGasUsed).encodeUint(),
             _ro.bloom.encodeBytes(),
-            _ro.receipt.encodeReceipt().encodeBytes()
+            _rlp
         );
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
     }

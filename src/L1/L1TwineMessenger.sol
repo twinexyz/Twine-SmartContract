@@ -121,16 +121,16 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
         bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
         require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
         require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
-        require(_receiptObject.receipt.success == true, "Failed transaction");
+        require(_receiptObject.success == true, "Failed transaction");
         // MerklePatriciaProofVerification
         bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
         require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
         
         // Check if there are any logs in the ReceiptObject
-        require(_receiptObject.receipt.logs.length > 0, "No logs available");
+        require(_receiptObject.logs.length > 0, "No logs available");
         // Fetch the first log
         // Decoding the log data using abi.decode
-        (, address to, uint256 amount,, bytes memory message) = abi.decode(_receiptObject.receipt.logs[0].logData.data, (address, address, uint256, uint256, bytes));
+        (, address to, uint256 amount,, bytes memory message) = abi.decode(_receiptObject.logs[0].data, (address, address, uint256, uint256, bytes));
         (bool success, ) = to.call{value: amount}(message);
         
         if(success) {
@@ -174,7 +174,7 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
     }
 
     function getReceiptObjectRLP(Types.ReceiptObject memory _ro) public pure returns(bytes memory){
-        return abi.encodePacked(_ro.receipt.txType, _ro.encodeReceiptObject());
+        return abi.encodePacked(_ro.txType, _ro.encodeReceiptObject());
     }
 
 }   

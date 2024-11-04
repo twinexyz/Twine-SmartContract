@@ -148,10 +148,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         // loop to do processing on individual deposit receipt
         for(uint256 i = 0; i < depositReceiptObject.length; i++)  {
-            Types.Receipt memory depositReceipts = depositReceiptObject[i].receipt;
+            Types.ReceiptObject memory depositReceipts = depositReceiptObject[i];
 
             // Extract the datas from the log
-            ReceiptData memory receiptData = abi.decode(depositReceipts.logs[0].logData.data, (ReceiptData));
+            ReceiptData memory receiptData = abi.decode(depositReceipts.logs[0].data, (ReceiptData));
             uint256 messageIndex = 0;
 
             // Check to see if the message was initiated from this L1
@@ -164,8 +164,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
                 // Replace the _data with the transaction from Queue
                 receiptData.data = dataFromQueue;  
-                depositReceipts.logs[0].logData.data = abi.encode(receiptData);
-                depositReceiptObject[i].receipt = depositReceipts;
+                depositReceipts.logs[0].data = abi.encode(receiptData);
+                depositReceiptObject[i] = depositReceipts;
                 messageIndex += 1;
             }                 
 
@@ -185,10 +185,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // For individual forced transaction object
         for(uint256 i = 0; i < _forcedTransactionObject.length; i++) {
             Types.ReceiptObject memory withdrawalReceipt =  abi.decode(_forcedTransactionObject[i].data, (Types.ReceiptObject));
-            Types.Receipt memory receipt = withdrawalReceipt.receipt;
+            
 
              // Extract the datas from the log
-            ReceiptData memory receiptData = abi.decode(receipt.logs[0].logData.data, (ReceiptData));
+            ReceiptData memory receiptData = abi.decode(withdrawalReceipt.logs[0].data, (ReceiptData));
             uint256 messageIndex = 0;
 
             // Check to see if the message was initiated from this L1
@@ -200,8 +200,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 IL1MessageQueue(messageQueue).popFirstWithdrawalElement();
                 // Replace the _data with the transaction from Queue  
                 receiptData.data = dataFromQueue;
-                receipt.logs[0].logData.data = abi.encode(receiptData);
-                withdrawalReceipt.receipt = receipt;
+                withdrawalReceipt.logs[0].data = abi.encode(receiptData);
                 messageIndex += 1;
             }  
             // Replace the data field with the modified one.
