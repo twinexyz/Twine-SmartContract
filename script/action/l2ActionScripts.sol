@@ -37,12 +37,34 @@ contract l2ActionScripts is Script {
     bytes32 constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
 
     function setUp() public {
-        l2CustomERC20GatewayAddress = 0x9eBb49B2004C753f6Fb8b3181C224a8972f70528;
-        roleManagerAddress = 0xd829fcDDD9C9c7c50B7cB476596Ef0ff5889D543;
-        l2ETHGatewayAddress = 0x7B31b399a224aD30D48838F55B41b6A6F1e033ED;
-        l2GatewayRouterAddress = 0xe01c6c0E0997fa433357ec80BC21B1031CA7d4Cc;
-        l2XERC20GatewayAddress = 0x1f5E9E9602bEb4D14c38952cB5504E4471E3328F;
-        l2TwineMessengerAddress = 0xBAb8e13DeF75a95321E9f48d3ec57f2c0141A6c3;
+        string memory deployedJson = vm.readFile(
+            "./uitls/deployedContracts.json"
+        );
+
+        l2CustomERC20GatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2CustomERC20Gateway"
+        );
+        roleManagerAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.RoleManager"
+        );
+        l2ETHGatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2ETHGateway"
+        );
+        l2GatewayRouterAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2GatewayRouter"
+        );
+        l2XERC20GatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2XERC20Gateway"
+        );
+        l2TwineMessengerAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2TwineMessenger"
+        );
         l2TokenAddress = 0x5DA6D90630A282169BCe92735cC1E4aAF14c9c64;
         l2CustomERC20Gateway = L2CustomERC20Gateway(
             l2CustomERC20GatewayAddress
@@ -62,11 +84,26 @@ contract l2ActionScripts is Script {
         l2GatewayRouter.setDefaultERC20Gateway(l2ETHGatewayAddress);
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
-        l2CustomERC20Gateway.setAddress(l1TwineMessengerAddress, l2GatewayRouterAddress,l2TwineMessengerAddress);
-        l2XERC20Gateway.setAddress(l1TwineMessengerAddress, l2GatewayRouterAddress,l2TwineMessengerAddress);
-        l2CustomERC20Gateway.setAddress(l1TwineMessengerAddress, l2GatewayRouterAddress,l2TwineMessengerAddress);
-        l2ETHGateway.setAddress(l1TwineMessengerAddress, l2GatewayRouterAddress,l2TwineMessengerAddress);
-        
+        l2CustomERC20Gateway.setAddress(
+            l1TwineMessengerAddress,
+            l2GatewayRouterAddress,
+            l2TwineMessengerAddress
+        );
+        l2XERC20Gateway.setAddress(
+            l1TwineMessengerAddress,
+            l2GatewayRouterAddress,
+            l2TwineMessengerAddress
+        );
+        l2CustomERC20Gateway.setAddress(
+            l1TwineMessengerAddress,
+            l2GatewayRouterAddress,
+            l2TwineMessengerAddress
+        );
+        l2ETHGateway.setAddress(
+            l1TwineMessengerAddress,
+            l2GatewayRouterAddress,
+            l2TwineMessengerAddress
+        );
 
         //mint Token and approve
         l2Token.approve(address(l2CustomERC20Gateway), 100000);
