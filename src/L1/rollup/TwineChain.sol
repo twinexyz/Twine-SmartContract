@@ -110,7 +110,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32[] memory otherTransactionHash;
         bytes32[] memory forcedTransactionHash;
         
-        depositTransactionHash = _handleDeposit(_newBatchData.depositTransactionObject);
+        depositTransactionHash = _handleDeposit(_newBatchData.depositTransactionObject[0]);
         forcedTransactionHash = _handleForcedTransaction(_newBatchData.forcedTransactionObjects);
         otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
 
@@ -144,7 +144,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         returns (bytes32) 
     {
         // Array that contains the receipt object for individual deposit Transactions
-        Types.ReceiptObject[] memory depositReceiptObject = abi.decode(_depositTransactionObject.data, (Types.ReceiptObject[]));
+        Types.ReceiptObject[] memory depositReceiptObject = abi.decode(_depositTransactionObject.input, (Types.ReceiptObject[]));
 
         // loop to do processing on individual deposit receipt
         for(uint256 i = 0; i < depositReceiptObject.length; i++)  {
@@ -171,7 +171,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         }
         // Replace the data field with the modified one.
-        _depositTransactionObject.data = (abi.encode(depositReceiptObject));
+        _depositTransactionObject.input = (abi.encode(depositReceiptObject));
         bytes32 depositTransactionHash = keccak256(abi.encode(_depositTransactionObject));
         return depositTransactionHash;
     }
@@ -184,7 +184,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         // For individual forced transaction object
         for(uint256 i = 0; i < _forcedTransactionObject.length; i++) {
-            Types.ReceiptObject memory withdrawalReceipt =  abi.decode(_forcedTransactionObject[i].data, (Types.ReceiptObject));
+            Types.ReceiptObject memory withdrawalReceipt =  abi.decode(_forcedTransactionObject[i].input, (Types.ReceiptObject));
             
 
              // Extract the datas from the log
@@ -205,7 +205,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             }  
             // Replace the data field with the modified one.
 
-            _forcedTransactionObject[i].data = (abi.encode(withdrawalReceipt));
+            _forcedTransactionObject[i].input = (abi.encode(withdrawalReceipt));
             forcedTransactionHash[i] = keccak256(abi.encode(_forcedTransactionObject[i])); 
         }            
         return forcedTransactionHash;

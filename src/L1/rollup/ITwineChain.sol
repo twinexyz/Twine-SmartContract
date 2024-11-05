@@ -26,18 +26,32 @@ interface ITwineChain {
     /// @param withdrawRoot The merkle root on layer2 after this batch
     event FinalizeBatch(uint256 indexed batchNumber, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot);
 
-    struct TransactionObject{
+    struct TransactionObject {
+        bytes32 transactionHash;
+        uint256 nonce;
+        bytes32 blockHash; 
+        uint256 blockNumber; 
+        uint256 transactionIndex; 
         address from;
         address to;
-        uint256 nonce;
         uint256 value;
-        uint256 gasLimit;
+        uint256 gasprice;
+        uint256 gas;
         uint256 maxFeePerGas;
-        uint256 maxPriorityFeePerGas;
-        bytes data;
-        uint8 v;
-        bytes32 r;
+        uint256 maxPriorityFeePerGas; 
+        bytes input;
+        bytes32 r; 
         bytes32 s;
+        uint8 v;
+        uint256 yParity;
+        uint256 chainId;
+        AccessList[] accesslist; 
+        uint256 TransactionType;
+    }
+
+    struct AccessList {
+        address _address;
+        bytes32[] storageKeys;
     }
 
     struct CommitBatchInfo{
@@ -46,7 +60,7 @@ interface ITwineChain {
         bytes32 stateRoot;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
-        TransactionObject depositTransactionObject;
+        TransactionObject[] depositTransactionObject;
         TransactionObject[] forcedTransactionObjects;
         TransactionObject[] otherTransactions;
     }
