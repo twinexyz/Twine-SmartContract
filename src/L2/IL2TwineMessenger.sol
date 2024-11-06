@@ -29,8 +29,8 @@ interface IL2TwineMessenger is ITwineMessenger {
     event consensusVerified(bytes headers, bytes proof);
 
     /// @notice Emitted when the deposit is successful
-    event L1Deposit(bytes[] depositTransactions,bytes proof);
+    event L1Deposit();
 
     /// @notice Emitted when the forcedWithdrawal is successful
-    event FrocedWithdrawal(bytes withdrawalTransaction, bytes proof);
+    event FrocedWithdrawal();
 }

@@ -97,7 +97,7 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory data = abi.encode(depositTransactions, proof);
         (bool success, bytes memory output) = depositPrecompileAddress.call(data);
         require(success, "Deposits failed!");
-        emit L1Deposit(depositTransactions,proof);
+        emit L1Deposit();
     }
 
     function executeForcedWithdrawal(
@@ -107,7 +107,7 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory data = abi.encode(withdrawalTransaction, proof);
         (bool success, bytes memory output) = withdrawalPrecompileAddress.call(data);
         require(success, "Withdrawal failed!");
-        emit FrocedWithdrawal(withdrawalTransaction,proof);
+        emit FrocedWithdrawal();
     }
 
     /// @dev Internal function to send cross domain message.
