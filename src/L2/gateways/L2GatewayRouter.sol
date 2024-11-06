@@ -138,7 +138,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+        IL2XERC20Gateway(_gateway).withdrawXERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
     }
 
     
