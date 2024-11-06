@@ -5,31 +5,7 @@ import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
 
 contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
-    /// @notice Emitted when a cross domain message is relayed successfully.
-    /// @param messageHash The hash of the message.
-    event RelayedMessage(bytes32 indexed messageHash);
-
-    /// @notice Emitted when a cross domain message is failed to relay.
-    /// @param messageHash The hash of the message.
-    event FailedRelayedMessage(bytes32 indexed messageHash);
-
-    /// @notice Emitted when a cross domain message is sent.
-    /// @param sender The address of the sender who initiates the message.
-    /// @param target The address of target contract to call.
-    /// @param value The amount of value passed to the target contract.
-    /// @param gasLimit The optional gas limit passed to L1 or L2.
-    /// @param message The calldata passed to the target contract.
-    event SentMessage(
-        address indexed sender,
-        address indexed target,
-        uint256 value,
-        uint256 gasLimit,
-        bytes message
-    );
-
-    /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
-    mapping(bytes32 => bool) public isL1MessageExecuted;
-
+    
     /// @notice The address of L2MessageQueue.
     address public messageQueue;
 
@@ -41,6 +17,18 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
 
     /// @notice The address of withdrawal Proving Precompile
     address public withdrawalPrecompileAddress;
+
+    /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
+    mapping(bytes32 => bool) public isL1MessageExecuted;
+
+    /// @notice Mapping to store the receipt roots for each block number
+    mapping (uint256=> bytes32) public blockReceiptRoots;
+    
+    ///@notice Struct to match the precompile's return type
+    struct ConsensusVerificationData {
+        uint256 blockNumber;
+        bytes32 receiptRoot;
+    }
 
     /***************
      * Constructor *
@@ -93,6 +81,12 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory data = abi.encode(headers, proof);
         (bool success, bytes memory output) = consensusPrecompileAddress.call(data);
         require(success, "Consensus proof Failed!");
+        ConsensusVerificationData[] memory verificationData = abi.decode(output,(ConsensusVerificationData[]));
+        // Store the decoded data in the mapping
+        for (uint i = 0; i < verificationData.length; i++) {
+            blockReceiptRoots[verificationData[i].blockNumber] = verificationData[i].receiptRoot;
+        }
+        emit consensusVerified(headers,proof);
         
     }
 
@@ -103,17 +97,17 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory data = abi.encode(depositTransactions, proof);
         (bool success, bytes memory output) = depositPrecompileAddress.call(data);
         require(success, "Deposits failed!");
-        emit L1Deposit();
+        emit L1Deposit(depositTransactions,proof);
     }
 
-    function executeIndividualWithdrawal(
+    function executeForcedWithdrawal(
         bytes memory withdrawalTransaction,
         bytes memory proof
     ) public {
         bytes memory data = abi.encode(withdrawalTransaction, proof);
         (bool success, bytes memory output) = withdrawalPrecompileAddress.call(data);
         require(success, "Withdrawal failed!");
-        emit FrocedWithdrawal();
+        emit FrocedWithdrawal(withdrawalTransaction,proof);
     }
 
     /// @dev Internal function to send cross domain message.
