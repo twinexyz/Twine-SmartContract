@@ -38,7 +38,7 @@ contract l2ActionScripts is Script {
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
-            "./uitls/deployedContracts.json"
+            "./script/utils/deployedContracts.json"
         );
 
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
@@ -65,6 +65,7 @@ contract l2ActionScripts is Script {
             deployedJson,
             ".Twine.L2TwineMessenger"
         );
+        console.log("Messenger Address", l2TwineMessengerAddress);
         l2TokenAddress = 0x5DA6D90630A282169BCe92735cC1E4aAF14c9c64;
         l2CustomERC20Gateway = L2CustomERC20Gateway(
             l2CustomERC20GatewayAddress
@@ -79,6 +80,7 @@ contract l2ActionScripts is Script {
         address[] memory gateways = new address[](1);
         tokens[0] = l2TokenAddress;
         gateways[0] = l2CustomERC20GatewayAddress;
+
         l2GatewayRouter.setERC20Gateway(tokens, gateways);
         l2GatewayRouter.setETHGateway(l2CustomERC20GatewayAddress);
         l2GatewayRouter.setDefaultERC20Gateway(l2ETHGatewayAddress);
@@ -104,7 +106,6 @@ contract l2ActionScripts is Script {
             l2GatewayRouterAddress,
             l2TwineMessengerAddress
         );
-
         //mint Token and approve
         l2Token.approve(address(l2CustomERC20Gateway), 100000);
         l2Token.approve(address(l2GatewayRouter), 100000);
