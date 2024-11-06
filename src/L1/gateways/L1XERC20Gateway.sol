@@ -159,7 +159,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
             IXERC20(xTokenInfo.l1xToken).mint(_to, _amount);
         }
         _doCallback(_to, _data);
-        emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
+        emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 
 
@@ -228,7 +228,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
             _from
         );
 
-        emit DepositXERC20(_token, _l2Token, _from, _to, _amount, _data);
+        emit DepositXERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
 
     }
 

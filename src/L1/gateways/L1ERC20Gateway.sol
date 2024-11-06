@@ -80,7 +80,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
 
         _doCallback(_to, _data);
 
-        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
+        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 
     /// @inheritdoc IMessageDropCallback

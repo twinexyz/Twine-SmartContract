@@ -100,7 +100,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_from, _to, _amount);
+        emit FinalizeWithdrawETH(_from, _to,block.number, _amount);
     }
 
     /// @dev The internal ETH deposit implementation.
@@ -138,7 +138,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
             _from
         );
 
-        emit DepositETH(_from, _to, _amount);
+        emit DepositETH(_from, _to, block.number, _amount);
     }
 
     /// @dev The internal ETH forced withdrawal implementation.
@@ -168,7 +168,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
             _from
         );
 
-        emit ForcedWithdrawalInclusion(_from, _to, _amount);
+        emit ForcedWithdrawalEth(_from, _to,block.number, _amount);
     }
 
 }

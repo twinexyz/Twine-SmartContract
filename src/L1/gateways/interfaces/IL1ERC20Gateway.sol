@@ -21,6 +21,7 @@ interface IL1ERC20Gateway {
         address indexed from,
         address to,
         uint256 amount,
+        uint256 blockNumber,
         bytes data
     );
 
@@ -37,6 +38,7 @@ interface IL1ERC20Gateway {
         address indexed from,
         address to,
         uint256 amount,
+        uint256 blockNumber,
         bytes data
     );
 

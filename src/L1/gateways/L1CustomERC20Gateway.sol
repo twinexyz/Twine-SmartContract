@@ -152,7 +152,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             _from
         );
 
-        emit DepositERC20(_token, _l2Token, _from, _to, _amount, _data);
+        emit DepositERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 
      function _forcedWithdrawalERC20(
