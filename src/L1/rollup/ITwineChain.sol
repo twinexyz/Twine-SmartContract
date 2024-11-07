@@ -82,7 +82,7 @@ interface ITwineChain {
         address to;
         address target; 
         uint256 value;
-        uint256 chainID;
+        uint256 chainId;
         uint256 MessageIndex;
         uint256 gasLimit;
         bytes data;
