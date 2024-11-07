@@ -115,7 +115,7 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
     function relayWithdrawal(
         uint256 _batchNumber,
         Types.ReceiptObject memory _receiptObject,
-        bytes32 _mptKey,
+        bytes memory _mptKey,
         bytes memory _rlpProof
     ) external {
         bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
