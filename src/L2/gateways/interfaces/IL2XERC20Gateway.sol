@@ -36,6 +36,7 @@ interface IL2XERC20Gateway {
         address indexed from,
         address to,
         uint256 amount,
+        uint256 chainId,
         bytes data
     );
 
@@ -65,6 +66,7 @@ interface IL2XERC20Gateway {
         address token,
         address to,
         uint256 amount,
+        uint256 chainId,
         uint256 gasLimit
     ) external payable;
 
@@ -79,7 +81,8 @@ interface IL2XERC20Gateway {
         address token,
         address to,
         uint256 amount,
-        bytes calldata data,
-        uint256 gasLimit
+        uint256 chainId,
+        uint256 gasLimit,
+        bytes calldata data
     ) external payable;
 }

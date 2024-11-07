@@ -98,8 +98,9 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual override nonReentrant {
         address _l1Token = tokenMapping[_token];
         require(_l1Token != address(0), "no corresponding l1 token");
@@ -129,6 +130,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             _from
         );
         
-        emit WithdrawERC20(_l1Token, _token, _from, _to, _amount, _data);
+        emit WithdrawERC20(_l1Token, _token, _from, _to, _amount,_chainId, _data);
     }
 }

@@ -10,7 +10,7 @@ interface IL2ETHGateway {
     /// @param from The address of sender in L2.
     /// @param to The address of recipient in L1.
     /// @param amount The amount of ETH will be deposited from L2 to L1.
-    event WithdrawETH(address indexed from, address indexed to, uint256 amount);
+    event WithdrawETH(address indexed from, address indexed to, uint256 amount,uint256 chainId);
 
     /// @notice Emitted when ETH is deposited from L1 to L2 and transfer to recipient.
     /// @param from The address of sender in L1.
@@ -29,6 +29,7 @@ interface IL2ETHGateway {
     function withdrawETH(
         address to,
         uint256 amount,
+        uint256 chainId,
         uint256 gasLimit
     ) external payable;
 
@@ -40,8 +41,9 @@ interface IL2ETHGateway {
     function withdrawETHAndCall(
         address to,
         uint256 amount,
-        bytes calldata data,
-        uint256 gasLimit
+        uint256 chainId,
+        uint256 gasLimit,
+        bytes calldata data
     ) external payable;
 
 }

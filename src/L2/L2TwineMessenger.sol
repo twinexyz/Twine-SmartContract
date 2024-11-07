@@ -12,20 +12,18 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
     /// @notice The address of Consensus Proving Precompile
     address public consensusPrecompileAddress;
 
-    /// @notice The address of deposit Proving and executing Precompile
-    address public depositPrecompileAddress;
-
-    /// @notice The address of withdrawal Proving Precompile
-    address public withdrawalPrecompileAddress;
+    /// @notice The address of bridging Precompile
+    address public bridgingPrecompileAddress;
 
     /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL1MessageExecuted;
 
     /// @notice Mapping to store the receipt roots for each block number
-    mapping (uint256=> bytes32) public blockReceiptRoots;
+    mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
     
     ///@notice Struct to match the precompile's return type
     struct ConsensusVerificationData {
+        uint256 chainId;
         uint256 blockNumber;
         bytes32 receiptRoot;
     }
@@ -47,10 +45,9 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         messageQueue = _messageQueue;
     }
 
-    function setPrecompileAddress(address _consensusPrecompileAddress,address _depositPrecompileAddress,address _withdrawalPrecompileAddress) external {
+    function setPrecompileAddress(address _consensusPrecompileAddress,address _bridgingPrecompileAddress) external {
         consensusPrecompileAddress = _consensusPrecompileAddress;
-        depositPrecompileAddress = _depositPrecompileAddress;
-        withdrawalPrecompileAddress = _withdrawalPrecompileAddress;
+        bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
 
     function sendMessage(
@@ -75,18 +72,16 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
     }
 
     function verifyConsensusProof(
-        bytes memory headers,
-        bytes memory proof
+        bytes memory consensusData
     ) public {
-        bytes memory data = abi.encode(headers, proof);
-        (bool success, bytes memory output) = consensusPrecompileAddress.call(data);
+        (bool success, bytes memory output) = consensusPrecompileAddress.call(consensusData);
         require(success, "Consensus proof Failed!");
         ConsensusVerificationData[] memory verificationData = abi.decode(output,(ConsensusVerificationData[]));
         // Store the decoded data in the mapping
         for (uint i = 0; i < verificationData.length; i++) {
-            blockReceiptRoots[verificationData[i].blockNumber] = verificationData[i].receiptRoot;
+            blockReceiptRoots[verificationData[i].chainId][verificationData[i].blockNumber] = verificationData[i].receiptRoot;
         }
-        emit consensusVerified(headers,proof);
+        emit consensusVerified(consensusData);
         
     }
 
@@ -95,7 +90,7 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory proof
     ) public {
         bytes memory data = abi.encode(depositTransactions, proof);
-        (bool success, bytes memory output) = depositPrecompileAddress.call(data);
+        (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
         require(success, "Deposits failed!");
         emit L1Deposit();
     }
@@ -105,9 +100,9 @@ contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
         bytes memory proof
     ) public {
         bytes memory data = abi.encode(withdrawalTransaction, proof);
-        (bool success, bytes memory output) = withdrawalPrecompileAddress.call(data);
+        (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
         require(success, "Withdrawal failed!");
-        emit FrocedWithdrawal();
+        emit ForcedWithdrawal();
     }
 
     /// @dev Internal function to send cross domain message.

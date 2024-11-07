@@ -103,9 +103,10 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
     ) external payable override {
-        _withdraw(_token, _to, _amount, new bytes(0), _gasLimit);
+        _withdraw(_token, _to, _amount,_chainId,_gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL2XERC20Gateway
@@ -113,10 +114,11 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes calldata _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes calldata _data
     ) external payable override {
-        _withdraw(_token, _to, _amount, _data, _gasLimit);
+        _withdraw(_token, _to, _amount,_chainId, _gasLimit,_data);
     }
 
     /**********************
@@ -128,8 +130,9 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal {
         XTokenConfig memory xTokenInfo = tokenMapping[_token];
         address _l1Token = xTokenInfo.l1Token;
@@ -166,7 +169,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
             _gasLimit,
             _from
         );
-        emit WithdrawXERC20(_l1Token, _token, _from, _to, _amount, _data);
+        emit WithdrawXERC20(_l1Token, _token, _from, _to, _amount,_chainId, _data);
 
     }
 
