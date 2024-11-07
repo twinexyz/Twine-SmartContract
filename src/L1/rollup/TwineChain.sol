@@ -34,9 +34,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The Number of Last Batch Finalized
     uint256 public override lastFinalizedBatchNumber;
 
+    /// @notice The number of deposit Transaction of this L1 that is committed but not finalized.
+    uint256 public depositTransactionsCommitted;
+
+    /// @notice The number of forced Transaction of this L1 that is committed but not finalized
+    uint256 public forcedTransactionsCommitted;
+
+    
     /// @notice The mapping of batchNumber => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
-
 
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
@@ -80,12 +86,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     function _commitBatch(CommitBatchInfo calldata _newBatchData) internal returns (StoredBatchInfo memory) {
-        bytes memory proofInput;
-        bytes32 depositTransactionHash;
-        bytes32[] memory otherTransactionHash;
-        bytes32[] memory forcedTransactionHash;
-
-        (proofInput,depositTransactionHash,otherTransactionHash,forcedTransactionHash)= _calculateProofInput(_newBatchData);
+       CommitmentData memory commitmentData = _calculateProofInput(_newBatchData);
 
         return
             StoredBatchInfo({
@@ -94,24 +95,32 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 stateRoot: _newBatchData.stateRoot,
                 transactionRoot: _newBatchData.transactionRoot,
                 receiptRoot: _newBatchData.receiptRoot,
-                depositTransactionHash: depositTransactionHash,
-                forcedTransactionHashes: forcedTransactionHash,
-                otherTransactionHashes: otherTransactionHash,
-                publicInput: proofInput
+                numberOfDepositTransaction: commitmentData._numberOfDepositTransactions,
+                depositTransactionHash: commitmentData._depositTransactionHash,
+                numberOfForcedTransaction: commitmentData._numberOfForcedTransactions,
+                forcedTransactionHashes: commitmentData._forcedTransactionHash,
+                otherTransactionHashes: commitmentData._otherTransactionHash,
+                publicInput: commitmentData._proofInput
             });
     }
 
     function _calculateProofInput(CommitBatchInfo memory _newBatchData)
         internal
-        returns (bytes memory,bytes32,bytes32[] memory,bytes32[] memory)
+        returns (CommitmentData memory)
     {
         bytes memory proofInput;
         bytes32 depositTransactionHash;
         bytes32[] memory otherTransactionHash;
         bytes32[] memory forcedTransactionHash;
+        uint256 numberOfDepositTransactions;
+        uint256 numberOfForcedTransactions;
         
-        depositTransactionHash = _handleDeposit(_newBatchData.depositTransactionObject[0]);
-        forcedTransactionHash = _handleForcedTransaction(_newBatchData.forcedTransactionObjects);
+        if(_newBatchData.depositTransactionObject.length == 0){
+            depositTransactionHash = bytes32(0);
+        } else {
+            (numberOfDepositTransactions, depositTransactionHash) = _handleDeposit(_newBatchData.depositTransactionObject[0]);
+        }
+        (numberOfForcedTransactions, forcedTransactionHash) = _handleForcedTransaction(_newBatchData.forcedTransactionObjects);
         otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
 
         proofInput = abi.encode(
@@ -136,13 +145,23 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             proofInput = abi.encode(proofInput, otherTransactionHash[i]);
         }
 
-        return (proofInput,depositTransactionHash,otherTransactionHash,forcedTransactionHash);
+        CommitmentData memory commitData = CommitmentData({
+            _proofInput: proofInput,
+            _numberOfDepositTransactions: numberOfDepositTransactions,
+            _depositTransactionHash: depositTransactionHash,
+            _numberOfForcedTransactions: numberOfForcedTransactions,
+            _forcedTransactionHash: forcedTransactionHash,
+            _otherTransactionHash: otherTransactionHash
+        });
+
+        return (commitData);
     }
 
     function _handleDeposit(TransactionObject memory _depositTransactionObject)
         internal  
-        returns (bytes32) 
-    {  
+        returns (uint256, bytes32) 
+    {   
+        uint256 numberOfDepositTransactions;
         // Array that contains the receipt object for individual deposit Transactions
         Types.ReceiptObject[] memory depositReceipts = abi.decode(_depositTransactionObject.input, (Types.ReceiptObject[]));
 
@@ -151,15 +170,17 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
             // Extract the datas from the log
             ReceiptData memory receiptData = abi.decode(depositReceipts[i].logs[0].data, (ReceiptData));
-            uint256 messageIndex = 0;
+            uint256 messageIndex = depositTransactionsCommitted;
 
             // Check to see if the message was initiated from this L1
             if(receiptData.chainId == chainId) {
                 //Extract the ith transaction from deposit Queue
                 bytes memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(messageIndex);
 
-                // Pop the first Element from the Queue
-                IL1MessageQueue(messageQueue).popFirstDepositElement();
+                // Increase the deposit transaction Committed count
+                depositTransactionsCommitted += 1;
+                // Count the number of deposit transaction for this L1
+                numberOfDepositTransactions += 1;
 
                 // Replace the _data with the transaction from Queue
                 receiptData.data = dataFromQueue;  
@@ -167,16 +188,18 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             }                 
 
         }
+
         // Replace the data field with the modified one.
         _depositTransactionObject.input = (abi.encode(depositReceipts));
         bytes32 depositTransactionHash = keccak256(abi.encode(_depositTransactionObject));
-        return depositTransactionHash;
+        return (numberOfDepositTransactions, depositTransactionHash);
     }
 
     function _handleForcedTransaction(TransactionObject[] memory _forcedTransactionObject) 
         internal  
-        returns (bytes32[] memory)
+        returns (uint256, bytes32[] memory)
     {
+        uint256 numberOfForcedTransactions;
         bytes32[] memory forcedTransactionHash = new bytes32[](_forcedTransactionObject.length);
 
         // For individual forced transaction object
@@ -185,15 +208,18 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         
             // Extract the datas from the log
             ReceiptData memory receiptData = abi.decode(withdrawalReceipt.logs[0].data, (ReceiptData));
-            uint256 messageIndex = 0;
+            uint256 messageIndex = forcedTransactionsCommitted;
 
             // Check to see if the message was initiated from this L1
             if(receiptData.chainId == chainId) {
                 //Extract the ith transaction from withdrawal Queue
                 bytes memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(messageIndex);
 
-                // Pop the first Element from the Queue
-                IL1MessageQueue(messageQueue).popFirstWithdrawalElement();
+                // Increase the forced transactions committed count
+                forcedTransactionsCommitted += 1;
+
+                // Increase the count for number of forced transaction from this L1
+                numberOfForcedTransactions += 1;
 
                 // Replace the _data with the transaction from Queue  
                 receiptData.data = dataFromQueue;
@@ -204,7 +230,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             _forcedTransactionObject[i].input = (abi.encode(withdrawalReceipt));
             forcedTransactionHash[i] = keccak256(abi.encode(_forcedTransactionObject[i])); 
         }            
-        return forcedTransactionHash;
+        return (numberOfForcedTransactions, forcedTransactionHash);
     }
 
     function _handleOtherTransaction(TransactionObject[] memory _otherTransactionObject)
@@ -226,6 +252,20 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         bytes memory publicValues = committedBatches[batchNumber].publicInput;
         ISP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, _proofBytes);
+
+        // remove first (depositTransactionsCommitted) elements from depositQueue
+        uint256 numberOfDepositTransaction = committedBatches[batchNumber].numberOfDepositTransaction;
+        IL1MessageQueue(messageQueue).popFirstNDepositElement(numberOfDepositTransaction);
+
+        // subtract the finalized deposits transactions
+        depositTransactionsCommitted -= numberOfDepositTransaction;
+
+        // remove first (forcedTransactionsCommitted) elements from withdrawQueue
+        uint256 numberOfForcedTransaction = committedBatches[batchNumber].numberOfForcedTransaction;
+        IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(numberOfForcedTransaction);
+
+        // subtract the finalized forced transactions
+        forcedTransactionsCommitted -= numberOfForcedTransaction;
 
         finalizedStateRoots[batchNumber] = committedBatches[batchNumber].stateRoot;
         lastFinalizedBatchNumber = batchNumber;

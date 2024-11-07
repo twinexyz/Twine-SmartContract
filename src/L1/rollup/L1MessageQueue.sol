@@ -74,31 +74,35 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstDepositElement() external {
+    function popFirstNDepositElement(uint n) external {
         require(depositMessageQueue.length > 0, "Array is empty");
 
-        // Shift elements to the left
-        for (uint256 i = 0; i < depositMessageQueue.length - 1; i++) {
-            depositMessageQueue[i] = depositMessageQueue[i + 1];
+        // Shift elements
+        for (uint i = 0; i < depositMessageQueue.length - n; i++) {
+            depositMessageQueue[i] = depositMessageQueue[i + n];
         }
 
-        // Remove the last element (since it's now a duplicate of the second-to-last element)
-        depositMessageQueue.pop();
+        // Remove the last n elements by reducing the array length
+        for (uint i = 0; i < n; i++) {
+            depositMessageQueue.pop();
+        }
+
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstWithdrawalElement() external {
+    function popFirstNWithdrawalElement(uint n) external {
         require(withdrawalMessageQueue.length > 0, "Array is empty");
 
-        // Shift elements to the left
-        for (uint256 i = 0; i < withdrawalMessageQueue.length - 1; i++) {
-            withdrawalMessageQueue[i] = withdrawalMessageQueue[i + 1];
+        // Shift elements
+        for (uint i = 0; i < withdrawalMessageQueue.length - n; i++) {
+            withdrawalMessageQueue[i] = withdrawalMessageQueue[i + n];
         }
 
-        // Remove the last element (since it's now a duplicate of the second-to-last element)
-        withdrawalMessageQueue.pop();
+        // Remove the last n elements by reducing the array length
+        for (uint i = 0; i < n; i++) {
+            withdrawalMessageQueue.pop();
+        }
     }
-
 
     function getCrossDomainDepositMessage(uint256 _queueIndex)
         external
