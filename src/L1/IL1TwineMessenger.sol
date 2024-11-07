@@ -13,7 +13,7 @@ interface IL1TwineMessenger is ITwineMessenger {
     function relayWithdrawal(
         uint256 _batchNumber,
         Types.ReceiptObject memory _receiptObject,
-        bytes32 _mptKey,
+        bytes memory _mptKey,
         bytes memory _rlpProof
     ) external;
 }

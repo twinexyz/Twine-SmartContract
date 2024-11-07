@@ -19,16 +19,12 @@ library MerklePatriciaProofVerifier {
     ///        inclusion/exclusion we are proving.
     /// @return value whose inclusion is proved or an empty byte array for
     ///         a proof of exclusion
-    function verifyRLPProof(bytes memory rlpProof, bytes32 rootHash, bytes32 mptKey)
+    function verifyRLPProof(bytes memory rlpProof, bytes32 rootHash, bytes memory mptKey)
         internal
         pure
         returns (bytes memory value)
     {
-        bytes memory key = new bytes(32);
-        assembly {
-            mstore(add(key, 0x20), mptKey)
-        }
-        return verify(rlpProof.toRlpItem().toList(), rootHash, decodeNibbles(key, 0));
+        return verify(rlpProof.toRlpItem().toList(), rootHash, mptKey);
     }
 
     /// @dev Verifies a Merkle-Patricia-Trie proof.
