@@ -56,7 +56,7 @@ abstract contract TwineGatewayBase is
     }
 
     function setRoleManagerAddress(address _roleManagerAddress)
-        external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+        external 
     {
         roleManagerAddress = _roleManagerAddress;
     }

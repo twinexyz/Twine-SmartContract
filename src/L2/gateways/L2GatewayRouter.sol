@@ -210,7 +210,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     }
 
      function setRoleManagerAddress(address _roleManagerAddress)
-        external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+        external
     {
         roleManagerAddress = _roleManagerAddress;
     }
