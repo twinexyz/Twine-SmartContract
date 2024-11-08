@@ -46,18 +46,20 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
     function withdrawETH(
         address _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
     ) public payable override {
-        _withdraw(_to, _amount, new bytes(0), _gasLimit);
+        _withdraw(_to, _amount,_chainId, _gasLimit,new bytes(0));
     }
 
     function withdrawETHAndCall(
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
-    ) public payable  {
-        _withdraw(_to, _amount, _data, _gasLimit);
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
+    ) public payable {
+        _withdraw(_to, _amount,_chainId, _gasLimit,_data);
     }
 
     /// @dev The internal ETH withdraw implementation.
@@ -67,10 +69,11 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
     function _withdraw(
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual {
-        require(msg.value > 0, "withdraw zero eth");
+        require(msg.value > 0 && _amount > 0, "Invalid input: msg.value and amount must be greater than zero");
 
         address _from = _msgSender();
 
@@ -90,6 +93,6 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
             _gasLimit
         );
 
-        emit WithdrawETH(_from, _to, _amount);
+        emit WithdrawETH(_from, _to, _amount,_chainId);
     }
 }

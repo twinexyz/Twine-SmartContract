@@ -23,7 +23,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
     /// @param l1Token The address of XERC20 token in layer 2.
     /// @param oldL2Token The address of the old corresponding XERC20 token in layer 1.
     /// @param newL2Token The address of the new corresponding XERC20 token in layer 1.
-    event UpdateTokenMapping(address indexed l1Token, address indexed oldL2Token, address indexed newL2Token);
+    event UpdateTokenMapping(uint256 indexed _chainId,address indexed l1Token, address indexed oldL2Token, address newL2Token);
 
     /*************
      * Variables *
@@ -38,7 +38,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
     }
 
       /// @notice Mapping from l1 token address to l2 token address for XERC20 token.
-    mapping(address => XTokenConfig) public tokenMapping;
+    mapping(uint256=>mapping(address => XTokenConfig)) public tokenMapping;
 
     /***************
      * Constructor *
@@ -84,14 +84,14 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
 
-    function updateTokenMapping(address _l1Token,XTokenConfig memory xTokenConfig) external payable {
-        XTokenConfig memory oldxTokenConfig = tokenMapping[xTokenConfig.l1Token];
+    function updateTokenMapping(uint256 _chainId,address _l1Token,XTokenConfig memory xTokenConfig) external payable onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+        XTokenConfig memory oldxTokenConfig = tokenMapping[_chainId][xTokenConfig.l1Token];
         address _oldL1Token = oldxTokenConfig.l1Token;
         address l2Token = xTokenConfig.l1Token;
-        tokenMapping[l2Token] = xTokenConfig;
-        tokenMapping[l2Token].l1Token = _l1Token;
+        tokenMapping[_chainId][l2Token] = xTokenConfig;
+        tokenMapping[_chainId][l2Token].l1Token = _l1Token;
 
-        emit UpdateTokenMapping(l2Token, _oldL1Token, _l1Token);
+        emit UpdateTokenMapping(_chainId,l2Token, _oldL1Token, _l1Token);
     }
 
      /*****************************
@@ -103,9 +103,10 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
     ) external payable override {
-        _withdraw(_token, _to, _amount, new bytes(0), _gasLimit);
+        _withdraw(_token, _to, _amount,_chainId,_gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL2XERC20Gateway
@@ -113,10 +114,11 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes calldata _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes calldata _data
     ) external payable override {
-        _withdraw(_token, _to, _amount, _data, _gasLimit);
+        _withdraw(_token, _to, _amount,_chainId, _gasLimit,_data);
     }
 
     /**********************
@@ -128,17 +130,18 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal {
-        XTokenConfig memory xTokenInfo = tokenMapping[_token];
+        XTokenConfig memory xTokenInfo = tokenMapping[_chainId][_token];
         address _l1Token = xTokenInfo.l1Token;
         require(_l1Token != address(0), "no corresponding l1 token");
         address _from = _msgSender();
         if (router == _from) {
             (_from, _data) = abi.decode(_data, (address, bytes));
         }
-        require(_amount > 0, "withdraw zero amount");
+        require(_amount > 0, "withdrawing zero amount not allowd");
 
          if (_token != xTokenInfo.l2xToken) {
             bool isNative = IXERC20Lockbox(xTokenInfo.l2LockBox).IS_NATIVE();
@@ -166,7 +169,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
             _gasLimit,
             _from
         );
-        emit WithdrawXERC20(_l1Token, _token, _from, _to, _amount, _data);
+        emit WithdrawXERC20(_l1Token, _token, _from, _to, _amount,_chainId, _data);
 
     }
 

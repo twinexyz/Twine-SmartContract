@@ -85,6 +85,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         payable
         onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
     {
+        require(_l1Token != address(0), "token address cannot be 0");
         require(_l2Token != address(0), "token address cannot be 0");
 
         address _oldL2Token = tokenMapping[_l1Token];
@@ -113,22 +114,14 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     }
 
     /// @inheritdoc L1ERC20Gateway
-    function _beforeDropMessage(
-        address,
-        address,
-        uint256
-    ) internal virtual override {
-        require(msg.value == 0, "nonzero msg.value");
-    }
-
-    /// @inheritdoc L1ERC20Gateway
     function _deposit(
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual override nonReentrant {
+        require(_amount > 0, "Amount can not be zero");
         address _l2Token = tokenMapping[_token];
         require(_l2Token != address(0), "no corresponding l2 token");
 
@@ -152,7 +145,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             _from
         );
 
-        emit DepositERC20(_token, _l2Token, _from, _to, _amount, _data);
+        emit DepositERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 
      function _forcedWithdrawalERC20(
@@ -162,6 +155,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         uint256 _amount,
         uint256 _gasLimit
     ) internal virtual override nonReentrant {
+        require(_amount > 0, "withdrawing zero amount not allowd");
          // 1. Extract real sender if this call is from L1GatewayRouter
         address _from = _msgSender();
 

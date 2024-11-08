@@ -9,7 +9,7 @@ import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transp
 
 contract UpgradeCreate2 is Script {
     function run() external {
-        address l2TwineMessengerAddress = 0xC25D056662fCF79eB5F09b61d70885143c2Eb885;
+        address l2TwineMessengerAddress = 0xdb4fB660852e4005D331Cb64F7B85DEfB47D5a86; //replace with l2Twine Messgenr
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
@@ -21,14 +21,19 @@ contract UpgradeCreate2 is Script {
         L2TwineMessenger newL2TwineMessenger = new L2TwineMessenger();
 
         console.log(
-            "Get Admin",
+            "New Deployed implementation :",
+            address(newL2TwineMessenger)
+        );
+
+        console.log(
+            "Get Admin Address :",
             Upgrades.getAdminAddress(address(l2TwineMessenger))
         );
 
         address prevImplementationAddress = Upgrades.getImplementationAddress(
             address(l2TwineMessenger)
         );
-        console.log("Get previous Implementation", prevImplementationAddress);
+        console.log("Get previous Implementation :", prevImplementationAddress);
 
         address proxyAdminContractAddress = Upgrades.getAdminAddress(
             address(l2TwineMessenger)
@@ -47,7 +52,7 @@ contract UpgradeCreate2 is Script {
             address(l2TwineMessenger)
         );
 
-        console.log("Get Changed Implementation : ", newImplementationAddress);
+        console.log("Get Changed Implementation :", newImplementationAddress);
 
         vm.stopBroadcast();
     }

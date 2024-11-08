@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Create2DeployFactory} from "./Create2DeployFactory.sol";
 
 contract DeployCreate2 is Script {
@@ -15,11 +16,17 @@ contract DeployCreate2 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy Create2Factory
-        Create2DeployFactory factory = new Create2DeployFactory();
+        // Generate a unique salt
+        bytes32 salt = keccak256(abi.encodePacked("TwineContract"));
 
-        // Deploy the implementation
-        L2TwineMessenger l2TwineMessengerImplementation = new L2TwineMessenger();
+        L2TwineMessenger l2TwineMessengerImplementation = new L2TwineMessenger{
+            salt: salt
+        }();
+
+        console.log(
+            "L2TwineMessenger deployed at :",
+            address(l2TwineMessengerImplementation)
+        );
 
         // Prepare initialization data
         bytes memory initializeData = abi.encodeWithSelector(
@@ -27,30 +34,36 @@ contract DeployCreate2 is Script {
             address(0),
             messageQueue
         );
-        // Generate a unique salt
-        bytes32 salt = keccak256(abi.encodePacked("TwineContract"));
 
-        // Compute the future address of the proxy
-        address estimatedAddress = factory.computeAddress(
-            address(l2TwineMessengerImplementation),
-            admin,
-            initializeData,
-            salt
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{
+            salt: salt
+        }(address(l2TwineMessengerImplementation), admin, initializeData);
+
+        bytes memory bytecode = abi.encodePacked(
+            type(TransparentUpgradeableProxy).creationCode,
+            abi.encode(
+                address(l2TwineMessengerImplementation),
+                admin,
+                initializeData
+            )
         );
 
-        // Deploy the proxy using CREATE2
-        address deployedAddress = factory.deployProxy(
-            address(l2TwineMessengerImplementation),
-            admin,
-            initializeData,
-            salt
+        address estimatedAddress = vm.computeCreate2Address(
+            salt,
+            keccak256(bytecode)
         );
 
-        console.log("Estimated deployed Addres", estimatedAddress);
-        console.log("Actual deployed Address", deployedAddress);
+        console.log(
+            "Estimated deployed Addres of Proxy contract :",
+            estimatedAddress
+        );
+        console.log(
+            "Actual deployed Address of Proxy contract :",
+            address(proxy)
+        );
 
         // Verify that the deployed address matches the computed address
-        require(deployedAddress == estimatedAddress, "Addresses don't match!");
+        require(address(proxy) == estimatedAddress, "Addresses don't match!");
 
         vm.stopBroadcast();
     }

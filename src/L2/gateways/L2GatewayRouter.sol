@@ -8,6 +8,7 @@ import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
 import {IL2XERC20Gateway} from "./interfaces/IL2XERC20Gateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title L2GatewayRouter
 /// @notice The `L2GatewayRouter` is the main entry for withdrawing Ether and ERC20 tokens.
@@ -29,6 +30,13 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     // solhint-disable-next-line var-name-mixedcase
     mapping(address => address) public ERC20Gateway;
 
+    address public roleManagerAddress;
+
+     modifier onlyRoles(bytes32 role) {
+        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        _;
+    }
+
     /***************
      * Constructor *
      ***************/
@@ -38,7 +46,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         _disableInitializers();
     }
 
-    function initialize(address _ethGateway, address _defaultERC20Gateway) external initializer {
+    function initialize(address _ethGateway, address _defaultERC20Gateway,address _roleManagerAddress) external initializer {
         // OwnableUpgradeable.__Ownable_init();
 
         // it can be zero during initialization
@@ -52,6 +60,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
             ethGateway = _ethGateway;
             emit SetETHGateway(address(0), _ethGateway);
         }
+        roleManagerAddress = _roleManagerAddress;
     }
 
     /*************************
@@ -59,18 +68,13 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
      *************************/
 
     /// @inheritdoc IL2ERC20Gateway
-    function getL2ERC20Address(address) external pure returns (address) {
-        revert("unsupported");
-    }
-
-    /// @inheritdoc IL2ERC20Gateway
-    function getL1ERC20Address(address _l2Address) external view returns (address) {
+    function getL1ERC20Address(uint256 _chainId,address _l2Address) external view returns (address) {
         address _gateway = getERC20Gateway(_l2Address);
         if (_gateway == address(0)) {
             return address(0);
         }
 
-        return IL2ERC20Gateway(_gateway).getL1ERC20Address(_l2Address);
+        return IL2ERC20Gateway(_gateway).getL1ERC20Address(_chainId,_l2Address);
     }
 
     /// @notice Return the corresponding gateway address for given token address.
@@ -92,9 +96,10 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         address _token,
         address _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
     ) external payable  {
-        withdrawERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
+        withdrawERC20AndCall(_token, _to, _amount, _chainId, _gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL2ERC20Gateway
@@ -102,8 +107,9 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) public payable  {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
@@ -111,7 +117,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount,_chainId,_gasLimit, _routerData);
     }
 
      /// @inheritdoc IL2XERC20Gateway
@@ -119,9 +125,10 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         address _token,
         address _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
     ) external payable  {
-        withdrawXERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
+        withdrawXERC20AndCall(_token, _to, _amount, _chainId,_gasLimit, new bytes(0) );
     }
 
     /// @inheritdoc IL2XERC20Gateway
@@ -129,8 +136,9 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) public payable override {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
@@ -138,7 +146,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+        IL2XERC20Gateway(_gateway).withdrawXERC20AndCall{value: msg.value}(_token, _to, _amount,_chainId,_gasLimit, _routerData);
     }
 
     
@@ -146,17 +154,19 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     function withdrawETH(
         address _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
     ) external payable override {
-        withdrawETHAndCall(_to, _amount, new bytes(0), _gasLimit);
+        withdrawETHAndCall(_to, _amount,_chainId, _gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL2ETHGateway
     function withdrawETHAndCall(
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) public payable override {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
@@ -164,7 +174,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(_to, _amount, _routerData, _gasLimit);
+        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(_to, _amount,_chainId,_gasLimit, _routerData);
     }
 
     /************************
@@ -172,7 +182,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
      ************************/
 
     /// @inheritdoc IL2GatewayRouter
-    function setETHGateway(address _newEthGateway) external {
+    function setETHGateway(address _newEthGateway) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         address _oldEthGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -180,7 +190,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external  {
+    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
 
@@ -188,7 +198,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external  {
+    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
 
         for (uint256 i = 0; i < _tokens.length; i++) {
@@ -197,5 +207,11 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
 
             emit SetERC20Gateway(_tokens[i], _oldGateway, _gateways[i]);
         }
+    }
+
+     function setRoleManagerAddress(address _roleManagerAddress)
+        external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+    {
+        roleManagerAddress = _roleManagerAddress;
     }
 }

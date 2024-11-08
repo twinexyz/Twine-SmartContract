@@ -39,7 +39,7 @@ contract DeployL2Contracts is Script {
         address L2GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L2GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L2GatewayRouter.initialize, (address(0), address(0))) // Example initial value
+            abi.encodeCall(L2GatewayRouter.initialize, (address(0), address(0),address(0))) // Example initial value
         );
 
         // Deploying an upgradeable proxy for L2XERC20Gateway

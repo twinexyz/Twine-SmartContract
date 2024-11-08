@@ -22,6 +22,7 @@ interface IL1XERC20Gateway {
         address indexed from,
         address to,
         uint256 amount,
+        uint256 blockNumber,
         bytes data
     );
 
@@ -38,6 +39,7 @@ interface IL1XERC20Gateway {
         address indexed from,
         address to,
         uint256 amount,
+        uint256 blockNumber,
         bytes data
     );
 

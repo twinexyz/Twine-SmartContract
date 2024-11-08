@@ -11,7 +11,7 @@ import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
-import {IMessageDropCallback} from "../../libraries/callbacks/IMessageDropCallback.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title L1ERC20Gateway
 /// @notice The `L1ERC20Gateway` as a base contract for ERC20 gateways in L1.
@@ -38,7 +38,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_token, _to, _amount, new bytes(0), _gasLimit);
+        _deposit(_token, _to, _amount, _gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -46,10 +46,10 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) external payable override {
-        _deposit(_token, _to, _amount, _data, _gasLimit);
+        _deposit(_token, _to, _amount,_gasLimit, _data);
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -71,7 +71,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) external payable virtual override nonReentrant {
+    ) external payable virtual override nonReentrant  onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()){
         _beforeFinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
 
         // @note can possible trigger reentrant call to this contract or messenger,
@@ -80,27 +80,8 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
 
         _doCallback(_to, _data);
 
-        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
+        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
     }
-
-    /// @inheritdoc IMessageDropCallback
-    // function onDropMessage(bytes calldata _message) external payable virtual nonReentrant {
-        // _message should start with 0x8431f5c1  =>  finalizeDepositERC20(address,address,address,address,uint256,bytes)
-        // require(bytes4(_message[0:4]) == IL2ERC20Gateway.finalizeDepositERC20.selector, "invalid selector");
-
-        // decode (token, receiver, amount)
-    //     (address _token, , address _receiver, , uint256 _amount, ) = abi.decode(
-    //         _message[4:],
-    //         (address, address, address, address, uint256, bytes)
-    //     );
-
-    //     // do dome check for each custom gateway
-    //     _beforeDropMessage(_token, _receiver, _amount);
-
-    //     IERC20(_token).safeTransfer(_receiver, _amount);
-
-    //     emit RefundERC20(_token, _receiver, _amount);
-    // }
 
     /**********************
      * Internal Functions *
@@ -120,17 +101,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) internal virtual;
-
-    /// @dev Internal function hook to perform checks and actions before dropping the message.
-    /// @param _token The L1 token address.
-    /// @param _receiver The recipient address on L1.
-    /// @param _amount The amount of token to refund.
-    function _beforeDropMessage(
-        address _token,
-        address _receiver,
-        uint256 _amount
-    ) internal virtual;
+    ) internal virtual;   
 
     /// @dev Internal function to transfer ERC20 token to this contract.
     /// @param _token The address of token to transfer.
@@ -179,8 +150,8 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual;
 
     function _forcedWithdrawalERC20(

@@ -24,7 +24,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @param l2Token The address of corresponding ERC20 token in layer 2.
     /// @param oldL1Token The address of the old corresponding ERC20 token in layer 1.
     /// @param newL1Token The address of the new corresponding ERC20 token in layer 1.
-    event UpdateTokenMapping(address indexed l2Token, address indexed oldL1Token, address indexed newL1Token);
+    event UpdateTokenMapping(uint256 indexed chainId,address indexed l2Token, address indexed oldL1Token, address newL1Token);
 
     /*************
      * Variables *
@@ -32,7 +32,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
     // solhint-disable-next-line var-name-mixedcase
-    mapping(address => address) public tokenMapping;
+    mapping(uint256=>mapping(address => address)) public tokenMapping;
 
     /***************
      * Constructor *
@@ -63,13 +63,8 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
      *************************/
 
     /// @inheritdoc IL2ERC20Gateway
-    function getL1ERC20Address(address _l2Token) external view override returns (address) {
-        return tokenMapping[_l2Token];
-    }
-
-    /// @inheritdoc IL2ERC20Gateway
-    function getL2ERC20Address(address) public pure override returns (address) {
-        revert("unimplemented");
+    function getL1ERC20Address(uint256 _chainId,address _l2Token) external view override returns (address) {
+        return tokenMapping[_chainId][_l2Token];
     }
 
     /************************
@@ -82,11 +77,12 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     ///
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
     /// @param _l1Token The address of ERC20 token on layer 1.
-    function updateTokenMapping(address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
-        address _oldL1Token = tokenMapping[_l2Token];
-        tokenMapping[_l2Token] = _l1Token;
+    function updateTokenMapping(uint256 _chainId,address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+        require(_l2Token != address(0) && _l1Token != address(0)," Token address cann't be zero");
+        address _oldL1Token = tokenMapping[_chainId][_l2Token];
+        tokenMapping[_chainId][_l2Token] = _l1Token;
 
-        emit UpdateTokenMapping(_l2Token, _oldL1Token, _l1Token);
+        emit UpdateTokenMapping(_chainId,_l2Token, _oldL1Token, _l1Token);
     }
 
     /**********************
@@ -98,13 +94,15 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual override nonReentrant {
-        address _l1Token = tokenMapping[_token];
+        address _l1Token = tokenMapping[_chainId][_token];
         require(_l1Token != address(0), "no corresponding l1 token");
-
-        require(_amount > 0, "withdraw zero amount");
+        
+        require(_amount > 0, "Amout must be greater than zero");
+        
 
         // 1. Extract real sender if this call is from L2GatewayRouter.
         address _from = _msgSender();
@@ -129,6 +127,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             _from
         );
         
-        emit WithdrawERC20(_l1Token, _token, _from, _to, _amount, _data);
+        emit WithdrawERC20(_l1Token, _token, _from, _to, _amount,_chainId, _data);
     }
 }

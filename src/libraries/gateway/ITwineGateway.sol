@@ -16,8 +16,6 @@ interface ITwineGateway {
     /// @dev Thrown when the cross chain sender is not the counterpart gateway contract.
     error ErrorCallerIsNotCounterpartGateway();
 
-    /// @dev Thrown when TwineMessenger is not dropping message.
-    error ErrorNotInDropMessageContext();
 
     /*************************
      * Public View Functions *

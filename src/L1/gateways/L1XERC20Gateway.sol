@@ -79,7 +79,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
 
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
-    function updateTokenMapping(address _l1Token, XTokenConfig memory _newXTokenConfig) external payable {
+    function updateTokenMapping(address _l1Token, XTokenConfig memory _newXTokenConfig) external payable onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         require(_newXTokenConfig.l2Token != address(0), "token address cannot be 0");
 
         XTokenConfig memory oldXTokenConfig = tokenMapping[_l1Token];
@@ -87,10 +87,6 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         tokenMapping[_l1Token] = _newXTokenConfig;
 
         emit UpdateTokenMapping(_l1Token, _oldL2Token, _newXTokenConfig.l2Token);
-
-        // update corresponding mapping in L2, 1000000 gas limit should be enough
-        bytes memory _message = abi.encodeCall(L1XERC20Gateway.updateTokenMapping, ( _l1Token,_newXTokenConfig));
-        // IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, 0, _message, 1000000, _msgSender());
     }
 
      /*****************************
@@ -138,7 +134,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) external payable virtual override nonReentrant {
+    ) external payable virtual override nonReentrant onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         _beforeFinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
         XTokenConfig memory xTokenInfo = tokenMapping[_l1Token];
         if(_l1Token != xTokenInfo.l1xToken){
@@ -159,7 +155,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
             IXERC20(xTokenInfo.l1xToken).mint(_to, _amount);
         }
         _doCallback(_to, _data);
-        emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
+        emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 
 
@@ -195,6 +191,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         bytes memory _data,
         uint256 _gasLimit
     ) internal {
+        require(_amount > 0, "Amount can not be zero");
         address _from;
         XTokenConfig memory xTokenInfo = tokenMapping[_token];
         address _l2Token = xTokenInfo.l2Token;
@@ -228,7 +225,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
             _from
         );
 
-        emit DepositXERC20(_token, _l2Token, _from, _to, _amount, _data);
+        emit DepositXERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
 
     }
 

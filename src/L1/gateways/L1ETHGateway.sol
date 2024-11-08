@@ -44,17 +44,17 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_to, _amount, new bytes(0), _gasLimit);
+        _deposit(_to, _amount,_gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL1ETHGateway
     function depositETHAndCall(
         address _to,
         uint256 _amount,
-        bytes calldata _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes calldata _data
     ) external payable override {
-        _deposit(_to, _amount, _data, _gasLimit);
+        _deposit(_to, _amount, _gasLimit,_data);
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -66,33 +66,12 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         _forcedWithdrawalEth(_to, _amount, _gasLimit);
     }
 
-    // function onDropMessage(bytes calldata _message) external payable virtual {
-    //     // _message should start with 0x232e8748  =>  finalizeDepositETH(address,address,uint256,bytes)
-    //     require(
-    //         bytes4(_message[0:4]) == IL2ETHGateway.finalizeDepositETH.selector,
-    //         "invalid selector"
-    //     );
-
-        // decode (receiver, amount)
-    //     (address _receiver, , uint256 _amount, ) = abi.decode(
-    //         _message[4:],
-    //         (address, address, uint256, bytes)
-    //     );
-
-    //     require(_amount == msg.value, "msg.value mismatch");
-
-    //     (bool _success, ) = _receiver.call{value: _amount}("");
-    //     require(_success, "ETH transfer failed");
-
-    //     emit RefundETH(_receiver, _amount);
-    // }
-
     /// @inheritdoc IL1ETHGateway
     function finalizeWithdrawETH(
         address _from,
         address _to,
         uint256 _amount
-    ) external payable override {
+    ) external payable override onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         require(msg.value == _amount, "msg.value mismatch");
 
         // @note can possible trigger reentrant call to messenger,
@@ -100,7 +79,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_from, _to, _amount);
+        emit FinalizeWithdrawETH(_from, _to,block.number, _amount);
     }
 
     /// @dev The internal ETH deposit implementation.
@@ -110,10 +89,10 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
     function _deposit(
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual {
-        require(_amount > 0, "deposit zero eth");
+        require(_amount > 0, "Amount can not be zero");
 
         // 1. Extract real sender if this call is from L1GatewayRouter.
         address _from = _msgSender();
@@ -138,7 +117,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
             _from
         );
 
-        emit DepositETH(_from, _to, _amount);
+        emit DepositETH(_from, _to, block.number, _amount);
     }
 
     /// @dev The internal ETH forced withdrawal implementation.
@@ -150,6 +129,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         uint256 _amount,
         uint256 _gasLimit
     ) internal virtual {
+        require(_amount > 0, "withdrawing zero amount not allowd");
         // 1. Extract real sender if this call is from L1GatewayRouter
         address _from = _msgSender();
 
@@ -168,7 +148,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
             _from
         );
 
-        emit ForcedWithdrawalInclusion(_from, _to, _amount);
+        emit ForcedWithdrawalEth(_from, _to,block.number, _amount);
     }
 
 }
