@@ -11,14 +11,14 @@ import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
 import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
-import {IL1ERC20Gateway, L1CustomERC20Gateway} from "../L1/gateways/L1CustomERC20Gateway.sol";
+import {IL1ETHGateway, L1ETHGateway} from "../L1/gateways/L1ETHGateway.sol";
 import {TwineChain} from "../L1/rollup/TwineChain.sol";
-import {IL2ERC20Gateway, L2CustomERC20Gateway} from "../L2/gateways/L2CustomERC20Gateway.sol";
+import {IL2ETHGateway, L2ETHGateway} from "../L2/gateways/L2ETHGateway.sol";
 
-contract L1CustomERC20GatewayTest is Test {
-    L1CustomERC20Gateway private gateway;
+contract L1ETHGatewayTest is Test {
+    L1ETHGateway private gateway;
     L1GatewayRouter private router;
-    L2CustomERC20Gateway private counterpartGateway;
+    L2ETHGateway private counterpartGateway;
     RoleManager private roleManager;
     MockERC20 l1Token;
     MockERC20 l2Token;
@@ -31,12 +31,9 @@ contract L1CustomERC20GatewayTest is Test {
 
     function setUp() public {
         vm.startPrank(initialOwner);
-        // Deploy tokens
-        l1Token = new MockERC20("Mock L1", "ML1");
-        l2Token = new MockERC20("Mock L2", "ML2");
-        l1Token.mint(initialOwner, 100000);
+        deal(initialOwner, 10 ether);
 
-         //setup the rolemanager
+        //setup the rolemanager
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
             msg.sender,
@@ -56,7 +53,10 @@ contract L1CustomERC20GatewayTest is Test {
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
             "L1MessageQueue.sol",
             msg.sender,
-            abi.encodeCall(L1MessageQueue.initialize, (address(0),0,address(roleManager)))
+            abi.encodeCall(
+                L1MessageQueue.initialize,
+                (address(0), 0, address(roleManager))
+            )
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 
@@ -66,7 +66,7 @@ contract L1CustomERC20GatewayTest is Test {
             abi.encodeCall(
                 L2TwineMessenger.initialize,
                 (address(0), address(0))
-            ) 
+            )
         );
 
         l2Messenger = L2TwineMessenger(L2TwineMessengerAddress);
@@ -74,7 +74,7 @@ contract L1CustomERC20GatewayTest is Test {
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
             msg.sender,
-            abi.encodeCall(TwineChain.initialize, (address(0), address(0))) 
+            abi.encodeCall(TwineChain.initialize, (address(0), address(0)))
         );
 
         rollup = TwineChain(TwineChainAddress);
@@ -91,59 +91,39 @@ contract L1CustomERC20GatewayTest is Test {
 
         l1Messenger = L1TwineMessenger(L1TwineMessengerAddress);
 
-        //setup customErc20 Gateway
-        address L1CustomERC20GatewayAddress = Upgrades.deployTransparentProxy(
-            "L1CustomERC20Gateway.sol",
+        //setup ETH Gateway
+        address L1ETHGatewayAddress = Upgrades.deployTransparentProxy(
+            "L1ETHGateway.sol",
             msg.sender,
             abi.encodeCall(
-                L1CustomERC20Gateway.initialize,
+                L1ETHGateway.initialize,
                 (address(0), address(router), address(l1Messenger))
             )
         );
-        gateway = L1CustomERC20Gateway(L1CustomERC20GatewayAddress);
+        gateway = L1ETHGateway(L1ETHGatewayAddress);
 
        
-
-        address[] memory tokens = new address[](1);
-        address[] memory gateways = new address[](1);
-
-        tokens[0] = address(l1Token);
-        gateways[0] = address(gateway);
         //setup gateway in router;
         vm.startPrank(initialOwner);
-        router.setERC20Gateway(tokens, gateways);
         router.setAddress(address(gateway), address(gateway));
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));
         messageQueue.setAddress(address(l1Messenger));
         vm.stopPrank();
+
     }
 
-    function testDepositERC20() public {
+    function testDepositETH() public {
         vm.startPrank(initialOwner);
-        gateway.updateTokenMapping(address(l1Token), address(l2Token));
-        assertEq(l1Token.balanceOf(initialOwner),100000);
-        l1Token.approve(address(gateway), 100000);
-        l1Token.approve(address(router), 100000);
-        router.depositERC20{value: 0}(address(l1Token), address(this), 10, 0);
-        assertEq(l1Token.balanceOf(initialOwner),99990);
-    }
-
-    function testWithdrawERC20() public {
-        vm.startPrank(initialOwner);
-        gateway.updateTokenMapping(address(l1Token), address(l2Token));
-        assertEq(l1Token.balanceOf(initialOwner),100000);
-        l1Token.approve(address(gateway), 100000);
-        l1Token.approve(address(router), 100000);
-        router.depositERC20{value: 0}(address(l1Token), address(this), 10, 0);
-        assertEq(l1Token.balanceOf(initialOwner),99990);
-        gateway.finalizeWithdrawERC20(
-            address(l1Token),
-            address(l2Token),
+        console.log("Initial owner Before ", address(gateway).balance);
+        uint256 depositAmount = 1 ether;
+        router.depositETH{value: depositAmount}(initialOwner, depositAmount, 0);
+        gateway.depositETH{value: depositAmount}(
             initialOwner,
-            initialOwner,
-            10,
-            new bytes(0)
+            depositAmount,
+            0
         );
-        assertEq(l1Token.balanceOf(initialOwner),100000);
+        assertEq(address(l1Messenger).balance,2 ether);
     }
 }

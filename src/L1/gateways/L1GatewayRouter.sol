@@ -299,7 +299,6 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
     }
 
     function setRoleManagerAddress(address _roleManagerAddress)external 
-    onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
     {
         roleManagerAddress = _roleManagerAddress;
     }

@@ -31,10 +31,20 @@ contract L2CustomERC20GatewayTest is Test {
         l1Token = new MockERC20("Mock L2", "ML2");
         l2Token = new MockERC20("Mock L2", "ML2");
 
+          address roleManagerAddress = Upgrades.deployTransparentProxy(
+            "RoleManager.sol",
+            msg.sender,
+            abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
+        roleManager = RoleManager(roleManagerAddress);
+
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
+
          address L2GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L2GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L2GatewayRouter.initialize, (address(0), address(0)))
+            abi.encodeCall(L2GatewayRouter.initialize, (address(0), address(0),address(roleManager)))
         );
         router = L2GatewayRouter(L2GatewayRouterAddress);
 
@@ -65,28 +75,23 @@ contract L2CustomERC20GatewayTest is Test {
         gateway = L2CustomERC20Gateway(L2CustomERC20GatewayAddress);
 
         //setup the rolemanager
-        address roleManagerAddress = Upgrades.deployTransparentProxy(
-            "RoleManager.sol",
-            msg.sender,
-            abi.encodeCall(RoleManager.initialize, (initialOwner))
-        );
-        roleManager = RoleManager(roleManagerAddress);
 
         address[] memory tokens = new address[](1);
         address[] memory gateways = new address[](1);
 
         tokens[0] = address(l2Token);
         gateways[0] = address(gateway);
-        //setup gateway in router;
+        // setup gateway in router;
+        vm.startPrank(initialOwner);
         router.setERC20Gateway(tokens, gateways);
         router.setETHGateway(address(gateway));
         router.setDefaultERC20Gateway(address(gateway));
-        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));
+        vm.stopPrank();
     }
         function testwithdrawERC20() public {
             vm.startPrank(initialOwner);
-            gateway.updateTokenMapping(address(l2Token), address(l1Token));
+            gateway.updateTokenMapping(1,address(l2Token), address(l1Token));
             assertEq(l2Token.balanceOf(initialOwner),100000);
             l2Token.approve(address(gateway), 100000);
             l2Token.approve(address(router), 100000);
@@ -95,8 +100,16 @@ contract L2CustomERC20GatewayTest is Test {
                 address(l2Token),
                 initialOwner,
                 10,
+                1,
                 0
             );
-            assertEq(l2Token.balanceOf(initialOwner),99990);
+            gateway.withdrawERC20(
+                address(l2Token),
+                initialOwner,
+                10,
+                1,
+                0
+            );
+            assertEq(l2Token.balanceOf(initialOwner),99980);
         }
 }

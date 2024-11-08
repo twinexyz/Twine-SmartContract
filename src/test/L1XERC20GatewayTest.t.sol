@@ -58,7 +58,7 @@ contract L1XERC20GatewayTest is Test {
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0)))
+            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0),address(roleManager)))
         );
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
@@ -125,6 +125,7 @@ contract L1XERC20GatewayTest is Test {
         tokens[1] = address(l1XToken);
         gateways[1] = address(gateway);
         //setup gateway in router;
+        vm.startPrank(initialOwner);
         router.setERC20Gateway(tokens, gateways);
         router.setAddress(address(gateway), address(gateway));
         L1XERC20Gateway.XTokenConfig memory xConfig = L1XERC20Gateway
@@ -138,8 +139,8 @@ contract L1XERC20GatewayTest is Test {
         gateway.updateTokenMapping(address(l1Token), xConfig);
         gateway.updateTokenMapping(address(l1XToken), xConfig);
         gateway.setRoleManagerAddress(address(roleManager));
-        vm.startPrank(initialOwner);
         messageQueue.setAddress(address(l1Messenger));
+        vm.stopPrank();
     }
 
     function testDepositOfERC20() public {
