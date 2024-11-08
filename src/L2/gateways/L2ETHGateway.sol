@@ -73,7 +73,7 @@ contract L2ETHGateway is TwineGatewayBase, IL2ETHGateway {
         uint256 _gasLimit,
         bytes memory _data
     ) internal virtual {
-        require(msg.value > 0, "withdraw zero eth");
+        require(msg.value > 0 && _amount > 0, "Invalid input: msg.value and amount must be greater than zero");
 
         address _from = _msgSender();
 

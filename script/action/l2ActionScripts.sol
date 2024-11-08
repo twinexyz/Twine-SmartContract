@@ -116,7 +116,7 @@ contract l2ActionScripts is Script {
         vm.startBroadcast();
 
         //withdraw of erc20
-        l2GatewayRouter.withdrawERC20(address(l2Token), initialOwner, 10, 0);
+        l2GatewayRouter.withdrawERC20(address(l2Token), initialOwner, 10,1, 0);
 
         // Stop broadcasting transactions
         vm.stopBroadcast();

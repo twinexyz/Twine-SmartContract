@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.24;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -15,7 +15,7 @@ import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 /// @title L1GatewayRouter
 /// @notice The `L1GatewayRouter` is the main entry for depositing Ether and ERC20 tokens.
 /// All deposited tokens are routed to corresponding gateways.
-contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
+contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
     using SafeERC20 for IERC20;
     /// @notice The address of L1ETHGateway.
     address public ethGateway;
@@ -30,6 +30,28 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     /// @notice The address of gateway in current execution context.
     address public gatewayInContext;
 
+    /// @notice The address of RoleManagerContract
+    address public roleManagerAddress;
+
+     /**********************
+     * Function Modifiers *
+     **********************/
+
+    modifier onlyRoles(bytes32 role) {
+        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        _;
+    }
+
+    modifier onlyNotInContext() {
+        require(gatewayInContext == address(0), "Only not in context");
+        _;
+    }
+
+     modifier onlyInContext() {
+        require(_msgSender() == gatewayInContext, "Only in deposit context");
+        _;
+    }
+
     /***************
      * Constructor *
      ***************/
@@ -42,11 +64,10 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     /// @notice Initialize the storage of L1GatewayRouter.
     /// @param _ethGateway The address of L1ETHGateway contract.
     /// @param _defaultERC20Gateway The address of default ERC20 Gateway contract.
-    function initialize(address _ethGateway, address _defaultERC20Gateway)
+    function initialize(address _ethGateway, address _defaultERC20Gateway,address _roleManager)
         external
         initializer
     {
-        OwnableUpgradeable.__Ownable_init(_msgSender());
 
         // it can be zero during initialization
         if (_defaultERC20Gateway != address(0)) {
@@ -59,6 +80,8 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
             ethGateway = _ethGateway;
             emit SetETHGateway(address(0), _ethGateway);
         }
+
+        roleManagerAddress = _roleManager;
     }
 
     function setAddress(address _ethGateway, address _defaultERC20Gateway)
@@ -111,7 +134,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         address _sender,
         address _token,
         uint256 _amount
-    ) external returns (uint256) {
+    ) external onlyInContext returns (uint256) {
         address _caller = _msgSender();
         uint256 _balance = IERC20(_token).balanceOf(_caller);
         IERC20(_token).safeTransferFrom(_sender, _caller, _amount);
@@ -126,7 +149,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        depositERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
+        depositERC20AndCall(_token, _to, _amount, _gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -134,9 +157,9 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
-    ) public payable override  {
+        uint256 _gasLimit,
+        bytes memory _data
+    ) public onlyNotInContext payable override  {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
 
@@ -146,7 +169,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL1ERC20Gateway(_gateway).depositERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+        IL1ERC20Gateway(_gateway).depositERC20AndCall{value: msg.value}(_token, _to, _amount, _gasLimit, _routerData);
 
         // leave deposit context
         gatewayInContext = address(0);
@@ -170,7 +193,7 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         uint256 _amount,
         bytes memory _data,
         uint256 _gasLimit
-    ) public payable override {
+    ) public onlyNotInContext payable override {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
 
@@ -215,23 +238,23 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        depositETHAndCall(_to, _amount, new bytes(0), _gasLimit);
+        depositETHAndCall(_to, _amount, _gasLimit,new bytes(0));
     }
 
    /// @inheritdoc IL1ETHGateway
     function depositETHAndCall(
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
-    ) public payable override {
+        uint256 _gasLimit,
+        bytes memory _data
+    ) public onlyNotInContext payable override {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
 
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL1ETHGateway(_gateway).depositETHAndCall{value: msg.value}(_to, _amount, _routerData, _gasLimit);
+        IL1ETHGateway(_gateway).depositETHAndCall{value: msg.value}(_to, _amount, _gasLimit,_routerData);
     }
     
     /// @inheritdoc IL1ETHGateway
@@ -275,7 +298,14 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
         revert("should never be called");
     }
 
-    function setETHGateway(address _newEthGateway) external onlyOwner {
+    function setRoleManagerAddress(address _roleManagerAddress)external 
+    onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+    {
+        roleManagerAddress = _roleManagerAddress;
+    }
+
+    function setETHGateway(address _newEthGateway) external 
+    onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         address _oldETHGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -283,9 +313,8 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     }
 
     /// @inheritdoc IL1GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway)
-        external
-        onlyOwner
+    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external 
+    onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
     {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
@@ -300,13 +329,12 @@ contract L1GatewayRouter is OwnableUpgradeable, IL1GatewayRouter {
     function setERC20Gateway(
         address[] memory _tokens,
         address[] memory _gateways
-    ) external onlyOwner {
+    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
-
         for (uint256 i = 0; i < _tokens.length; i++) {
+            require(_tokens[i]!= address(0)," Value cann't be zero");
             address _oldGateway = ERC20Gateway[_tokens[i]];
             ERC20Gateway[_tokens[i]] = _gateways[i];
-
             emit SetERC20Gateway(_tokens[i], _oldGateway, _gateways[i]);
         }
     }

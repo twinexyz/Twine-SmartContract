@@ -12,12 +12,6 @@ interface IL2ETHGateway {
     /// @param amount The amount of ETH will be deposited from L2 to L1.
     event WithdrawETH(address indexed from, address indexed to, uint256 amount,uint256 chainId);
 
-    /// @notice Emitted when ETH is deposited from L1 to L2 and transfer to recipient.
-    /// @param from The address of sender in L1.
-    /// @param to The address of recipient in L2.
-    /// @param amount The amount of ETH deposited from L1 to L2.
-    event FinalizeDepositETH(address indexed from, address indexed to, uint256 amount);
-
     /*****************************
      * Public Mutating Functions *
      *****************************/

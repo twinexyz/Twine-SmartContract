@@ -49,8 +49,8 @@ interface IL1ETHGateway {
     function depositETHAndCall(
         address to,
         uint256 amount,
-        bytes calldata data,
-        uint256 gasLimit
+        uint256 gasLimit,
+        bytes calldata data
     ) external payable;
 
     /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.

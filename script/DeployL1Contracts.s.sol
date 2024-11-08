@@ -13,7 +13,9 @@ import {L1TwineMessenger} from "../src/L1/L1TwineMessenger.sol";
 
 contract DeployL1Contracts is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY"); // Read private key from environment variable
+        // uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY"); // Read private key from environment variable
+        uint256 deployerPrivateKey = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
+
 
         vm.startBroadcast(deployerPrivateKey); // Start broadcasting transactions
 
@@ -41,7 +43,7 @@ contract DeployL1Contracts is Script {
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0))) // Example initial value
+            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0),address(0))) // Example initial value
         );
 
         // Deploying an upgradeable proxy for L1XERC20Gateway

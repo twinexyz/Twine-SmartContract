@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
-
 contract L2TwineMessenger is TwineMessengerBase, IL2TwineMessenger {
     
     /// @notice The address of L2MessageQueue.
