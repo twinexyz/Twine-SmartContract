@@ -36,7 +36,6 @@ contract L1XERC20GatewayTest is Test {
     TwineChain private rollup;
 
     function setUp() public {
-        vm.startPrank(initialOwner);
         // Deploy tokens
         l1Token = new MockERC20("Mock L1", "ML1");
         l1XToken = new MockXERC20("Mock XL1", "MXL1");
@@ -52,8 +51,6 @@ contract L1XERC20GatewayTest is Test {
             abi.encodeCall(RoleManager.initialize, (initialOwner))
         );
         roleManager = RoleManager(roleManagerAddress);
-        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
-        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
 
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
@@ -74,7 +71,7 @@ contract L1XERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (address(0), address(0))
+                (0,address(0), address(0))
             ) 
         );
         
@@ -96,7 +93,7 @@ contract L1XERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
-                (address(l2Messenger), address(messageQueue), address(0))
+                (address(l2Messenger), address(messageQueue), address(0),address(0))
             )
         );
 
@@ -124,26 +121,28 @@ contract L1XERC20GatewayTest is Test {
         gateways[0] = address(gateway);
         tokens[1] = address(l1XToken);
         gateways[1] = address(gateway);
-        //setup gateway in router;
         vm.startPrank(initialOwner);
+        //setup gateway in router;
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         router.setERC20Gateway(tokens, gateways);
         router.setAddress(address(gateway), address(gateway));
         L1XERC20Gateway.XTokenConfig memory xConfig = L1XERC20Gateway
             .XTokenConfig({
                 l2Token: address(l2XToken),
                 l1xToken: address(l1XToken),
-                l2xToken: address(l2XToken),
+                l2xToken: address(l2XToken),    
                 l1LockBox: address(lockBox),
                 l2LockBox: address(lockBox)
             });
+        gateway.setRoleManagerAddress(address(roleManager));
         gateway.updateTokenMapping(address(l1Token), xConfig);
         gateway.updateTokenMapping(address(l1XToken), xConfig);
-        gateway.setRoleManagerAddress(address(roleManager));
         messageQueue.setAddress(address(l1Messenger));
         vm.stopPrank();
     }
 
-    function testDepositOfERC20() public {
+    function testDeposit() public {
         vm.startPrank(initialOwner);
         assertEq(l1Token.balanceOf(initialOwner),10000000);
         l1Token.approve(address(gateway), 100000);
@@ -169,6 +168,7 @@ contract L1XERC20GatewayTest is Test {
     }
 
     function testWithdrawOfERC20() public {
+        vm.startPrank(initialOwner);
         assertEq(l1Token.balanceOf(initialOwner),10000000);
         l1Token.approve(address(gateway), 100000);
         gateway.depositXERC20(address(l1Token), address(this), 10,  10);
@@ -187,6 +187,7 @@ contract L1XERC20GatewayTest is Test {
     }
 
      function testWithdrawOfXERC20() public {
+        vm.startPrank(initialOwner);
         assertEq(l1XToken.balanceOf(initialOwner),0);
         gateway.finalizeWithdrawXERC20(
             address(l1XToken),

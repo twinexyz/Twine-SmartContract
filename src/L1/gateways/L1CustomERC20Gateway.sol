@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.24;
 
-import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
-import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
+import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
+import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 /// @title L1CustomERC20Gateway
 /// @notice The `L1CustomERC20Gateway` is used to deposit ERC20 compatible tokens on layer 1 and
@@ -45,9 +45,6 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    ///
-    /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
-    ///
     /// @param _counterpart The address of L2CustomERC20Gateway in L2.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
@@ -56,7 +53,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address _router,
         address _messenger
     ) external initializer {
-        TwineGatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger);
     }
 
     /*************************
@@ -133,7 +130,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         bytes memory _message = abi.encode(_token, _l2Token, _from, _to, _amount, _data);
         
         // 3. Calculate the type of transaction
-        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.deposit;
+        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.deposit;
 
         // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
@@ -163,7 +160,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
 
         // 3. Calculate the type of transaction
-        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.withdrawal;
+        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
@@ -173,6 +170,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             _gasLimit,
             _from
         );
+         emit ForcedWithdrawalCustomERC20(_l1Token, _l2Token, _from, _to, _amount,block.number);
 
     }
 }

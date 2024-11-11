@@ -7,30 +7,18 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title L1ERC20Gateway
 /// @notice The `L1ERC20Gateway` as a base contract for ERC20 gateways in L1.
 /// It has implementation of common used functions for ERC20 gateways.
-abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineGatewayBase {
+abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     
     using SafeERC20 for IERC20;
-
-    /*************
-     * Variables *
-     *************/
-
-    /// @dev The storage slots for future usage.
-    uint256[50] private __gap;
-
-    /*****************************
-     * Public Mutating Functions *
-     *****************************/
-
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address _token,

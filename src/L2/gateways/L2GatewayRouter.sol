@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
@@ -15,7 +16,7 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 /// All deposited tokens are routed to corresponding gateways.
 /// @dev One can also use this contract to query L1/L2 token address mapping.
 /// In the future, ERC-721 and ERC-1155 tokens will be added to the router too.
-contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
+contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2GatewayRouter {
     /*************
      * Variables *
      *************/
@@ -110,7 +111,7 @@ contract L2GatewayRouter is ContextUpgradeable, IL2GatewayRouter {
         uint256 _chainId,
         uint256 _gasLimit,
         bytes memory _data
-    ) public payable  {
+    ) public payable nonReentrant {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
 

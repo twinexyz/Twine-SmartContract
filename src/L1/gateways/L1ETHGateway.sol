@@ -5,11 +5,11 @@ import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
-import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 
-contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
+contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     /***************
      * Constructor *
      ***************/
@@ -20,10 +20,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    ///
-    /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
-    ///
-    /// @param _counterpart The address of L2CustomERC20Gateway in L2.
+    /// @param _counterpart The address of L1CustomERC20Gateway in L2.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     function initialize(
@@ -31,7 +28,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         address _router,
         address _messenger
     ) external initializer {
-        TwineGatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger);
     }
 
     /*****************************
@@ -106,7 +103,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         bytes memory _message = abi.encode(_from, _to, _amount);
 
         // 3. Calculate the type of transaction
-        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.deposit;
+        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.deposit;
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
@@ -117,7 +114,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
             _from
         );
 
-        emit DepositETH(_from, _to, block.number, _amount);
+        emit DepositETH(_from, _to,  _amount,block.number);
     }
 
     /// @dev The internal ETH forced withdrawal implementation.
@@ -137,7 +134,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
         bytes memory _message = abi.encode(_from, _to, _amount);
 
         // 3. Calculate the type of transaction
-        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.withdrawal;
+        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type, 
@@ -148,7 +145,7 @@ contract L1ETHGateway is TwineGatewayBase, IL1ETHGateway {
             _from
         );
 
-        emit ForcedWithdrawalEth(_from, _to,block.number, _amount);
+        emit ForcedWithdrawalEth(_from, _to, _amount,block.number);
     }
 
 }

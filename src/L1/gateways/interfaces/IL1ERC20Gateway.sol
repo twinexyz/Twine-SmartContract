@@ -42,6 +42,21 @@ interface IL1ERC20Gateway {
         bytes data
     );
 
+     /// @notice Emitted when someone call ForcedWithdrawal of custom ERC20 token from L1 to L2.
+    /// @param l1Token The address of the token in L1.
+    /// @param l2Token The address of the token in L2.
+    /// @param from The address of sender in L1.
+    /// @param to The address of recipient in L2.
+    /// @param amount The amount of token will be deposited from L1 to L2.
+    event ForcedWithdrawalCustomERC20(
+        address indexed l1Token,
+        address indexed l2Token,
+        address indexed from,
+        address to,
+        uint256 amount,
+        uint256 blockNumber
+    );
+
     function getL2ERC20Address(address _l1Token) external view returns (address);
 
     /// @notice Emitted when some ERC20 token is refunded.

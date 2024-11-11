@@ -65,7 +65,7 @@ contract L1CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (address(0), address(0))
+                (0,address(0), address(0))
             ) 
         );
 
@@ -85,7 +85,7 @@ contract L1CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
-                (address(l2Messenger), address(messageQueue), address(0))
+                (address(l2Messenger), address(messageQueue), address(0),address(0))
             )
         );
 
@@ -100,9 +100,8 @@ contract L1CustomERC20GatewayTest is Test {
                 (address(0), address(router), address(l1Messenger))
             )
         );
-        gateway = L1CustomERC20Gateway(L1CustomERC20GatewayAddress);
 
-       
+        gateway = L1CustomERC20Gateway(L1CustomERC20GatewayAddress);
 
         address[] memory tokens = new address[](1);
         address[] memory gateways = new address[](1);

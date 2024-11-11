@@ -5,12 +5,13 @@ pragma solidity ^0.8.24;
 import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
-import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
-import {TwineMessengerBase} from "../libraries/TwineMessengerBase.sol";
+import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
+import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.sol";
 import {MerklePatriciaProofVerifier} from "../libraries/mpt/MerklePatriciaProofVerifier.sol";
 import {RLPEncodeStruct, Types} from "../libraries/rlp/RLPEncodeStruct.sol";
+import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 
-contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
+contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     using MerklePatriciaProofVerifier for bytes;
     using RLPEncodeStruct for Types.ReceiptObject;
 
@@ -75,22 +76,22 @@ contract L1TwineMessenger is TwineMessengerBase, IL1TwineMessenger {
     /// @param _counterpart The address of L2TwineMessenger in L2.
     /// @param _messageQueue The address of `L1MessageQueue` contract.
     /// @param _rollup The address of rollup contract.
-    function initialize(address _counterpart, address _messageQueue, address _rollup)
+    function initialize(address _counterpart, address _messageQueue, address _rollup,address _roleManager)
         external
         initializer
     {
-        __TwineMessengerBase_init(_counterpart);
+        __TwineMessengerBase_init(_counterpart,_roleManager);
    
         messageQueue = _messageQueue;
         rollup = _rollup;
     }
 
-    function setAddressMessenger(address _messageQueue, address _rollup) external {
+    function setAddressMessenger(address _messageQueue, address _rollup) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         messageQueue = _messageQueue;
         rollup = _rollup;
     }
 
-    /// @inheritdoc ITwineMessenger
+    /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,
         address _to,

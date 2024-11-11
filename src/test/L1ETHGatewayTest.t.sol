@@ -65,7 +65,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (address(0), address(0))
+                (0,address(0), address(0))
             )
         );
 
@@ -85,7 +85,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
-                (address(l2Messenger), address(messageQueue), address(0))
+                (address(l2Messenger), address(messageQueue), address(0),address(0))
             )
         );
 
