@@ -67,11 +67,11 @@ interface IL1MessageQueue {
     /// @param queueIndex The index to query.
     function getCrossDomainWithdrawalMessage(uint256 queueIndex) external view returns (bytes memory);
     
-    /// @notice Removes the first message from the Deposit Queue
-    function popFirstDepositElement() external;
+    /// @notice Removes the first N message from the Deposit Queue
+    function popFirstNDepositElement(uint n) external;
 
-    /// @notice Removes the first message from the Withdrawal Queue
-    function popFirstWithdrawalElement() external;
+    /// @notice Removes the first N message from the Withdrawal Queue
+    function popFirstNWithdrawalElement(uint n) external;
 
     /// @notice Return the amount of ETH should pay for cross domain message.
     /// @param gasLimit Gas limit required to complete the message relay on L2.
