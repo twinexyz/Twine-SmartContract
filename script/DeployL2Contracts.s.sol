@@ -3,17 +3,37 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import {L2CustomERC20Gateway} from "../src/L2/gateways/L2CustomERC20Gateway.sol";
+
+import {L2TwineMessenger} from "../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../src/L2/gateways/L2ETHGateway.sol";
+import {RoleManager} from "../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../src/L2/gateways/L2GatewayRouter.sol";
 import {L2XERC20Gateway} from "../src/L2/gateways/L2XERC20Gateway.sol";
-import {L2TwineMessenger} from "../src/L2/L2TwineMessenger.sol";
+import {L2CustomERC20Gateway} from "../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract DeployL2Contracts is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY"); // Read private key from environment variable
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address initialOwner = vm.addr(deployerPrivateKey);
 
-        vm.startBroadcast(deployerPrivateKey); // Start broadcasting transactions
+        // Start broadcasting transactions
+        vm.startBroadcast(deployerPrivateKey);
+
+        address roleManagerAddress = Upgrades.deployTransparentProxy(
+            "RoleManager.sol",
+            msg.sender,
+            abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
+
+        // Deploying an upgradeable proxy for L2GatewayRouter
+        address L2GatewayRouterAddress = Upgrades.deployTransparentProxy(
+            "L2GatewayRouter.sol",
+            msg.sender,
+            abi.encodeCall(
+                L2GatewayRouter.initialize,
+                (address(0), address(0), roleManagerAddress)
+            )
+        );
 
         // Deploying an upgradeable proxy for L2CustomERC20Gateway
         address L2CustomERC20GatewayAddress = Upgrades.deployTransparentProxy(
@@ -21,8 +41,8 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (address(0), address(0), address(0))
-            ) // Example initial value
+                (address(0), L2GatewayRouterAddress, address(0))
+            )
         );
 
         // Deploying an upgradeable proxy for L2ETHGateway
@@ -31,15 +51,8 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2ETHGateway.initialize,
-                (address(0), address(0), address(0))
-            ) // Example initial value
-        );
-
-        // Deploying an upgradeable proxy for L2GatewayRouter
-        address L2GatewayRouterAddress = Upgrades.deployTransparentProxy(
-            "L2GatewayRouter.sol",
-            msg.sender,
-            abi.encodeCall(L2GatewayRouter.initialize, (address(0), address(0),address(0))) // Example initial value
+                (address(0), L2GatewayRouterAddress, address(0))
+            )
         );
 
         // Deploying an upgradeable proxy for L2XERC20Gateway
@@ -48,8 +61,8 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2XERC20Gateway.initialize,
-                (address(0), address(0), address(0))
-            ) // Example initial value
+                (address(0), L2GatewayRouterAddress, address(0))
+            )
         );
 
         // Deploying an upgradeable proxy for L2TwineMessenger
@@ -58,19 +71,20 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (address(0), address(0))
-            ) // Example initial value
+                (0, address(0), roleManagerAddress)
+            )
         );
 
-        vm.stopBroadcast(); // Stop broadcasting transactions
+        // Stop broadcasting transactions
+        vm.stopBroadcast();
 
         // Logging the address of the deployed proxies
-        console.log(
-            "Contracts deployed at:",
-            L2CustomERC20GatewayAddress,
-            L2ETHGatewayAddress,
-            L2GatewayRouterAddress
-        );
-        console.log(L2XERC20GatewayAddress, L2TwineMessengerAddress);
+        console.log("Deployed Contracts :");
+        console.log("L2 Eth Gateway contract address :", L2ETHGatewayAddress);
+        console.log("L2 Rolemanager contract Address :", roleManagerAddress);
+        console.log("L2 Gateway Router contract Address :", L2GatewayRouterAddress);
+        console.log("L2 XERC20 contract contract Address :", L2XERC20GatewayAddress);
+        console.log("L2 Twine Messenger contract Address :", L2TwineMessengerAddress);
+        console.log("Custom L2 ERC20 contract Address :", L2CustomERC20GatewayAddress);
     }
 }

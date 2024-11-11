@@ -62,7 +62,7 @@ contract L1XERC20GatewayTest is Test {
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
             "L1MessageQueue.sol",
             msg.sender,
-            abi.encodeCall(L1MessageQueue.initialize, (address(0),0,address(roleManager)))
+            abi.encodeCall(L1MessageQueue.initialize, (0,address(0),address(roleManager)))
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 

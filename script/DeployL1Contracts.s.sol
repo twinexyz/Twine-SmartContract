@@ -2,22 +2,29 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
+import {L1TwineMessenger} from "../src/L1/L1TwineMessenger.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import {L1CustomERC20Gateway} from "../src/L1/gateways/L1CustomERC20Gateway.sol";
+
+import {TwineChain} from "../src/L1/rollup/TwineChain.sol";
 import {L1ETHGateway} from "../src/L1/gateways/L1ETHGateway.sol";
+import {L1MessageQueue} from "../src/L1/rollup/L1MessageQueue.sol";
+import {RoleManager} from "../src/libraries/access/RoleManager.sol";
 import {L1GatewayRouter} from "../src/L1/gateways/L1GatewayRouter.sol";
 import {L1XERC20Gateway} from "../src/L1/gateways/L1XERC20Gateway.sol";
-import {L1MessageQueue} from "../src/L1/rollup/L1MessageQueue.sol";
-import {TwineChain} from "../src/L1/rollup/TwineChain.sol";
-import {L1TwineMessenger} from "../src/L1/L1TwineMessenger.sol";
+import {L1CustomERC20Gateway} from "../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract DeployL1Contracts is Script {
     function run() external {
-        // uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY"); // Read private key from environment variable
-        uint256 deployerPrivateKey = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
-
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address initialOwner = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerPrivateKey); // Start broadcasting transactions
+
+        address roleManagerAddress = Upgrades.deployTransparentProxy(
+            "RoleManager.sol",
+            msg.sender,
+            abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
 
         // Deploying an upgradeable proxy for L1CustomERC20Gateway
         address L1CustomERC20GatewayAddress = Upgrades.deployTransparentProxy(
@@ -26,7 +33,7 @@ contract DeployL1Contracts is Script {
             abi.encodeCall(
                 L1CustomERC20Gateway.initialize,
                 (address(0), address(0), address(0))
-            ) // Example initial value
+            )
         );
 
         // Deploying an upgradeable proxy for L1ETHGateway
@@ -36,14 +43,17 @@ contract DeployL1Contracts is Script {
             abi.encodeCall(
                 L1ETHGateway.initialize,
                 (address(0), address(0), address(0))
-            ) // Example initial value
+            )
         );
 
         // Deploying an upgradeable proxy for L1GatewayRouter
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0),address(0))) // Example initial value
+            abi.encodeCall(
+                L1GatewayRouter.initialize,
+                (address(0), address(0), roleManagerAddress)
+            )
         );
 
         // Deploying an upgradeable proxy for L1XERC20Gateway
@@ -53,21 +63,27 @@ contract DeployL1Contracts is Script {
             abi.encodeCall(
                 L1XERC20Gateway.initialize,
                 (address(0), address(0), address(0))
-            ) // Example initial value
+            )
         );
 
         // Deploying an upgradeable proxy for L1MessageQueue
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
             "L1MessageQueue.sol",
             msg.sender,
-            abi.encodeCall(L1MessageQueue.initialize, (address(0),0,address(0))) // Example initial value
+            abi.encodeCall(
+                L1MessageQueue.initialize,
+                (0, address(0), address(0))
+            )
         );
 
         // Deploying an upgradeable proxy for TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
             msg.sender,
-            abi.encodeCall(TwineChain.initialize, (address(0), address(0))) // Example initial value
+            abi.encodeCall(
+                TwineChain.initialize,
+                (L1MessageQueueAddress, address(0))
+            )
         );
 
         // Deploying an upgradeable proxy for L1TwineMessenger
@@ -76,24 +92,27 @@ contract DeployL1Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
-                (address(0), address(0), address(0))
-            ) // Example initial value
+                (
+                    address(0),
+                    L1MessageQueueAddress,
+                    TwineChainAddress,
+                    roleManagerAddress
+                )
+            )
         );
 
-        vm.stopBroadcast(); // Stop broadcasting transactions
+        // Stop broadcasting transactions
+        vm.stopBroadcast();
 
         // Logging the address of the deployed proxies
-        console.log(
-            "Contracts deployed at:",
-            L1CustomERC20GatewayAddress,
-            L1ETHGatewayAddress,
-            L1GatewayRouterAddress
-        );
-        console.log(
-            L1XERC20GatewayAddress,
-            L1MessageQueueAddress,
-            TwineChainAddress,
-            L1TwineMessengerAddress
-        );
+        console.log("Deployed Contracts :");
+        console.log("L1 Eth contract Address :", L1ETHGatewayAddress);
+        console.log("L1 Rolemanager contract Address :", roleManagerAddress);
+        console.log("Twine chain contract Address :", TwineChainAddress);
+        console.log("L1 Gateway Router contract Address :", L1GatewayRouterAddress);
+        console.log("L1 XERC20 contract contract Address :", L1XERC20GatewayAddress);
+        console.log("L1 Twine Messenger contract Address :", L1TwineMessengerAddress);
+        console.log("Custom L1 ERC20 contract Address :", L1CustomERC20GatewayAddress);
+        console.log("Message Queue contract Address :", L1MessageQueueAddress);
     }
 }
