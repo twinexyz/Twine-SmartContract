@@ -9,8 +9,6 @@ import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {Types} from "../../libraries/rlp/Types.sol";
 
-import "forge-std/console.sol";
-
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
@@ -83,10 +81,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function commitBatch(CommitBatchInfo calldata _newBatchData) external {
         require(_newBatchData.batchNumber == lastCommittedBatchNumber + 1, "Only next batch can be committed.");
         StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
-
-        console.log("Input FOr Proof:");
-        console.logBytes(batchToCommit.publicInput);
-
         committedBatches[batchToCommit.batchNumber] = batchToCommit;
         lastCommittedBatchNumber = batchToCommit.batchNumber;
     }
