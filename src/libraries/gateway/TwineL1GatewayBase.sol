@@ -5,29 +5,28 @@ pragma solidity ^0.8.24;
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-import {ITwineGateway} from "./ITwineGateway.sol";
-import {ITwineMessenger} from "../ITwineMessenger.sol";
+import {ITwineL1Gateway} from "./ITwineL1Gateway.sol";
 import {IRoleManager} from "../access/IRoleManager.sol";
 import {ITwineGatewayCallback} from "../callbacks/ITwineGatewayCallback.sol";
 
 /// @title TwineGatewayBase
 /// @notice The `TwineGatewayBase` is a base contract for gateway contracts used in both in L1 and L2.
-abstract contract TwineGatewayBase is
+abstract contract TwineL1GatewayBase is
     ContextUpgradeable,
     ReentrancyGuardUpgradeable,
-    ITwineGateway
+    ITwineL1Gateway
 {
     /*************
      * Constants *
      *************/
 
-    /// @inheritdoc ITwineGateway
+    /// @inheritdoc ITwineL1Gateway
     address public override counterpart;
 
-    /// @inheritdoc ITwineGateway
+    /// @inheritdoc ITwineL1Gateway
     address public override router;
 
-    /// @inheritdoc ITwineGateway
+    /// @inheritdoc ITwineL1Gateway
     address public override messenger;
 
     address public roleManagerAddress;

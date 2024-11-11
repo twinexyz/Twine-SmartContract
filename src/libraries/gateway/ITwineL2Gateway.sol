@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.24;
 
-interface ITwineGateway {
+interface ITwineL2Gateway {
     /**********
      * Errors *
      **********/
@@ -15,6 +15,12 @@ interface ITwineGateway {
 
     /// @dev Thrown when the cross chain sender is not the counterpart gateway contract.
     error ErrorCallerIsNotCounterpartGateway();
+
+    /// @notice Emitted when the `counterpart gateway`  is updated.
+    /// @param chainId The id of a chain.
+    /// @param oldCounterpartGateway The corresponding address of the old gateway.
+    /// @param newCounterpartGateway The corresponding address of the new gateway.
+    event SetCounterpartGateway(uint256 indexed chainId, address indexed oldCounterpartGateway, address indexed newCounterpartGateway);
 
 
     /*************************

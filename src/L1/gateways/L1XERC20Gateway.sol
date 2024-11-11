@@ -8,14 +8,14 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {IL2XERC20Gateway} from "../../L2/gateways/interfaces/IL2XERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 
-contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
+contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
     using SafeERC20 for IERC20;
      /**********
      * Events *
@@ -50,9 +50,6 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    ///
-    /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
-    ///
     /// @param _counterpart The address of L2CustomERC20Gateway in L2.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
@@ -61,7 +58,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         address _router,
         address _messenger
     ) external initializer {
-        TwineGatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger);
     }
 
     /*************************
@@ -217,7 +214,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         bytes memory _message = abi.encode(_token, _l2Token,_from, _to, _amount);
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
-            ITwineMessenger.TransactionType.deposit,
+            ITwineL1MessengerBase.TransactionType.deposit,
             counterpart,
             0,
             _message,
@@ -243,7 +240,7 @@ contract L1XERC20Gateway is TwineGatewayBase,IL1XERC20Gateway {
         bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
 
         // 3. Calculate the type of transaction
-        ITwineMessenger.TransactionType _type = ITwineMessenger.TransactionType.withdrawal;
+        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,

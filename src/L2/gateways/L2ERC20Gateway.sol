@@ -3,22 +3,10 @@
 pragma solidity ^0.8.24;
 
 import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
-abstract contract L2ERC20Gateway is TwineGatewayBase, IL2ERC20Gateway {
-    /*************
-     * Variables *
-     *************/
-
-    /// @dev The storage slots for future usage.
-    uint256[50] private __gap;
-
-    /*****************************
-     * Public Mutating Functions *
-     *****************************/
-
-    /// @inheritdoc IL2ERC20Gateway
-
+abstract contract L2ERC20Gateway is TwineL2GatewayBase, IL2ERC20Gateway {
+    
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20(
         address _token,
@@ -26,7 +14,7 @@ abstract contract L2ERC20Gateway is TwineGatewayBase, IL2ERC20Gateway {
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
-    ) external payable override {
+    ) external payable override nonReentrant {
         _withdraw(_token, _to, _amount,_chainId,_gasLimit, new bytes(0));
     }
 
@@ -38,7 +26,7 @@ abstract contract L2ERC20Gateway is TwineGatewayBase, IL2ERC20Gateway {
         uint256 _chainId,
         uint256 _gasLimit,
         bytes calldata _data
-    ) external payable override {
+    ) external payable override nonReentrant {
         _withdraw(_token, _to, _amount,_chainId,_gasLimit, _data);
     }
 

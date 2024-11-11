@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
-interface IL2TwineMessenger is ITwineMessenger {
+import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
+interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
     event RelayedMessage(bytes32 indexed messageHash);

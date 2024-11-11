@@ -10,11 +10,10 @@ import {IL1XERC20Gateway} from "../../L1/gateways/interfaces/IL1XERC20Gateway.so
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
 import {IL2XERC20Gateway} from "./interfaces/IL2XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
-import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 
-contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
+contract L2XERC20Gateway is TwineL2GatewayBase,IL2XERC20Gateway {
      /**********
      * Events *
      **********/
@@ -37,12 +36,8 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address l2LockBox;
     }
 
-      /// @notice Mapping from l1 token address to l2 token address for XERC20 token.
+    /// @notice Mapping from l1 token address to l2 token address for XERC20 token.
     mapping(uint256=>mapping(address => XTokenConfig)) public tokenMapping;
-
-    /***************
-     * Constructor *
-     ***************/
 
     /***************
      * Constructor *
@@ -54,10 +49,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    ///
-    /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
-    ///
-    /// @param _counterpart The address of L2CustomERC20Gateway in L2.
+    /// @param _counterpart The address of L1XERC20Gateway in L1.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     function initialize(
@@ -65,7 +57,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
         address _router,
         address _messenger
     ) external initializer {
-        TwineGatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger);
     }
 
     /*************************
@@ -162,8 +154,7 @@ contract L2XERC20Gateway is TwineGatewayBase,IL2XERC20Gateway {
             IL1XERC20Gateway.finalizeWithdrawXERC20,(_l1Token,_token, _from, _to, _amount, _data));
 
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
-            ITwineMessenger.TransactionType.withdrawal,
-            counterpart,
+            counterpartGateWay[_chainId],
             0,
             _message,
             _gasLimit,

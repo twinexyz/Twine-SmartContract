@@ -6,9 +6,8 @@ import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
 import {IL1ERC20Gateway} from "../../L1/gateways/interfaces/IL1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineGatewayBase} from "../../libraries/gateway/TwineGatewayBase.sol";
+import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
-import {ITwineMessenger} from "../../libraries/ITwineMessenger.sol";
 
 /// @title L2CustomERC20Gateway
 /// @notice The `L2CustomERC20Gateway` is used to withdraw custom ERC20 compatible tokens on layer 2 and
@@ -55,7 +54,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         address _router,
         address _messenger
     ) external initializer {
-        TwineGatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger);
     }
 
     /*************************
@@ -84,7 +83,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
         emit UpdateTokenMapping(_chainId,_l2Token, _oldL1Token, _l1Token);
     }
-
     /**********************
      * Internal Functions *
      **********************/
@@ -97,7 +95,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         uint256 _chainId,
         uint256 _gasLimit,
         bytes memory _data
-    ) internal virtual override nonReentrant {
+    ) internal virtual override  {
         address _l1Token = tokenMapping[_chainId][_token];
         require(_l1Token != address(0), "no corresponding l1 token");
         
@@ -117,10 +115,9 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         bytes memory _message = abi.encodeCall(
             IL1ERC20Gateway.finalizeWithdrawERC20,(_l1Token,_token, _from, _to, _amount, _data));
 
-        // 4. Send message to L12wineMessenger.
+        // 4. Send message to L2TwineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
-            ITwineMessenger.TransactionType.withdrawal,
-            counterpart,
+            counterpartGateWay[_chainId],
             0,
             _message,
             _gasLimit,

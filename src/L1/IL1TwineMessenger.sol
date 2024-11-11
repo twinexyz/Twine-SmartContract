@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ITwineMessenger} from "../libraries/ITwineMessenger.sol";
+import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 import {Types} from "../libraries/rlp/Types.sol";
 
-interface IL1TwineMessenger is ITwineMessenger {
+interface IL1TwineMessenger is ITwineL1MessengerBase {
     /// @notice Relay a L2 => L1 message with message proof.
     /// @param _batchNumber The index of the Batch where the message is contained.
     /// @param _receiptObject The object for the receipt of withdrawal transaction.
