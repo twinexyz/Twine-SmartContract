@@ -62,7 +62,7 @@ abstract contract TwineL1MessengerBase is
         feeVault = _feeVault;
     }
 
-    function setRoleManager(address _roleManagerAddress) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()){
+    function setRoleManager(address _roleManagerAddress) external {
         roleManagerAddress = _roleManagerAddress;
     }
 

@@ -109,7 +109,7 @@ contract L1ETHGatewayTest is Test {
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));
-        messageQueue.setAddress(address(l1Messenger));
+        messageQueue.setMessengerAddress(address(l1Messenger));
         vm.stopPrank();
 
     }

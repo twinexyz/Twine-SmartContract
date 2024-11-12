@@ -36,7 +36,7 @@ contract TwineChainTest is Test {
         twineChain = TwineChain(TwineChainAddress);
     } 
 
-    function testChainId() public {
+    function testChainId() public view{
         assertEq(twineChain.chainId(), 0);
         assertEq(twineChain.lastCommittedBatchNumber(), 0);
     }
