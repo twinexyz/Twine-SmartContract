@@ -44,8 +44,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     // @notice Initialize the storage of L1MessageQueue.
+    /// @param _chainId The chain id of L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
-    function initialize(address _messenger,uint256 _chainId,address _roleManager) external initializer {
+    /// @param _roleManager The address of roleManager Contract.
+    function initialize(uint256 _chainId,address _messenger,address _roleManager) external initializer {
         messenger = _messenger;
         chainId = _chainId;
         roleManager = _roleManager;

@@ -55,7 +55,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1MessageQueue.initialize,
-                (address(0), 0, address(roleManager))
+                (0,address(0),address(roleManager))
             )
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
