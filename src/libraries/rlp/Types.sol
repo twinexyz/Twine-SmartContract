@@ -32,5 +32,25 @@ library Types {
         LogData[] logs; // Logs sent from contracts (array of Log structs)
     }
 
+    struct AccessList {
+        address _address;
+        bytes32[] storageKeys;
+    }
+
+    struct transactionObject {
+        uint256 chainId;
+        uint256 nonce;
+        uint256 maxPriorityFeePerGas;
+        uint256 maxFeePerGas;
+        uint256 gas;
+        address to;
+        uint256 value;
+        bytes input;
+        AccessList[] accesslist;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
 
 }
