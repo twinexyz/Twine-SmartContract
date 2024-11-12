@@ -2,16 +2,16 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
-import {L1TwineMessenger} from "../src/L1/L1TwineMessenger.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import {TwineChain} from "../src/L1/rollup/TwineChain.sol";
-import {L1ETHGateway} from "../src/L1/gateways/L1ETHGateway.sol";
-import {L1MessageQueue} from "../src/L1/rollup/L1MessageQueue.sol";
-import {RoleManager} from "../src/libraries/access/RoleManager.sol";
-import {L1GatewayRouter} from "../src/L1/gateways/L1GatewayRouter.sol";
-import {L1XERC20Gateway} from "../src/L1/gateways/L1XERC20Gateway.sol";
-import {L1CustomERC20Gateway} from "../src/L1/gateways/L1CustomERC20Gateway.sol";
+import {TwineChain} from "../../src/L1/rollup/TwineChain.sol";
+import {L1TwineMessenger} from "../../src/L1/L1TwineMessenger.sol";
+import {L1ETHGateway} from "../../src/L1/gateways/L1ETHGateway.sol";
+import {L1MessageQueue} from "../../src/L1/rollup/L1MessageQueue.sol";
+import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
+import {L1GatewayRouter} from "../../src/L1/gateways/L1GatewayRouter.sol";
+import {L1XERC20Gateway} from "../../src/L1/gateways/L1XERC20Gateway.sol";
+import {L1CustomERC20Gateway} from "../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract DeployL1Contracts is Script {
     function run() external {

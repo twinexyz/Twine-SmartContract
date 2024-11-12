@@ -61,19 +61,25 @@ abstract contract TwineL2GatewayBase is
         roleManagerAddress = _roleManagerAddress;
     }
 
-    function setAddress(address _counterpart, address _router, address _messenger)
+    function setRouterAddress(address _router)
         external
         onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
     {
-        counterpart = _counterpart;
         router = _router;
+    }
+
+
+    function setMessengerAddress(address _messenger)
+        external
+        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+    {
         messenger = _messenger;
     }
 
-       function setCounterpartGateway(uint256[] memory _chainId,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setCounterpartGateway(uint256[] memory _chainId,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         require(_chainId.length == _counterpartGateWay.length, "length mismatch");
         for (uint256 i = 0; i < _chainId.length; i++) {
-            require(_chainId[i]!= 0 && _counterpartGateWay[i] != address(0)," Value cann't be zero");
+            require(_counterpartGateWay[i] != address(0)," Value cann't be zero");
             address _oldCounterPart = counterpartGateWay[_chainId[i]];
             counterpartGateWay[_chainId[i]] = _counterpartGateWay[i];
             emit SetCounterpartGateway(_chainId[i], _oldCounterPart, _counterpartGateWay[i]);
