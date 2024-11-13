@@ -16,16 +16,14 @@ library RLPEncodeStruct {
     using RLPEncodeStruct for Types.LogData;
     using RLPEncodeStruct for Types.AccessList;
     using RLPEncodeStruct for Types.ReceiptObject;
-    using RLPEncodeStruct for Types.transactionObject;
+    using RLPEncodeStruct for Types.RLPTransactionObject;
 
     uint8 internal constant LIST_SHORT_START = 0xc0;
     uint8 internal constant LIST_LONG_START = 0xf7;
 
-    function encodeLogData(Types.LogData memory _ld)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeLogData(
+        Types.LogData memory _ld
+    ) internal pure returns (bytes memory) {
         bytes memory _rlp;
         bytes memory temp;
 
@@ -44,11 +42,9 @@ library RLPEncodeStruct {
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
     }
 
-    function encodeReceiptObject(Types.ReceiptObject memory _ro)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeReceiptObject(
+        Types.ReceiptObject memory _ro
+    ) internal pure returns (bytes memory) {
         bytes memory _rlp;
         bytes memory temp;
 
@@ -67,11 +63,9 @@ library RLPEncodeStruct {
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
     }
 
-    function encodeAccessList(Types.AccessList memory _accessList)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeAccessList(
+        Types.AccessList memory _accessList
+    ) internal pure returns (bytes memory) {
         bytes memory _rlp;
         bytes memory temp;
 
@@ -85,15 +79,18 @@ library RLPEncodeStruct {
     }
 
     function encodeTransactionObject(
-        Types.transactionObject memory _transactionObject
+        Types.RLPTransactionObject memory _transactionObject
     ) internal pure returns (bytes memory) {
         bytes memory _rlp;
+        bytes memory _rlpSig;
         bytes memory temp;
 
         for (uint256 i = 0; i < _transactionObject.accesslist.length; i++) {
             temp = _transactionObject.accesslist[i].encodeAccessList();
             _rlp = abi.encodePacked(_rlp, temp);
         }
+        _rlp = abi.encodePacked(addLength(_rlp.length, false), _rlp);
+
         _rlp = abi.encodePacked(
             _transactionObject.chainId.encodeUint(),
             _transactionObject.nonce.encodeUint(),
@@ -103,14 +100,21 @@ library RLPEncodeStruct {
             _transactionObject.to.encodeAddress(),
             _transactionObject.value.encodeUint(),
             _transactionObject.input.encodeBytes(),
-            _rlp,
-            uint256(_transactionObject.v).encodeUint(),
+            _rlp
+        );
+
+        bytes memory _rsEncode = abi.encodePacked(
             abi.encodePacked(_transactionObject.r).encodeBytes(),
             abi.encodePacked(_transactionObject.s).encodeBytes()
-
-
         );
-      
+
+        bytes memory _vEncode = abi.encodePacked(
+            abi.encodePacked(_transactionObject.v.encodeBool())
+        );
+        _rlpSig = abi.encodePacked(_vEncode, _rsEncode);
+
+        _rlp = abi.encodePacked(_rlp, _rlpSig);
+
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
     }
 
@@ -121,11 +125,10 @@ library RLPEncodeStruct {
     //  - Total Payload = 512 elements = 0x0200
     //  - Length of Total Payload = 2
     //  => LIST_HEAD_START = \x (LIST_LONG_START + length of Total Payload) \x (Total Payload) = \x(F7 + 2) \x(0200) = \xF9 \x0200 = 0xF90200
-    function addLength(uint256 length, bool isLongList)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function addLength(
+        uint256 length,
+        bool isLongList
+    ) internal pure returns (bytes memory) {
         if (length > 55 && !isLongList) {
             bytes memory payLoadSize = RLPEncode.encodeUintByLength(length);
             return

@@ -7,6 +7,7 @@ pragma solidity ^0.8.24;
  * The original code was modified. For more info, please check the link:
  * https://github.com/bakaoh/solidity-rlp-encode.git
  */
+
 library RLPEncode {
     int8 internal constant MAX_INT8 = type(int8).max;
     int16 internal constant MAX_INT16 = type(int16).max;
@@ -41,7 +42,6 @@ library RLPEncode {
     uint112 internal constant MAX_UINT112 = type(uint112).max;
     uint120 internal constant MAX_UINT120 = type(uint120).max;
     uint128 internal constant MAX_UINT128 = type(uint128).max;
-
     /*
      * Internal functions
      */
@@ -51,13 +51,11 @@ library RLPEncode {
      * @param self The byte string to encode.
      * @return The RLP encoded string in bytes.
      */
-    function encodeBytes(bytes memory self)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeBytes(
+        bytes memory self
+    ) internal pure returns (bytes memory) {
         bytes memory encoded;
-        if (self.length == 1 && uint8(self[0]) <= 128) {
+        if (self.length == 1 && uint8(self[0]) < 128) {
             encoded = self;
         } else {
             encoded = concat(encodeLength(self.length, 128), self);
@@ -70,11 +68,9 @@ library RLPEncode {
      * @param self The list of RLP encoded byte strings.
      * @return The RLP encoded list of items in bytes.
      */
-    function encodeList(bytes[] memory self)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeList(
+        bytes[] memory self
+    ) internal pure returns (bytes memory) {
         bytes memory list = flatten(self);
         return concat(encodeLength(list.length, 192), list);
     }
@@ -84,11 +80,9 @@ library RLPEncode {
      * @param self The string to encode.
      * @return The RLP encoded string in bytes.
      */
-    function encodeString(string memory self)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeString(
+        string memory self
+    ) internal pure returns (bytes memory) {
         return encodeBytes(bytes(self));
     }
 
@@ -116,58 +110,8 @@ library RLPEncode {
      * @param self The uint to encode.
      * @return The RLP encoded uint in bytes.
      */
-    function encodeUint(uint256 self) internal pure returns (bytes memory) {
-        uint256 nBytes = bitLength(self) / 8 + 1;
-        bytes memory uintBytes = encodeUintByLength(self);
-        if (nBytes - uintBytes.length > 0) {
-            uintBytes = abi.encodePacked(bytes1(0), uintBytes);
-        }
-        return encodeBytes(uintBytes);
-    }
-
-    /**
-     * @dev convert int to strict bytes.
-     * @notice only handle to int128 due to contract code size limit
-     * @param n The int to convert.
-     * @return The int in strict bytes without padding.
-     */
-    function intToStrictBytes(int256 n) internal pure returns (bytes memory) {
-        if (-MAX_INT8 - 1 <= n && n <= MAX_INT8) {
-            return abi.encodePacked(int8(n));
-        } else if (-MAX_INT16 - 1 <= n && n <= MAX_INT16) {
-            return abi.encodePacked(int16(n));
-        } else if (-MAX_INT24 - 1 <= n && n <= MAX_INT24) {
-            return abi.encodePacked(int24(n));
-        } else if (-MAX_INT32 - 1 <= n && n <= MAX_INT32) {
-            return abi.encodePacked(int32(n));
-        } else if (-MAX_INT40 - 1 <= n && n <= MAX_INT40) {
-            return abi.encodePacked(int40(n));
-        } else if (-MAX_INT48 - 1 <= n && n <= MAX_INT48) {
-            return abi.encodePacked(int48(n));
-        } else if (-MAX_INT56 - 1 <= n && n <= MAX_INT56) {
-            return abi.encodePacked(int56(n));
-        } else if (-MAX_INT64 - 1 <= n && n <= MAX_INT64) {
-            return abi.encodePacked(int64(n));
-        } else if (-MAX_INT72 - 1 <= n && n <= MAX_INT72) {
-            return abi.encodePacked(int72(n));
-        } else if (-MAX_INT80 - 1 <= n && n <= MAX_INT80) {
-            return abi.encodePacked(int80(n));
-        } else if (-MAX_INT88 - 1 <= n && n <= MAX_INT88) {
-            return abi.encodePacked(int88(n));
-        } else if (-MAX_INT96 - 1 <= n && n <= MAX_INT96) {
-            return abi.encodePacked(int96(n));
-        } else if (-MAX_INT104 - 1 <= n && n <= MAX_INT104) {
-            return abi.encodePacked(int104(n));
-        } else if (-MAX_INT112 - 1 <= n && n <= MAX_INT112) {
-            return abi.encodePacked(int112(n));
-        } else if (-MAX_INT120 - 1 <= n && n <= MAX_INT120) {
-            return abi.encodePacked(int120(n));
-        }
-        require(
-            -MAX_INT128 - 1 <= n && n <= MAX_INT128,
-            "outOfBounds: [-2^128-1, 2^128]"
-        );
-        return abi.encodePacked(int128(n));
+    function encodeUint(uint self) internal pure returns (bytes memory) {
+        return encodeBytes(toBinary(self));
     }
 
     /**
@@ -175,8 +119,8 @@ library RLPEncode {
      * @param self The int to encode.
      * @return The RLP encoded int in bytes.
      */
-    function encodeInt(int256 self) internal pure returns (bytes memory) {
-        return encodeBytes(intToStrictBytes(self));
+    function encodeInt(int self) internal pure returns (bytes memory) {
+        return encodeUint(uint(self));
     }
 
     /**
@@ -186,7 +130,7 @@ library RLPEncode {
      */
     function encodeBool(bool self) internal pure returns (bytes memory) {
         bytes memory encoded = new bytes(1);
-        encoded[0] = (self ? bytes1(0x01) : bytes1(0x00));
+        encoded[0] = (self ? bytes1(0x01) : bytes1(0x80));
         return encoded;
     }
 
@@ -200,18 +144,17 @@ library RLPEncode {
      * @param offset 128 if item is string, 192 if item is list.
      * @return RLP encoded bytes.
      */
-    function encodeLength(uint256 len, uint256 offset)
-        private
-        pure
-        returns (bytes memory)
-    {
+    function encodeLength(
+        uint len,
+        uint offset
+    ) private pure returns (bytes memory) {
         bytes memory encoded;
         if (len < 56) {
             encoded = new bytes(1);
             encoded[0] = bytes32(len + offset)[31];
         } else {
-            uint256 lenLen;
-            uint256 i = 1;
+            uint lenLen;
+            uint i = 1;
             while (len / i != 0) {
                 lenLen++;
                 i *= 256;
@@ -220,7 +163,7 @@ library RLPEncode {
             encoded = new bytes(lenLen + 1);
             encoded[0] = bytes32(lenLen + offset + 55)[31];
             for (i = 1; i <= lenLen; i++) {
-                encoded[i] = bytes32((len / (256**(lenLen - i))) % 256)[31];
+                encoded[i] = bytes32((len / (256 ** (lenLen - i))) % 256)[31];
             }
         }
         return encoded;
@@ -232,23 +175,19 @@ library RLPEncode {
      * @param _x The integer to encode.
      * @return RLP encoded bytes.
      */
-    function toBinary(uint256 _x) private pure returns (bytes memory) {
-        //  Modify library to make it work properly when _x = 0
-        if (_x == 0) {
-            return abi.encodePacked(uint8(_x));
-        }
+    function toBinary(uint _x) private pure returns (bytes memory) {
         bytes memory b = new bytes(32);
         assembly {
             mstore(add(b, 32), _x)
         }
-        uint256 i;
+        uint i;
         for (i = 0; i < 32; i++) {
             if (b[i] != 0) {
                 break;
             }
         }
         bytes memory res = new bytes(32 - i);
-        for (uint256 j = 0; j < res.length; j++) {
+        for (uint j = 0; j < res.length; j++) {
             res[j] = b[i++];
         }
         return res;
@@ -261,14 +200,10 @@ library RLPEncode {
      * @param _src Source location.
      * @param _len Length of memory to copy.
      */
-    function memcpy(
-        uint256 _dest,
-        uint256 _src,
-        uint256 _len
-    ) private pure {
-        uint256 dest = _dest;
-        uint256 src = _src;
-        uint256 len = _len;
+    function memcpy(uint _dest, uint _src, uint _len) private pure {
+        uint dest = _dest;
+        uint src = _src;
+        uint len = _len;
 
         for (; len >= 32; len -= 32) {
             assembly {
@@ -278,7 +213,7 @@ library RLPEncode {
             src += 32;
         }
 
-        uint256 mask = 256**(32 - len) - 1;
+        uint mask = 256 ** (32 - len) - 1;
         assembly {
             let srcpart := and(mload(src), not(mask))
             let destpart := and(mload(dest), mask)
@@ -297,14 +232,18 @@ library RLPEncode {
             return new bytes(0);
         }
 
-        uint256 len;
-        uint256 i;
+        uint len;
+        uint i;
         for (i = 0; i < _list.length; i++) {
+            require(
+                _list[i].length > 0,
+                "An item in the list to be RLP encoded is null."
+            );
             len += _list[i].length;
         }
 
         bytes memory flattened = new bytes(len);
-        uint256 flattenedPtr;
+        uint flattenedPtr;
         assembly {
             flattenedPtr := add(flattened, 0x20)
         }
@@ -312,7 +251,7 @@ library RLPEncode {
         for (i = 0; i < _list.length; i++) {
             bytes memory item = _list[i];
 
-            uint256 listPtr;
+            uint listPtr;
             assembly {
                 listPtr := add(item, 0x20)
             }
@@ -331,11 +270,10 @@ library RLPEncode {
      * @param _postBytes Second byte string.
      * @return Both byte string combined.
      */
-    function concat(bytes memory _preBytes, bytes memory _postBytes)
-        private
-        pure
-        returns (bytes memory)
-    {
+    function concat(
+        bytes memory _preBytes,
+        bytes memory _postBytes
+    ) private pure returns (bytes memory) {
         bytes memory tempBytes;
 
         assembly {
@@ -389,11 +327,9 @@ library RLPEncode {
      * @param length The uint to convert.
      * @return The uint in strict bytes without padding.
      */
-    function encodeUintByLength(uint256 length)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeUintByLength(
+        uint256 length
+    ) internal pure returns (bytes memory) {
         if (length < MAX_UINT8) {
             return abi.encodePacked(uint8(length));
         } else if (length >= MAX_UINT8 && length < MAX_UINT16) {
@@ -430,14 +366,5 @@ library RLPEncode {
             "outOfBounds: [0, 2^128]"
         );
         return abi.encodePacked(uint128(length));
-    }
-
-    function bitLength(uint256 n) internal pure returns (uint256) {
-        uint256 count;
-        while (n != 0) {
-            count += 1;
-            n >>= 1;
-        }
-        return count;
     }
 }

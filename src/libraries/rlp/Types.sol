@@ -37,7 +37,7 @@ library Types {
         bytes32[] storageKeys;
     }
 
-    struct transactionObject {
+    struct RLPTransactionObject {
         uint256 chainId;
         uint256 nonce;
         uint256 maxPriorityFeePerGas;
@@ -47,10 +47,8 @@ library Types {
         uint256 value;
         bytes input;
         AccessList[] accesslist;
-        uint8 v;
+        bool v;
         bytes32 r;
         bytes32 s;
     }
-
-
 }

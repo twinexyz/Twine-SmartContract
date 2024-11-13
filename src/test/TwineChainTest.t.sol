@@ -19,24 +19,30 @@ contract TwineChainTest is Test {
 
         // setup L1MessageQueue
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
-            "L1MessageQueue.sol", 
+            "L1MessageQueue.sol",
             msg.sender,
-            abi.encodeCall(L1MessageQueue.initialize, (0,address(0),address(0)))
+            abi.encodeCall(
+                L1MessageQueue.initialize,
+                (0, address(0), address(0))
+            )
         );
 
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 
         // setup TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
-            "TwineChain.sol", 
-            msg.sender, 
-            abi.encodeCall(TwineChain.initialize, (address(messageQueue), address(0)))
+            "TwineChain.sol",
+            msg.sender,
+            abi.encodeCall(
+                TwineChain.initialize,
+                (address(messageQueue), address(0))
+            )
         );
 
         twineChain = TwineChain(TwineChainAddress);
-    } 
+    }
 
-    function testChainId() public view{
+    function testChainId() public view {
         assertEq(twineChain.chainId(), 0);
         assertEq(twineChain.lastCommittedBatchNumber(), 0);
     }
@@ -45,20 +51,28 @@ contract TwineChainTest is Test {
         bytes32 bytes32dummy = bytes32(0);
         bytes32[] memory bytes32Array = new bytes32[](1);
         bytes32Array[0] = bytes32dummy;
-    
+
         // Default Access List
-        ITwineChain.AccessList memory defaultAccessList = ITwineChain.AccessList({
-            _address: address(0),
-            storageKeys: bytes32Array
-        });
+        ITwineChain.AccessList memory defaultAccessList = ITwineChain
+            .AccessList({_address: address(0), storageKeys: bytes32Array});
 
         // Array of Access List
-        ITwineChain.AccessList[] memory accessListArray = new ITwineChain.AccessList[](1);
+        ITwineChain.AccessList[]
+            memory accessListArray = new ITwineChain.AccessList[](1);
         accessListArray[0] = defaultAccessList;
 
         // Dummy data for Log data
         bytes memory _message = abi.encode(address(0), address(0), 10);
-        bytes memory _data = abi.encode(address(0), address(0), address(0), 0, 3, 0, 0, _message);
+        bytes memory _data = abi.encode(
+            address(0),
+            address(0),
+            address(0),
+            0,
+            3,
+            0,
+            0,
+            _message
+        );
 
         // Dummy Log Data Object
         Types.LogData memory DummyLogData = Types.LogData({
@@ -83,80 +97,114 @@ contract TwineChainTest is Test {
         bytes memory _input = abi.encode(receiptObject);
 
         // Dummy Transaction Object
-        ITwineChain.TransactionObject memory defaultTransactionObject = ITwineChain.TransactionObject({
-            transactionHash: bytes32(0),
-            nonce: 0,
-            blockHash: bytes32(0),
-            blockNumber: 0,
-            transactionIndex: 0,
-            from: address(0),
-            to: address(0),
-            value: 0,
-            gasprice: 0,
-            gas: 0,
-            maxFeePerGas: 0,
-            maxPriorityFeePerGas: 0,
-            input: _input,
-            r: bytes32(0),
-            s: bytes32(0),
-            v: 0,
-            yParity: 0,
-            chainId: 0,
-            accesslist: accessListArray,
-            TransactionType: 0
-        });
+        ITwineChain.TransactionObject
+            memory defaultTransactionObject = ITwineChain.TransactionObject({
+                transactionHash: bytes32(0),
+                nonce: 0,
+                blockHash: bytes32(0),
+                blockNumber: 0,
+                transactionIndex: 0,
+                from: address(0),
+                to: address(0),
+                value: 0,
+                gasprice: 0,
+                gas: 0,
+                maxFeePerGas: 0,
+                maxPriorityFeePerGas: 0,
+                input: _input,
+                r: bytes32(0),
+                s: bytes32(0),
+                v: 0,
+                yParity: 0,
+                chainId: 0,
+                accesslist: accessListArray,
+                TransactionType: 0
+            });
 
-        Types.ReceiptObject[] memory receiptObjectArray = new Types.ReceiptObject[](1);
+        Types.ReceiptObject[]
+            memory receiptObjectArray = new Types.ReceiptObject[](1);
         receiptObjectArray[0] = receiptObject;
 
         bytes memory depositInput = abi.encode(receiptObjectArray);
 
-        ITwineChain.TransactionObject memory depositTransactionObject = ITwineChain.TransactionObject({
-            transactionHash: bytes32(0),
-            nonce: 0,
-            blockHash: bytes32(0),
-            blockNumber: 0,
-            transactionIndex: 0,
-            from: address(0),
-            to: address(0),
-            value: 0,
-            gasprice: 0,
-            gas: 0,
-            maxFeePerGas: 0,
-            maxPriorityFeePerGas: 0,
-            input: depositInput,
-            r: bytes32(0),
-            s: bytes32(0),
-            v: 0,
-            yParity: 0,
-            chainId: 0,
-            accesslist: accessListArray,
-            TransactionType: 0
-        });
+        ITwineChain.TransactionObject
+            memory depositTransactionObject = ITwineChain.TransactionObject({
+                transactionHash: bytes32(0),
+                nonce: 0,
+                blockHash: bytes32(0),
+                blockNumber: 0,
+                transactionIndex: 0,
+                from: address(0),
+                to: address(0),
+                value: 0,
+                gasprice: 0,
+                gas: 0,
+                maxFeePerGas: 0,
+                maxPriorityFeePerGas: 0,
+                input: depositInput,
+                r: bytes32(0),
+                s: bytes32(0),
+                v: 0,
+                yParity: 0,
+                chainId: 0,
+                accesslist: accessListArray,
+                TransactionType: 0
+            });
 
         // Array of dummy Transaction Object
-        ITwineChain.TransactionObject[] memory defaultTransactionObjectArray = new ITwineChain.TransactionObject[](1);
+        ITwineChain.TransactionObject[]
+            memory defaultTransactionObjectArray = new ITwineChain.TransactionObject[](
+                1
+            );
         defaultTransactionObjectArray[0] = defaultTransactionObject;
 
         // Array of dummy deposit Transaction object
-        ITwineChain.TransactionObject[] memory depositTransactionObjectArray = new ITwineChain.TransactionObject[](1);
+        ITwineChain.TransactionObject[]
+            memory depositTransactionObjectArray = new ITwineChain.TransactionObject[](
+                1
+            );
         depositTransactionObjectArray[0] = depositTransactionObject;
 
         // Dummy CommitBatchInfo
-        ITwineChain.CommitBatchInfo memory commitInfo = ITwineChain.CommitBatchInfo({
-            batchNumber: 1,
-            batchHash: bytes32(0),
-            stateRoot: bytes32(0),
-            transactionRoot: bytes32(0),
-            receiptRoot: bytes32(0),
-            depositTransactionObject: depositTransactionObjectArray,
-            forcedTransactionObjects: defaultTransactionObjectArray,
-            otherTransactions: defaultTransactionObjectArray
-        });
+        ITwineChain.CommitBatchInfo memory commitInfo = ITwineChain
+            .CommitBatchInfo({
+                batchNumber: 1,
+                batchHash: bytes32(0),
+                stateRoot: bytes32(0),
+                transactionRoot: bytes32(0),
+                receiptRoot: bytes32(0),
+                depositTransactionObject: depositTransactionObjectArray,
+                forcedTransactionObjects: defaultTransactionObjectArray,
+                otherTransactions: defaultTransactionObjectArray
+            });
 
         vm.startPrank(initialOwner);
 
         twineChain.commitBatch(commitInfo);
         assertEq(twineChain.lastCommittedBatchNumber(), 1);
+    }
+
+    function testTransactionObjectRlpEncoding() public view {
+        Types.AccessList[] memory accessListArray = new Types.AccessList[](0);
+        Types.RLPTransactionObject memory _transactionObject = Types
+            .RLPTransactionObject({
+                chainId: 1337,
+                nonce: 128,
+                gas: 66540,
+                maxPriorityFeePerGas: 2000000,
+                maxFeePerGas: 2000016,
+                to: 0x5fc748f1FEb28d7b76fa1c6B07D8ba2d5535177c,
+                value: 0,
+                input: hex"7259bf9f000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000005c000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000050cf90509018305c9d1b9010020000002200200000000110000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000200000000000200000000010000000000000000000000000000000000400000000000000000000000001000000000000000000000000000000000000000100000020000000000800000000000000000000000000010000000000010000040010000000000000000000000000000000000000002002002000000000000000040000000000000000000000000000000000000000000000040000000000000000200001000000000400000000000000000008000000000000802000000000000000000000000000f903fef901bd94d829fcddd9c9c7c50b7cb476596ef0ff5889d543f863a06b96cd196b0916aed2fc4c4a5d570357011c9bdd90e88bbcaaaa5ba5c7c132c2a00000000000000000000000007b31b399a224ad30d48838f55b41b6a6f1e033eda0000000000000000000000000bab8e13def75a95321e9f48d3ec57f2c0141a6c3b901400000000000000000000000007b31b399a224ad30d48838f55b41b6a6f1e033ed0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000003018240000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000006000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d99550000000000000000000000000000000000000000000000000de0b6b3a7640000f9017d947b31b399a224ad30d48838f55b41b6a6f1e033edf863a07c6f146141469b762a9bbd558d3e11247afe51a3b07bc8122802ebac51a48643a0000000000000000000000000982830d87c95479db81fe62cd08dd9118d080697a00000000000000000000000007b31b399a224ad30d48838f55b41b6a6f1e033edb901000000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000006000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d99550000000000000000000000000000000000000000000000000de0b6b3a7640000f8bc94982830d87c95479db81fe62cd08dd9118d080697f863a046b2d0b3699bedf05eb8e43f94da2ce9fec6bca6f70ad78c66000c27aea73fe6a000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d9955a000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d9955b8400000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000241bf00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000006a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000200010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000053f851a0c4fb95f30a7ac72e5911a75fd020a2707818cd498b2984a7f0fbb44a5248064680808080808080a05596b7d1ae953c50ffe051d72d86bbe3ad597d5db1413fc95e99f401314b8c8a8080808080808080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000513f9051031b9050cf90509018305c9d1b9010020000002200200000000110000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000200000000000200000000010000000000000000000000000000000000400000000000000000000000001000000000000000000000000000000000000000100000020000000000800000000000000000000000000010000000000010000040010000000000000000000000000000000000000002002002000000000000000040000000000000000000000000000000000000000000000040000000000000000200001000000000400000000000000000008000000000000802000000000000000000000000000f903fef901bd94d829fcddd9c9c7c50b7cb476596ef0ff5889d543f863a06b96cd196b0916aed2fc4c4a5d570357011c9bdd90e88bbcaaaa5ba5c7c132c2a00000000000000000000000007b31b399a224ad30d48838f55b41b6a6f1e033eda0000000000000000000000000bab8e13def75a95321e9f48d3ec57f2c0141a6c3b901400000000000000000000000007b31b399a224ad30d48838f55b41b6a6f1e033ed0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000003018240000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000006000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d99550000000000000000000000000000000000000000000000000de0b6b3a7640000f9017d947b31b399a224ad30d48838f55b41b6a6f1e033edf863a07c6f146141469b762a9bbd558d3e11247afe51a3b07bc8122802ebac51a48643a0000000000000000000000000982830d87c95479db81fe62cd08dd9118d080697a00000000000000000000000007b31b399a224ad30d48838f55b41b6a6f1e033edb901000000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000006000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d99550000000000000000000000000000000000000000000000000de0b6b3a7640000f8bc94982830d87c95479db81fe62cd08dd9118d080697f863a046b2d0b3699bedf05eb8e43f94da2ce9fec6bca6f70ad78c66000c27aea73fe6a000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d9955a000000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d9955b8400000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000241bf00000000000000000000000000",
+                accesslist: accessListArray,
+                v: false,
+                r: 0xf5360b7ea30c1a0ca81c1fc6a5ab9129479e77ff2976f1bbf6791400917294b0,
+                s: 0x43eaf52c39b8509135746b61f071a2fbba30b31f3548f1a4947e7efe5b20e436
+            });
+            
+        assertEq(
+            0x56be66e660246e3ca76a186283f2687b4abcb0af8770d56733514cbefbdaaaad,
+            twineChain.getTransactinObjectRLP(_transactionObject)
+        );
     }
 }
