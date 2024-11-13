@@ -103,16 +103,12 @@ library RLPEncodeStruct {
             _transactionObject.to.encodeAddress(),
             _transactionObject.value.encodeUint(),
             _transactionObject.input.encodeBytes(),
-            _rlp
-        );
-
-        _rlp = abi.encodePacked(addLength(_rlp.length, false), _rlp);
-
-        _rlp = abi.encodePacked(
             _rlp,
             uint256(_transactionObject.v).encodeUint(),
             abi.encodePacked(_transactionObject.r).encodeBytes(),
             abi.encodePacked(_transactionObject.s).encodeBytes()
+
+
         );
       
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
