@@ -53,7 +53,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         roleManager = _roleManager;
     }
 
-    function setAddress(address _messenger) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setMessengerAddress(address _messenger) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messenger = _messenger;
     }
 

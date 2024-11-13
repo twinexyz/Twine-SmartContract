@@ -138,7 +138,7 @@ contract L1XERC20GatewayTest is Test {
         gateway.setRoleManagerAddress(address(roleManager));
         gateway.updateTokenMapping(address(l1Token), xConfig);
         gateway.updateTokenMapping(address(l1XToken), xConfig);
-        messageQueue.setAddress(address(l1Messenger));
+        messageQueue.setMessengerAddress(address(l1Messenger));
         vm.stopPrank();
     }
 

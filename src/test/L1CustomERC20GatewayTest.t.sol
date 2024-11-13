@@ -113,7 +113,7 @@ contract L1CustomERC20GatewayTest is Test {
         router.setERC20Gateway(tokens, gateways);
         router.setAddress(address(gateway), address(gateway));
         gateway.setRoleManagerAddress(address(roleManager));
-        messageQueue.setAddress(address(l1Messenger));
+        messageQueue.setMessengerAddress(address(l1Messenger));
         vm.stopPrank();
     }
 

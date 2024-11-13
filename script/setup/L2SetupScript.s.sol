@@ -12,7 +12,7 @@ import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2XERC20Gateway} from "../../src/L2/gateways/L2XERC20Gateway.sol";
 import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
-contract l2SetupScripts is Script {
+contract L2SetupScript is Script {
     MockERC20 l2Erc20Token;
     RoleManager roleManager;
     L2ETHGateway l2ETHGateway;
@@ -42,7 +42,7 @@ contract l2SetupScripts is Script {
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
-            "./script/utils/deployedContractsAnvil.json"
+            "./script/utils/deployedContracts.json"
         );
 
         l1EthGatewayAddress = vm.parseJsonAddress(

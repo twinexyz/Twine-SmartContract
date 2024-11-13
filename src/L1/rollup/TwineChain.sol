@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {ITwineChain} from "./ITwineChain.sol";
-import {IL1MessageQueue} from "./IL1MessageQueue.sol";
-
-import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {Types} from "../../libraries/rlp/Types.sol";
-
+import {IL1MessageQueue} from "./IL1MessageQueue.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
@@ -40,12 +39,24 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The number of forced Transaction of this L1 that is committed but not finalized
     uint256 public forcedTransactionsCommitted;
 
+    /// @notice Address of the rolemanager contract
+    address roleManagerAddress;
+
     
     /// @notice The mapping of batchNumber => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
 
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
+
+    /**********************
+     * Function Modifiers *
+     **********************/
+
+    modifier onlyRoles(bytes32 role) {
+        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        _;
+    }
 
     /***************
      * Constructor *
@@ -67,13 +78,17 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         verifier = _verifier;
     }
 
-    function setAddress(address _messageQueue, address _verifier) external {
+    function setMessengerQueueAddress(
+        address _messageQueue
+    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         messageQueue = _messageQueue;
+    }
+
+    function setVeriferAddress(address _verifier) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         verifier = _verifier;
     }
 
-    // To be only called by prover
-    function setProgramVKey(bytes32 _programVKey) external {
+    function setProgramVKey(bytes32 _programVKey) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
         ProgramVKey = _programVKey;
     }
 
