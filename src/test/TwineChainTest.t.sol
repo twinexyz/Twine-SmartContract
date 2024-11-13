@@ -146,6 +146,7 @@ contract TwineChainTest is Test {
         ITwineChain.CommitBatchInfo memory commitInfo = ITwineChain.CommitBatchInfo({
             batchNumber: 1,
             batchHash: bytes32(0),
+            previousStateRoot: bytes32(0),
             stateRoot: bytes32(0),
             transactionRoot: bytes32(0),
             receiptRoot: bytes32(0),

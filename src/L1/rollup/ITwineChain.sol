@@ -57,6 +57,7 @@ interface ITwineChain {
     struct CommitBatchInfo{
         uint64 batchNumber;
         bytes32 batchHash;
+        bytes32 previousStateRoot;
         bytes32 stateRoot;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
@@ -68,12 +69,11 @@ interface ITwineChain {
     struct StoredBatchInfo{
         uint64 batchNumber;
         bytes32 batchHash;
+        bytes32 previousStateRoot;
         bytes32 stateRoot;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
-        uint256 numberOfDepositTransaction;  // number of deposit transaction in this L1 (not the total number)
-        bytes32 depositTransactionHash;
-        uint256 numberOfForcedTransaction;  //number of forced transaction in this L1 (not the total number) 
+        bytes32[] depositTransactionHashes;
         bytes32[] forcedTransactionHashes;
         bytes32[] otherTransactionHashes;
         bytes publicInput;
@@ -81,9 +81,7 @@ interface ITwineChain {
 
     struct CommitmentData{
         bytes _proofInput;
-        uint256 _numberOfDepositTransactions;
-        bytes32 _depositTransactionHash;
-        uint256 _numberOfForcedTransactions;
+        bytes32[] _depositTransactionHash;
         bytes32[] _forcedTransactionHash;
         bytes32[] _otherTransactionHash;
     }
