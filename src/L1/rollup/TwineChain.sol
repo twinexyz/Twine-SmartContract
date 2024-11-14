@@ -8,10 +8,12 @@ import {ITwineChain} from "./ITwineChain.sol";
 import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {RLPEncodeStruct, Types} from "../../libraries/rlp/RLPEncodeStruct.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
+    using RLPEncodeStruct for Types.RLPTransactionObject;
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
 
@@ -307,5 +309,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function getReceiptRoot(uint256 _batchNumber) public view returns (bytes32) {
         require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
         return committedBatches[_batchNumber].receiptRoot;
+    }
+
+    function getTransactinObjectRLP(
+        Types.RLPTransactionObject memory _transactionObject
+    ) public view returns (bytes32 transactionObjectHash) {
+        uint8 transactionType = 2;
+        bytes memory returnedRlp = abi.encodePacked(transactionType,_transactionObject.encodeTransactionObject());
+        transactionObjectHash = keccak256(
+            returnedRlp
+        );
     }
 }
