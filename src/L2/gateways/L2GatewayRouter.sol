@@ -31,10 +31,10 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     // solhint-disable-next-line var-name-mixedcase
     mapping(address => address) public ERC20Gateway;
 
-    address public roleManagerAddress;
+    address public roleManager;
 
      modifier onlyRoles(bytes32 role) {
-        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
 
@@ -61,7 +61,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
             ethGateway = _ethGateway;
             emit SetETHGateway(address(0), _ethGateway);
         }
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 
     /*************************
@@ -183,7 +183,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
      ************************/
 
     /// @inheritdoc IL2GatewayRouter
-    function setETHGateway(address _newEthGateway) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setETHGateway(address _newEthGateway) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         address _oldEthGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -191,7 +191,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
 
@@ -199,7 +199,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
 
         for (uint256 i = 0; i < _tokens.length; i++) {
@@ -213,6 +213,6 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
      function setRoleManagerAddress(address _roleManagerAddress)
         external
     {
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 }

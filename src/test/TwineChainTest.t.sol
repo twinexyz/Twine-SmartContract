@@ -3,19 +3,36 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
+
+import {Types} from "../libraries/rlp/Types.sol";
 import {TwineChain} from "../L1/rollup/TwineChain.sol";
+import {ITwineChain} from "../L1/rollup/ITwineChain.sol";
 import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
-import "../L1/rollup/ITwineChain.sol";
-import "../libraries/rlp/Types.sol";
+import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract TwineChainTest is Test {
+    RoleManager roleManager;
     TwineChain public twineChain;
     L1MessageQueue public messageQueue;
+    
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
+    bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
+    bytes32 public constant TWINE_OPERATIONS_HANDLER = keccak256("TWINE_OPERATIONS_HANDLER");
+    
 
     function setUp() public {
         vm.startPrank(initialOwner);
+
+
+        address roleManagerAddress = Upgrades.deployTransparentProxy(
+            "RoleManager.sol",
+            msg.sender,
+            abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
+        roleManager = RoleManager(roleManagerAddress);
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.grantRole(TWINE_OPERATIONS_HANDLER, initialOwner);
 
         // setup L1MessageQueue
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
@@ -23,7 +40,7 @@ contract TwineChainTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1MessageQueue.initialize,
-                (0, address(0), address(0))
+                (0, address(0), address(roleManager))
             )
         );
 
@@ -35,7 +52,7 @@ contract TwineChainTest is Test {
             msg.sender,
             abi.encodeCall(
                 TwineChain.initialize,
-                (address(messageQueue), address(0))
+                (address(messageQueue),address(0), address(roleManager))
             )
         );
 
@@ -177,7 +194,7 @@ contract TwineChainTest is Test {
                 forcedTransactionObjects: defaultTransactionObjectArray,
                 otherTransactions: defaultTransactionObjectArray
             });
-
+        console.log("Done here");
         vm.startPrank(initialOwner);
 
         twineChain.commitBatch(commitInfo);

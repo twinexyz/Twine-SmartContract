@@ -32,7 +32,7 @@ contract DeployL1Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L1CustomERC20Gateway.initialize,
-                (address(0), address(0), address(0))
+                (address(0), address(0), address(0),roleManagerAddress)
             )
         );
 
@@ -42,7 +42,7 @@ contract DeployL1Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(0), address(0), address(0))
+                (address(0), address(0), address(0),roleManagerAddress)
             )
         );
 
@@ -62,7 +62,7 @@ contract DeployL1Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L1XERC20Gateway.initialize,
-                (address(0), address(0), address(0))
+                (address(0), address(0), address(0),roleManagerAddress)
             )
         );
 
@@ -72,7 +72,7 @@ contract DeployL1Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L1MessageQueue.initialize,
-                (0, address(0), address(0))
+                (0, address(0), roleManagerAddress)
             )
         );
 
@@ -82,7 +82,7 @@ contract DeployL1Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 TwineChain.initialize,
-                (L1MessageQueueAddress, address(0))
+                (L1MessageQueueAddress, address(0),roleManagerAddress)
             )
         );
 
@@ -107,12 +107,12 @@ contract DeployL1Contracts is Script {
         // Logging the address of the deployed proxies
         console.log("Deployed Contracts :");
         console.log("L1 Eth contract Address :", L1ETHGatewayAddress);
-        console.log("L1 Rolemanager contract Address :", roleManagerAddress);
         console.log("Twine chain contract Address :", TwineChainAddress);
+        console.log("L1 Rolemanager contract Address :", roleManagerAddress);
+        console.log("Message Queue contract Address :", L1MessageQueueAddress);
         console.log("L1 Gateway Router contract Address :", L1GatewayRouterAddress);
         console.log("L1 XERC20 contract contract Address :", L1XERC20GatewayAddress);
         console.log("L1 Twine Messenger contract Address :", L1TwineMessengerAddress);
         console.log("Custom L1 ERC20 contract Address :", L1CustomERC20GatewayAddress);
-        console.log("Message Queue contract Address :", L1MessageQueueAddress);
     }
 }

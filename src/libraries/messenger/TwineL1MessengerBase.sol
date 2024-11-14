@@ -3,13 +3,14 @@ pragma solidity ^0.8.24;
 
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import {ITwineL1MessengerBase} from "./ITwineL1MessengerBase.sol";
+
 import {IRoleManager} from "../access/IRoleManager.sol";
+import {ITwineL1MessengerBase} from "./ITwineL1MessengerBase.sol";
 
 abstract contract TwineL1MessengerBase is
     ContextUpgradeable,
-    ReentrancyGuardUpgradeable,
-    ITwineL1MessengerBase
+    ITwineL1MessengerBase,
+    ReentrancyGuardUpgradeable
 {
     /*************
      * Constants *
@@ -28,14 +29,14 @@ abstract contract TwineL1MessengerBase is
     /// @notice The address of fee vault, collecting cross domain messaging fee.
     address public feeVault;
 
-    address public roleManagerAddress;
+    address public roleManager;
 
     /**********************
      * Function Modifiers *
      **********************/
 
     modifier onlyRoles(bytes32 role) {
-        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
 
@@ -48,22 +49,26 @@ abstract contract TwineL1MessengerBase is
         _disableInitializers();
     }
 
-    function __TwineMessengerBase_init(address _counterpart,address _roleManagerAddress) internal {
+    function __TwineMessengerBase_init(
+        address _counterpart,
+        address _roleManagerAddress
+    ) internal {
         __Context_init();
         __ReentrancyGuard_init();
         counterpart = _counterpart;
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 
-    function setAddressMessengerBase(address _counterpart, address _feeVault)
-        external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
-    {
+    function setAddressMessengerBase(
+        address _counterpart,
+        address _feeVault
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         counterpart = _counterpart;
         feeVault = _feeVault;
     }
 
     function setRoleManager(address _roleManagerAddress) external {
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 
     /// @dev The storage slots for future usage.

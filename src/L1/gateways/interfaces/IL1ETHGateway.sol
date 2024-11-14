@@ -2,25 +2,38 @@
 pragma solidity ^0.8.24;
 
 interface IL1ETHGateway {
-
-    
     /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
     /// @param from The address of sender in L2.
     /// @param to The address of recipient in L1.
     /// @param amount The amount of ETH withdrawn from L2 to L1.
-    event FinalizeWithdrawETH(address indexed from, address indexed to, uint256 amount,uint256 blockNumber);
+    event FinalizeWithdrawETH(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        uint256 blockNumber
+    );
 
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
     /// @param amount The amount of ETH will be deposited from L1 to L2.
-    event DepositETH(address indexed from, address indexed to, uint256 amount,uint256 blockNumber);
+    event DepositETH(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        uint256 blockNumber
+    );
 
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
     /// @param amount The amount of ETH will be deposited from L1 to L2.
-    event ForcedWithdrawalEth(address indexed from, address indexed to, uint256 amount,uint256 blockNumber);
+    event ForcedWithdrawalEth(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        uint256 blockNumber
+    );
 
     /// @notice Emitted when some ETH is refunded.
     /// @param recipient The address of receiver in L1.
@@ -28,9 +41,9 @@ interface IL1ETHGateway {
     event RefundETH(address indexed recipient, uint256 amount);
 
     /*****************************
-    * Public Mutating Functions *
-    *****************************/
-    
+     * Public Mutating Functions *
+     *****************************/
+
     /// @notice Deposit ETH to some recipient's account in L2.
     /// @param to The address of recipient's account on L2.
     /// @param amount The amount of ETH to be deposited.
@@ -74,5 +87,4 @@ interface IL1ETHGateway {
         uint256 amount,
         uint256 gasLimit
     ) external payable;
-
 }

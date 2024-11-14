@@ -30,7 +30,7 @@ abstract contract TwineL2GatewayBase is
     /// @inheritdoc ITwineL2Gateway
     address public override messenger;
 
-    address public roleManagerAddress;
+    address public roleManager;
     
      //chainId=> L1Gateway
     mapping(uint256 => address) counterpartGateWay;
@@ -40,30 +40,32 @@ abstract contract TwineL2GatewayBase is
      **********************/
 
     modifier onlyRoles(bytes32 role) {
-        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
 
     function _initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         counterpart = _counterpart;
         router = _router;
         messenger = _messenger;
+        roleManager = _roleManager;
     }
 
     function setRoleManagerAddress(address _roleManagerAddress)
         external 
     {
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 
     function setRouterAddress(address _router)
         external
-        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
         router = _router;
     }
@@ -71,12 +73,12 @@ abstract contract TwineL2GatewayBase is
 
     function setMessengerAddress(address _messenger)
         external
-        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
         messenger = _messenger;
     }
 
-    function setCounterpartGateway(uint256[] memory _chainId,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setCounterpartGateway(uint256[] memory _chainId,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_chainId.length == _counterpartGateWay.length, "length mismatch");
         for (uint256 i = 0; i < _chainId.length; i++) {
             require(_counterpartGateWay[i] != address(0)," Value cann't be zero");

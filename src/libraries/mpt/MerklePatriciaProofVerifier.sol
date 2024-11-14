@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import {RLPReader} from "@solidity-rlp/contracts/RLPReader.sol";
 
 library MerklePatriciaProofVerifier {
-    using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
+    using RLPReader for RLPReader.RLPItem;
 
     /// @dev Verifies a Merkle-Patricia-Trie proof.
     ///      If the proof proves the inclusion of some key-value pair in the

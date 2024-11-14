@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 pragma experimental ABIEncoderV2;
 
-import "./RLPEncode.sol";
 import "./Types.sol";
+import "./RLPEncode.sol";
 
 library RLPEncodeStruct {
     using RLPEncode for bytes;

@@ -42,7 +42,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     uint256 public forcedTransactionsCommitted;
 
     /// @notice Address of the rolemanager contract
-    address roleManagerAddress;
+    address roleManager;
 
     
     /// @notice The mapping of batchNumber => CommittedBatches
@@ -56,7 +56,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      **********************/
 
     modifier onlyRoles(bytes32 role) {
-        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
 
@@ -72,30 +72,31 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice Initialize the storage of TwineChain.
     /// @param _messageQueue The address of `L1MessageQueue` contract.
     /// @param _verifier The address of zkevm verifier contract.
-    function initialize(address _messageQueue, address _verifier)
+    function initialize(address _messageQueue, address _verifier,address _roleManager)
         external
         initializer
     {
         messageQueue = _messageQueue;
         verifier = _verifier;
+        roleManager = _roleManager;
     }
 
     function setMessengerQueueAddress(
         address _messageQueue
-    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messageQueue = _messageQueue;
     }
 
-    function setVeriferAddress(address _verifier) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setVeriferAddress(address _verifier) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         verifier = _verifier;
     }
 
-    function setProgramVKey(bytes32 _programVKey) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setProgramVKey(bytes32 _programVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         ProgramVKey = _programVKey;
     }
 
     /// @inheritdoc ITwineChain
-    function commitBatch(CommitBatchInfo calldata _newBatchData) external {
+    function commitBatch(CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(_newBatchData.batchNumber == lastCommittedBatchNumber + 1, "Only next batch can be committed.");
         StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
         committedBatches[batchToCommit.batchNumber] = batchToCommit;
@@ -264,7 +265,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
 
     /// @inheritdoc ITwineChain
-    function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external {
+    function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(isBatchCommitted(batchNumber), "Batch Needs to be committed before finalization");
 
         bytes memory publicValues = committedBatches[batchNumber].publicInput;

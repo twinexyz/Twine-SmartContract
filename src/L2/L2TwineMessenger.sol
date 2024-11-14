@@ -18,13 +18,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     /// @notice Mapping to store the receipt roots for each block number
     mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
-    
-    ///@notice Struct to match the precompile's return type
-    struct ConsensusVerificationData {
-        uint256 chainId;
-        uint256 blockNumber;
-        bytes32 receiptRoot;
-    }
 
     /***************
      * Constructor *
@@ -42,7 +35,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         TwineL2MessengerBase.__TwineMessengerBase_init(_ethChaindId,_ethCounterpart,_roleManager);
     }
 
-    function setPrecompileAddress(address _consensusPrecompileAddress,address _bridgingPrecompileAddress) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function setPrecompileAddress(address _consensusPrecompileAddress,address _bridgingPrecompileAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         consensusPrecompileAddress = _consensusPrecompileAddress;
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
@@ -70,14 +63,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function verifyConsensusProof(
         bytes memory consensusData
-    ) external {
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         (bool success, bytes memory output) = consensusPrecompileAddress.call(consensusData);
         require(success, "Consensus proof Failed!");
-        ConsensusVerificationData[] memory verificationData = abi.decode(output,(ConsensusVerificationData[]));
-        // Store the decoded data in the mapping
-        for (uint i = 0; i < verificationData.length; i++) {
-            blockReceiptRoots[verificationData[i].chainId][verificationData[i].blockNumber] = verificationData[i].receiptRoot;
-        }
         emit consensusVerified(consensusData);
         
     }
@@ -85,7 +73,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     function executeDepositTransactions(
         bytes[] memory depositTransactions,
         bytes memory proof
-    ) public {
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         bytes memory data = abi.encode(depositTransactions, proof);
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
         require(success, "Deposits failed!");
@@ -95,7 +83,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     function executeForcedWithdrawal(
         bytes memory withdrawalTransaction,
         bytes memory proof
-    ) public {
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         bytes memory data = abi.encode(withdrawalTransaction, proof);
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
         require(success, "Withdrawal failed!");

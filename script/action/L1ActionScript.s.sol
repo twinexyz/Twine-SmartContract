@@ -88,7 +88,7 @@ contract L1ActionScript is Script {
         l1CustomERC20Gateway = L1CustomERC20Gateway(
             l1CustomERC20GatewayAddress
         );
-        roleManager = RoleManager(roleManagerAddress);
+        roleManager = RoleManager(roleManager);
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
         l1XERC20Gateway = L1XERC20Gateway(l1XERC20GatewayAddress);

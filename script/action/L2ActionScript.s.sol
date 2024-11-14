@@ -92,7 +92,7 @@ contract L2ActionScript is Script {
             l2CustomERC20GatewayAddress
         );
 
-        roleManager = RoleManager(roleManagerAddress);
+        roleManager = RoleManager(roleManager);
         l2ETHGateway = L2ETHGateway(l2ETHGatewayAddress);
         l2GatewayRouter = L2GatewayRouter(l2GatewayRouterAddress);
         l2XERC20Gateway = L2XERC20Gateway(l2XERC20GatewayAddress);

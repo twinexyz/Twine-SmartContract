@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.24;
 
-import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
-import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title L1GatewayRouter
 /// @notice The `L1GatewayRouter` is the main entry for depositing Ether and ERC20 tokens.
@@ -31,14 +31,14 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
     address public gatewayInContext;
 
     /// @notice The address of RoleManagerContract
-    address public roleManagerAddress;
+    address public roleManager;
 
      /**********************
      * Function Modifiers *
      **********************/
 
     modifier onlyRoles(bytes32 role) {
-        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
 
@@ -81,7 +81,7 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
             emit SetETHGateway(address(0), _ethGateway);
         }
 
-        roleManagerAddress = _roleManager;
+        roleManager = _roleManager;
     }
 
     function setAddress(address _ethGateway, address _defaultERC20Gateway)
@@ -300,11 +300,11 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
 
     function setRoleManagerAddress(address _roleManagerAddress)external 
     {
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 
     function setETHGateway(address _newEthGateway) external 
-    onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         address _oldETHGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -313,7 +313,7 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
 
     /// @inheritdoc IL1GatewayRouter
     function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external 
-    onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+    onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
@@ -328,7 +328,7 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
     function setERC20Gateway(
         address[] memory _tokens,
         address[] memory _gateways
-    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
         for (uint256 i = 0; i < _tokens.length; i++) {
             require(_tokens[i]!= address(0)," Value cann't be zero");
