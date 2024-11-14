@@ -52,9 +52,10 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     function initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
     }
 
     /*************************
@@ -76,7 +77,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     ///
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
     /// @param _l1Token The address of ERC20 token on layer 1.
-    function updateTokenMapping(uint256 _chainId,address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function updateTokenMapping(uint256 _chainId,address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_l2Token != address(0) && _l1Token != address(0)," Token address cann't be zero");
         address _oldL1Token = tokenMapping[_chainId][_l2Token];
         tokenMapping[_chainId][_l2Token] = _l1Token;

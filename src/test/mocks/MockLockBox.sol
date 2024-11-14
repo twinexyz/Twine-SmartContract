@@ -3,10 +3,10 @@ pragma solidity >=0.8.4 <0.9.0;
 
 import {IXERC20} from "@xtoken/contracts/interfaces/IXERC20.sol";
 
-import {IERC20} from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeCast} from '@openzeppelin/contracts/utils/math/SafeCast.sol';
 import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 contract MockLockBox is IXERC20Lockbox {
   using SafeERC20 for IERC20;

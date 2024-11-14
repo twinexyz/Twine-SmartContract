@@ -24,8 +24,13 @@ interface IRoleManager {
     function DEFAULT_ADMIN_ROLE() external view returns (bytes32);
 
     /**
-     * @notice Returns bytes32 value of the public variable ACTIONS_ADMIN
-     **/
+     * @notice Returns bytes32 value of the public variable CHAIN_ADMIN
+    **/
     function CHAIN_ADMIN() external view returns (bytes32);
+
+    /**
+     * @notice Returns bytes32 value of the public variable  TWINE_OPERATIONS_HANDLER
+    **/
+    function TWINE_OPERATIONS_HANDLER() external view returns (bytes32);
 
 }

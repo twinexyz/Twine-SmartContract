@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
+import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
@@ -26,9 +26,10 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
     }
 
     /*****************************
@@ -68,7 +69,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         address _from,
         address _to,
         uint256 _amount
-    ) external payable override onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    ) external payable override onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(msg.value == _amount, "msg.value mismatch");
 
         // @note can possible trigger reentrant call to messenger,

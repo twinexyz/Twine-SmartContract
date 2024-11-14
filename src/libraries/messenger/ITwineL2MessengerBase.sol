@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 interface ITwineL2MessengerBase {
-
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
 
@@ -10,7 +9,11 @@ interface ITwineL2MessengerBase {
     /// @param chainId The id of a chain.
     /// @param oldCounterpartMessenger The corresponding address of the old messenger.
     /// @param newCounterpartMessenger The corresponding address of the new messenger.
-    event SetCounterpartMessenger(uint256 indexed chainId, address indexed oldCounterpartMessenger, address indexed newCounterpartMessenger);
+    event SetCounterpartMessenger(
+        uint256 indexed chainId,
+        address indexed oldCounterpartMessenger,
+        address indexed newCounterpartMessenger
+    );
 
     /*****************************
      * Public Mutating Functions *

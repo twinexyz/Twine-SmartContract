@@ -29,7 +29,7 @@ abstract contract TwineL1GatewayBase is
     /// @inheritdoc ITwineL1Gateway
     address public override messenger;
 
-    address public roleManagerAddress;
+    address public roleManager;
 
     /// @dev The storage slots for future usage.
     uint256[46] private __gap;
@@ -39,30 +39,32 @@ abstract contract TwineL1GatewayBase is
      **********************/
 
     modifier onlyRoles(bytes32 role) {
-        IRoleManager(roleManagerAddress).checkRole(role, _msgSender());
+        IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
 
     function _initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         counterpart = _counterpart;
         router = _router;
         messenger = _messenger;
+        roleManager = _roleManager;
     }
 
     function setRoleManagerAddress(address _roleManagerAddress)
-        external 
+        external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
-        roleManagerAddress = _roleManagerAddress;
+        roleManager = _roleManagerAddress;
     }
 
     function setAddress(address _counterpart, address _router, address _messenger)
         external
-        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
         counterpart = _counterpart;
         router = _router;

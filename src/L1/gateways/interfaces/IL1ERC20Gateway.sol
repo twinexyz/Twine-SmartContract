@@ -3,8 +3,7 @@
 pragma solidity ^0.8.24;
 
 interface IL1ERC20Gateway {
-
-     /**********
+    /**********
      * Events *
      **********/
 
@@ -42,7 +41,7 @@ interface IL1ERC20Gateway {
         bytes data
     );
 
-     /// @notice Emitted when someone call ForcedWithdrawal of custom ERC20 token from L1 to L2.
+    /// @notice Emitted when someone call ForcedWithdrawal of custom ERC20 token from L1 to L2.
     /// @param l1Token The address of the token in L1.
     /// @param l2Token The address of the token in L2.
     /// @param from The address of sender in L1.
@@ -57,13 +56,19 @@ interface IL1ERC20Gateway {
         uint256 blockNumber
     );
 
-    function getL2ERC20Address(address _l1Token) external view returns (address);
+    function getL2ERC20Address(
+        address _l1Token
+    ) external view returns (address);
 
     /// @notice Emitted when some ERC20 token is refunded.
     /// @param token The address of the token in L1.
     /// @param recipient The address of receiver in L1.
     /// @param amount The amount of token refunded to receiver.
-    event RefundERC20(address indexed token, address indexed recipient, uint256 amount);
+    event RefundERC20(
+        address indexed token,
+        address indexed recipient,
+        uint256 amount
+    );
 
     /// @notice Deposit some token to a recipient's account on L2.
     /// @dev Make this function payable to send relayer fee in Ether.
@@ -125,5 +130,4 @@ interface IL1ERC20Gateway {
         uint256 _amount,
         bytes calldata _data
     ) external payable;
-
 }

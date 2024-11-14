@@ -29,9 +29,10 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     function initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
     }
 
     /*****************************

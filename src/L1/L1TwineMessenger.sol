@@ -88,13 +88,13 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
     function setMessengerQueueAddress(
         address _messageQueue
-    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messageQueue = _messageQueue;
     }
 
     function setRollupAddress(
         address _rollup
-    ) external onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         rollup = _rollup;
     }
 

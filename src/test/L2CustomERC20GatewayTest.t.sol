@@ -7,21 +7,23 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
-import {L2GatewayRouter} from "../L2/gateways/L2GatewayRouter.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
+import {L2GatewayRouter} from "../L2/gateways/L2GatewayRouter.sol";
 import {IL1ERC20Gateway, L1CustomERC20Gateway} from "../L1/gateways/L1CustomERC20Gateway.sol";
 import {IL2ERC20Gateway, L2CustomERC20Gateway} from "../L2/gateways/L2CustomERC20Gateway.sol";
 
 contract L2CustomERC20GatewayTest is Test {
-    L2CustomERC20Gateway private gateway;
-    L2GatewayRouter private router;
-    L1CustomERC20Gateway private counterpartGateway;
-    RoleManager private roleManager;
     MockERC20 l1Token;
     MockERC20 l2Token;
-    address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
+    L2GatewayRouter private router;
+    RoleManager private roleManager;
+    L2CustomERC20Gateway private gateway;
     L2TwineMessenger internal l2Messenger;
+    L1CustomERC20Gateway private counterpartGateway;
+
+    
+    address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
     address L2CustomERC20GatewayAddress;
 
@@ -69,7 +71,7 @@ contract L2CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (address(0), address(router), address(l2Messenger))
+                (address(0), address(router), address(l2Messenger),address(roleManager))
             )
         );
         gateway = L2CustomERC20Gateway(L2CustomERC20GatewayAddress);

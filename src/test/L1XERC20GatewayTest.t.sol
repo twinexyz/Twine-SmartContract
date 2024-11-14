@@ -9,31 +9,32 @@ import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockXERC20} from "./mocks/MockXERC20.sol";
 import {MockLockBox} from "./mocks/MockLockBox.sol";
+import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
-import {L1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {IXERC20Lockbox} from "../libraries/token/IXERC20Lockbox.sol";
 import {IL1XERC20Gateway, L1XERC20Gateway} from "../L1/gateways/L1XERC20Gateway.sol";
-import {TwineChain} from "../L1/rollup/TwineChain.sol";
+import {L1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 import {IL2XERC20Gateway, L2XERC20Gateway} from "../L2/gateways/L2XERC20Gateway.sol";
 
 contract L1XERC20GatewayTest is Test {
-    L1XERC20Gateway private gateway;
-    L1GatewayRouter private router;
-    L2XERC20Gateway private counterpartGateway;
-    RoleManager private roleManager;
     MockERC20 l1Token;
     MockXERC20 l1XToken;
     MockXERC20 l2XToken;
     MockLockBox lockBox;
-    address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
+    TwineChain private rollup;
+    L1GatewayRouter private router;
+    L1XERC20Gateway private gateway;
+    RoleManager private roleManager;
+    L1MessageQueue private messageQueue;
     L1TwineMessenger private l1Messenger;
     L2TwineMessenger private l2Messenger;
-    L1MessageQueue private messageQueue;
+    L2XERC20Gateway private counterpartGateway;
+
+    address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
-    TwineChain private rollup;
 
     function setUp() public {
         // Deploy tokens
@@ -80,7 +81,7 @@ contract L1XERC20GatewayTest is Test {
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
             msg.sender,
-            abi.encodeCall(TwineChain.initialize, (address(0), address(0))) // Example initial value
+            abi.encodeCall(TwineChain.initialize, (address(0), address(0),address(roleManager))) 
         );
 
         rollup = TwineChain(TwineChainAddress);
@@ -106,7 +107,7 @@ contract L1XERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1XERC20Gateway.initialize,
-                (address(0), address(router), address(l1Messenger))
+                (address(0), address(router), address(l1Messenger),address(roleManager))
             )
         );
         gateway = L1XERC20Gateway(L1XERC20GatewayAddress);

@@ -41,7 +41,7 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (address(0), L2GatewayRouterAddress, address(0))
+                (address(0), L2GatewayRouterAddress, address(0),roleManagerAddress)
             )
         );
 
@@ -51,7 +51,7 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2ETHGateway.initialize,
-                (address(0), L2GatewayRouterAddress, address(0))
+                (address(0), L2GatewayRouterAddress, address(0),roleManagerAddress)
             )
         );
 
@@ -61,7 +61,7 @@ contract DeployL2Contracts is Script {
             msg.sender,
             abi.encodeCall(
                 L2XERC20Gateway.initialize,
-                (address(0), L2GatewayRouterAddress, address(0))
+                (address(0), L2GatewayRouterAddress, address(0),roleManagerAddress)
             )
         );
 
@@ -80,8 +80,8 @@ contract DeployL2Contracts is Script {
 
         // Logging the address of the deployed proxies
         console.log("Deployed Contracts :");
-        console.log("L2 Eth Gateway contract address :", L2ETHGatewayAddress);
         console.log("L2 Rolemanager contract Address :", roleManagerAddress);
+        console.log("L2 Eth Gateway contract address :", L2ETHGatewayAddress);
         console.log("L2 Gateway Router contract Address :", L2GatewayRouterAddress);
         console.log("L2 XERC20 contract contract Address :", L2XERC20GatewayAddress);
         console.log("L2 Twine Messenger contract Address :", L2TwineMessengerAddress);

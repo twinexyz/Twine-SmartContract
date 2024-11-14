@@ -5,13 +5,13 @@ pragma solidity ^0.8.24;
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
+import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
-import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 /// @title L1ERC20Gateway
 /// @notice The `L1ERC20Gateway` as a base contract for ERC20 gateways in L1.
@@ -59,7 +59,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) external payable virtual override nonReentrant  onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()){
+    ) external payable virtual override nonReentrant  onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()){
         _beforeFinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
 
         // @note can possible trigger reentrant call to this contract or messenger,

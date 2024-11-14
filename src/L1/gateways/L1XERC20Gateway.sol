@@ -6,14 +6,14 @@ import {IXERC20} from "@xtoken/contracts/interfaces/IXERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IL2XERC20Gateway} from "../../L2/gateways/interfaces/IL2XERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
-import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 import {IL1XERC20Gateway} from "./interfaces/IL1XERC20Gateway.sol";
-import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
-import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IXERC20Lockbox} from "../../libraries/token/IXERC20Lockbox.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
+import {IL2XERC20Gateway} from "../../L2/gateways/interfaces/IL2XERC20Gateway.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
     using SafeERC20 for IERC20;
@@ -56,9 +56,10 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
     function initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
     }
 
     /*************************
@@ -76,7 +77,7 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
 
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
-    function updateTokenMapping(address _l1Token, XTokenConfig memory _newXTokenConfig) external payable onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function updateTokenMapping(address _l1Token, XTokenConfig memory _newXTokenConfig) external payable onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_newXTokenConfig.l2Token != address(0), "token address cannot be 0");
 
         XTokenConfig memory oldXTokenConfig = tokenMapping[_l1Token];
@@ -131,7 +132,7 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) external payable virtual override nonReentrant onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    ) external payable virtual override nonReentrant onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         _beforeFinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
         XTokenConfig memory xTokenInfo = tokenMapping[_l1Token];
         if(_l1Token != xTokenInfo.l1xToken){

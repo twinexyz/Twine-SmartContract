@@ -55,9 +55,10 @@ contract L2XERC20Gateway is TwineL2GatewayBase,IL2XERC20Gateway {
     function initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
     }
 
     /*************************
@@ -76,7 +77,7 @@ contract L2XERC20Gateway is TwineL2GatewayBase,IL2XERC20Gateway {
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
 
-    function updateTokenMapping(uint256 _chainId,address _l1Token,XTokenConfig memory xTokenConfig) external payable onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN()) {
+    function updateTokenMapping(uint256 _chainId,address _l1Token,XTokenConfig memory xTokenConfig) external payable onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         XTokenConfig memory oldxTokenConfig = tokenMapping[_chainId][xTokenConfig.l1Token];
         address _oldL1Token = oldxTokenConfig.l1Token;
         address l2Token = xTokenConfig.l1Token;

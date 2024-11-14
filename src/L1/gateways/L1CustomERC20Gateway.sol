@@ -6,8 +6,8 @@ import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 /// @title L1CustomERC20Gateway
@@ -51,9 +51,10 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     function initialize(
         address _counterpart,
         address _router,
-        address _messenger
+        address _messenger,
+        address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger);
+        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
     }
 
     /*************************
@@ -80,7 +81,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     function updateTokenMapping(address _l1Token, address _l2Token)
         external
         payable
-        onlyRoles(IRoleManager(roleManagerAddress).CHAIN_ADMIN())
+        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
         require(_l1Token != address(0), "token address cannot be 0");
         require(_l2Token != address(0), "token address cannot be 0");

@@ -6,28 +6,30 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
-import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
-import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
-import {IL1ETHGateway, L1ETHGateway} from "../L1/gateways/L1ETHGateway.sol";
-import {TwineChain} from "../L1/rollup/TwineChain.sol";
+import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {IL2ETHGateway, L2ETHGateway} from "../L2/gateways/L2ETHGateway.sol";
+import {IL1ETHGateway, L1ETHGateway} from "../L1/gateways/L1ETHGateway.sol";
+import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 
 contract L1ETHGatewayTest is Test {
-    L1ETHGateway private gateway;
-    L1GatewayRouter private router;
-    L2ETHGateway private counterpartGateway;
-    RoleManager private roleManager;
     MockERC20 l1Token;
     MockERC20 l2Token;
-    address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
+    TwineChain private rollup;
+    L1ETHGateway private gateway;
+    L1GatewayRouter private router;
+    RoleManager private roleManager;
+    L1MessageQueue private messageQueue;
     L1TwineMessenger private l1Messenger;
     L2TwineMessenger private l2Messenger;
-    L1MessageQueue private messageQueue;
+    L2ETHGateway private counterpartGateway;
+   
+
+    address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
-    TwineChain private rollup;
 
     function setUp() public {
         vm.startPrank(initialOwner);
@@ -74,7 +76,7 @@ contract L1ETHGatewayTest is Test {
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
             msg.sender,
-            abi.encodeCall(TwineChain.initialize, (address(0), address(0)))
+            abi.encodeCall(TwineChain.initialize, (address(0), address(0),address(roleManager)))
         );
 
         rollup = TwineChain(TwineChainAddress);
@@ -97,7 +99,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(0), address(router), address(l1Messenger))
+                (address(0), address(router), address(l1Messenger),address(roleManager))
             )
         );
         gateway = L1ETHGateway(L1ETHGatewayAddress);
