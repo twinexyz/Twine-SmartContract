@@ -32,6 +32,14 @@ library Types {
         LogData[] logs; // Logs sent from contracts (array of Log structs)
     }
 
+     // Represents the main receipt body excludingTxType
+    struct ReceiptWithoutTxType {
+        bool success; // If transaction is executed successfully
+        uint64 cumulativeGasUsed; // Gas used
+        bytes bloom;
+        LogData[] logs; // Logs sent from contracts (array of Log structs)
+    }
+
     struct AccessList {
         address _address;
         bytes32[] storageKeys;
