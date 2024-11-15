@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "./Types.sol";
 import "./RLPEncode.sol";
+import {ITwineChain} from "../../L1/rollup/ITwineChain.sol";
 
 library RLPEncodeStruct {
     using RLPEncode for bytes;
@@ -14,7 +15,7 @@ library RLPEncodeStruct {
     using RLPEncode for bool;
 
     using RLPEncodeStruct for Types.LogData;
-    using RLPEncodeStruct for Types.AccessList;
+    using RLPEncodeStruct for ITwineChain.AccessList;
     using RLPEncodeStruct for Types.ReceiptObject;
     using RLPEncodeStruct for Types.RLPTransactionObject;
 
@@ -64,7 +65,7 @@ library RLPEncodeStruct {
     }
 
     function encodeAccessList(
-        Types.AccessList memory _accessList
+        ITwineChain.AccessList memory _accessList
     ) internal pure returns (bytes memory) {
         bytes memory _rlp;
         bytes memory temp;

@@ -2,6 +2,7 @@
 src = "src"
 out = "out"
 libs = ["node_modules", "lib"]
+solc_version = "0.8.24"
 build_info = true
 extra_output = ["storageLayout"]
 ffi = true
