@@ -10,13 +10,13 @@ import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {RLPDecodeStruct} from "../../libraries/rlp/RLPDecodeStruct.sol";
 import {RLPEncodeStruct, Types} from "../../libraries/rlp/RLPEncodeStruct.sol";
-import "forge-std/console.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
-    using RLPEncodeStruct for Types.RLPTransactionObject;
+    using RLPEncodeStruct for TransactionObject;
     using RLPEncodeStruct for Types.ReceiptObject;
+
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
 
@@ -124,7 +124,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     function getTransactinObjectRLP(
-        Types.RLPTransactionObject memory _transactionObject
+        ITwineChain.TransactionObject memory _transactionObject
     ) public view returns (bytes32 transactionObjectHash) {
         uint8 transactionType = 2;
         bytes memory returnedRlp = abi.encodePacked(transactionType,_transactionObject.encodeTransactionObject());
@@ -174,10 +174,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // );
 
         bytes memory publicValues = committedBatches[batchNumber].publicInput;
-        //bytes memory publicValues = hex"00000000000002bf7e092780932eed98ecf71ba7ba4152ac470a58fa37256742f09b8994d8677f526ba4e55f69c3b7d8a451a3695d91214decaec10ad74553f77acd852875022ddd50947d76e553fff7120540097ecff5731a91f121903c309b553fe9f842628bcf111eb09ebd09d3e28793225d7193500bc65d396d1d1ed1e2707fb37f0d5e6ae500e9c139debae1d63dafd5d32abc4335e15a57037ebc39c181ec9ad426d88e2842ed6dce6384c126c301be1e0b2f2aaae9dd1a99f66c9e74fc25b0b351636cf200000000";
-        bytes memory prependedProof = perpendBytes(_proofBytes);
 
-        SP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, prependedProof);
+        SP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, _proofBytes);
 
         // remove first (depositTransactionsCommitted) elements from depositQueue
         //IL1MessageQueue(messageQueue).popFirstNDepositElement(depositTransactionsCommitted);
@@ -203,7 +201,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function _commitBatch(CommitBatchInfo calldata _newBatchData) internal returns (StoredBatchInfo memory) {
        CommitmentData memory commitmentData = _calculateProofInput(_newBatchData);
-       console.logBytes(commitmentData._proofInput);
         return
             StoredBatchInfo({
                 batchNumber: _newBatchData.batchNumber,
@@ -217,7 +214,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 otherTransactionHashes: commitmentData._otherTransactionHash,
                 publicInput: commitmentData._proofInput
             });
-    }
+    }   
 
     function _calculateProofInput(CommitBatchInfo memory _newBatchData)
         internal
@@ -239,7 +236,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         if(_newBatchData.depositTransactionObject.length != 0){
             depositTransactionHash = _handleDeposit(_newBatchData.depositTransactionObject);
-            console.logBytes32(depositTransactionHash[0]);
             proofInput = abi.encodePacked(proofInput, depositTransactionHash);
         }
 
@@ -300,24 +296,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             //         _depositTransactionObject[i].input = reencodedReceipt;
             //     }
             // }
-
-            bool _v = (_depositTransactionObject[i].v == 1);
-
-            Types.RLPTransactionObject memory transactionObjectForEncoding = Types.RLPTransactionObject({
-                chainId: _depositTransactionObject[i].chainId,
-                nonce: _depositTransactionObject[i].nonce,
-                maxPriorityFeePerGas: _depositTransactionObject[i].maxPriorityFeePerGas,
-                maxFeePerGas: _depositTransactionObject[i].maxFeePerGas,
-                gas: _depositTransactionObject[i].gas,
-                to: _depositTransactionObject[i].to,
-                value: _depositTransactionObject[i].value,
-                input: _depositTransactionObject[i].input,
-                accesslist: _depositTransactionObject[i].accesslist,
-                v: _v,
-                r: _depositTransactionObject[i].r,
-                s: _depositTransactionObject[i].s
-            });
-            depositTransactionHash[i] = getTransactinObjectRLP(transactionObjectForEncoding); 
+            depositTransactionHash[i] = getTransactinObjectRLP( _depositTransactionObject[i]); 
         }
         return depositTransactionHash;
     }

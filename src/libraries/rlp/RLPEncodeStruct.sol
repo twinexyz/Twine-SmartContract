@@ -17,7 +17,7 @@ library RLPEncodeStruct {
     using RLPEncodeStruct for Types.LogData;
     using RLPEncodeStruct for ITwineChain.AccessList;
     using RLPEncodeStruct for Types.ReceiptObject;
-    using RLPEncodeStruct for Types.RLPTransactionObject;
+    using RLPEncodeStruct for ITwineChain.TransactionObject;
 
     uint8 internal constant LIST_SHORT_START = 0xc0;
     uint8 internal constant LIST_LONG_START = 0xf7;
@@ -80,8 +80,9 @@ library RLPEncodeStruct {
     }
 
     function encodeTransactionObject(
-        Types.RLPTransactionObject memory _transactionObject
+        ITwineChain.TransactionObject memory _transactionObject
     ) internal pure returns (bytes memory) {
+        bytes memory _vEncode;
         bytes memory _rlp;
         bytes memory _rlpSig;
         bytes memory temp;
@@ -109,15 +110,22 @@ library RLPEncodeStruct {
             abi.encodePacked(_transactionObject.s).encodeBytes()
         );
 
-        bytes memory _vEncode = abi.encodePacked(
-            abi.encodePacked(_transactionObject.v.encodeBool())
-        );
+        uint64 vValue = _transactionObject.v;
+        
+        if (vValue == 0) {
+            _vEncode = abi.encodePacked(false.encodeBool());
+        } else if (vValue == 1) {
+            _vEncode = abi.encodePacked(true.encodeBool());
+        } else {
+            _vEncode = abi.encodePacked(uint256(vValue).encodeUint());
+        }
         _rlpSig = abi.encodePacked(_vEncode, _rsEncode);
 
         _rlp = abi.encodePacked(_rlp, _rlpSig);
 
         return abi.encodePacked(addLength(_rlp.length, false), _rlp);
     }
+
 
     //  Adding LIST_HEAD_START by length
     //  There are two cases:

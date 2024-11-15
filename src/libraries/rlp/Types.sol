@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-
-import {ITwineChain} from "../../L1/rollup/ITwineChain.sol";
-
 library Types {
     /**
      * @Notice List of ALL Struct being used to Encode and Decode RLP Messages
@@ -42,18 +39,5 @@ library Types {
         LogData[] logs; // Logs sent from contracts (array of Log structs)
     }
 
-    struct RLPTransactionObject {
-        uint256 chainId;
-        uint256 nonce;
-        uint256 maxPriorityFeePerGas;
-        uint256 maxFeePerGas;
-        uint256 gas;
-        address to;
-        uint256 value;
-        bytes input;
-        ITwineChain.AccessList[] accesslist;
-        bool v;
-        bytes32 r;
-        bytes32 s;
-    }
+    
 }
