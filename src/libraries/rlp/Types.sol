@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ITwineChain} from "../../L1/rollup/ITwineChain.sol";
+
 library Types {
     /**
      * @Notice List of ALL Struct being used to Encode and Decode RLP Messages
@@ -31,18 +33,13 @@ library Types {
         bytes bloom;
         LogData[] logs; // Logs sent from contracts (array of Log structs)
     }
-
+    
      // Represents the main receipt body excludingTxType
     struct ReceiptWithoutTxType {
         bool success; // If transaction is executed successfully
         uint64 cumulativeGasUsed; // Gas used
         bytes bloom;
         LogData[] logs; // Logs sent from contracts (array of Log structs)
-    }
-
-    struct AccessList {
-        address _address;
-        bytes32[] storageKeys;
     }
 
     struct RLPTransactionObject {
@@ -54,7 +51,7 @@ library Types {
         address to;
         uint256 value;
         bytes input;
-        AccessList[] accesslist;
+        ITwineChain.AccessList[] accesslist;
         bool v;
         bytes32 r;
         bytes32 s;
