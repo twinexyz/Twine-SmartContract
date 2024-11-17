@@ -129,18 +129,16 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
 
         // 2. Generate message passed to L2CustomERC20Gateway.
         bytes memory _message = abi.encode(_token, _l2Token, _from, _to, _amount, _data);
-        
-        // 3. Calculate the type of transaction
-        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.deposit;
 
         // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
-            _type,
+            ITwineL1MessengerBase.TransactionType.deposit,
             counterpart,
+            _from,
+            _to,
             0,
-            _message,
             _gasLimit,
-            _from
+            _message
         );
 
         emit DepositERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
@@ -160,16 +158,15 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         // 2. Generate message passed to L1TwineMessenger.
         bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
 
-        // 3. Calculate the type of transaction
-        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
-            _type,
+            ITwineL1MessengerBase.TransactionType.withdrawal,
             counterpart,
+            _from,
+            _to,
             0,
-            _message,
             _gasLimit,
-            _from
+            _message
         );
          emit ForcedWithdrawalCustomERC20(_l1Token, _l2Token, _from, _to, _amount,block.number);
 
