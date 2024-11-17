@@ -125,7 +125,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function getTransactinObjectRLP(
         ITwineChain.TransactionObject memory _transactionObject
-    ) public view returns (bytes32 transactionObjectHash) {
+    ) public pure returns (bytes32 transactionObjectHash) {
         uint8 transactionType = 2;
         bytes memory returnedRlp = abi.encodePacked(transactionType,_transactionObject.encodeTransactionObject());
         transactionObjectHash = keccak256(
@@ -244,7 +244,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if(_newBatchData.forcedTransactionObjects.length != 0){
             forcedTransactionHash = _handleForcedTransaction(_newBatchData.forcedTransactionObjects);
             for (uint256 i = 0; i < forcedTransactionHash.length; i++) {
-                proofInput = abi.encode(proofInput, forcedTransactionHash[i]);
+                proofInput = abi.encodePacked(proofInput, forcedTransactionHash[i]);
             }
         }
 
@@ -253,7 +253,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
 
             for (uint256 i = 0; i < otherTransactionHash.length; i++) {
-                proofInput = abi.encode(proofInput, otherTransactionHash[i]);
+                proofInput = abi.encodePacked(proofInput, otherTransactionHash[i]);
             }
         }
 
@@ -269,33 +269,30 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
 
     function _handleDeposit(TransactionObject[] memory _depositTransactionObject)
-        internal  
+        internal 
         returns (bytes32[] memory) 
     {   
         bytes32[] memory depositTransactionHash = new bytes32[](_depositTransactionObject.length);
 
         // For individual deposit transaction object
         for(uint256 i = 0; i < _depositTransactionObject.length; i++) {
-            // if(_depositTransactionObject[i].chainId == chainId){
-            //     bytes memory trimmedInput = _trimFourBytes(_depositTransactionObject[i].input);
-                 
-            //      // Array that contains RLP encoded Receipt Object for Individual deposit object
-            //     (bytes[] memory encodedReceiptObjects, ) = abi.decode(trimmedInput, (bytes[], bytes[]));
-
-            //     // Extract the datas from the log
-            //     for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
-            //         Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(encodedReceiptObjects[j]);
-            //         uint256 messageIndex = 0;
-
-            //         bytes memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(messageIndex);
-            //         Types.LogData memory decodedDataFromQueue = abi.decode(dataFromQueue, (Types.LogData));
-            //         depositTransactionsCommitted += 1;
-
-            //         decodedReceipt.logs[0] = decodedDataFromQueue;
-            //         bytes memory reencodedReceipt = getReceiptObjectRLP(decodedReceipt);
-            //         _depositTransactionObject[i].input = reencodedReceipt;
-            //     }
-            // }
+            (bytes memory trimmedInput,bytes memory removedInput) = _trimFourBytes(_depositTransactionObject[i].input);
+            // Array that contains RLP encoded Receipt Object for Individual deposit object
+            (bytes[] memory encodedReceiptObjects,bytes[] memory proofs) = abi.decode(trimmedInput, (bytes[], bytes[]));
+            // Extract the datas from the log
+            for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
+                IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(depositTransactionsCommitted);
+                ++ depositTransactionsCommitted;
+                Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects[j]));
+                    for(uint256 k = 0; k < decodedReceipt.logs.length; k++){
+                        if(decodedReceipt.logs[k].logAddress == dataFromQueue.messageQueueAddress) {
+                            decodedReceipt.logs[k].topics[1] = dataFromQueue.fromAddressHash;
+                            decodedReceipt.logs[k].data =  dataFromQueue.dataValuesByte;
+                        }
+                        encodedReceiptObjects[k]= getReceiptObjectRLP(decodedReceipt);
+                    }
+                _depositTransactionObject[i].input = prependBytes(removedInput,abi.encode(encodedReceiptObjects,proofs));
+            }
             depositTransactionHash[i] = getTransactinObjectRLP( _depositTransactionObject[i]); 
         }
         return depositTransactionHash;
@@ -318,13 +315,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             // Check to see if the message was initiated from this L1
             if(receiptData.chainId == chainId) {
                 //Extract the ith transaction from withdrawal Queue
-                bytes memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(messageIndex);
+                IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(messageIndex);
 
                 // Increase the forced transactions committed count
                 forcedTransactionsCommitted += 1;
 
                 // Replace the _data with the transaction from Queue  
-                receiptData.data = dataFromQueue;
+                receiptData.data = dataFromQueue.dataValuesByte;
                 withdrawalReceipt.logs[0].data = abi.encode(receiptData);
             }  
 
@@ -342,34 +339,46 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     {
         bytes32[] memory otherTransactionHash = new bytes32[](_otherTransactionObject.length);    
         for(uint256 i = 0; i < _otherTransactionObject.length; i++){
-            otherTransactionHash[i] = keccak256(abi.encode(_otherTransactionObject));
+            otherTransactionHash[i] = getTransactinObjectRLP((_otherTransactionObject[i]));
         }
         return otherTransactionHash;
     } 
 
-    function perpendBytes(bytes memory original) public returns (bytes memory){
-        bytes4 toPrepend = bytes4(SP1Verifier(verifier).VERIFIER_HASH());
-        bytes memory result  = new bytes(toPrepend.length + original.length);
+    function prependBytes(
+        bytes memory prefix,
+        bytes memory originalData
+    ) public pure returns (bytes memory) {
+        require(prefix.length == 4, "Prefix must be exactly 4 bytes");
+        bytes memory result = new bytes(prefix.length + originalData.length);
 
-        // Copy `toPrepend` into the result array
-        for (uint64 i = 0; i < toPrepend.length; i++) {
-            result[i] = toPrepend[i];
+        for (uint256 i = 0; i < prefix.length; i++) {
+            result[i] = prefix[i];
         }
-        
-        // Copy the original bytes into the result array after `toPrepend`
-        for (uint64 i = 0; i < original.length; i++) {
-            result[toPrepend.length + i] = original[i];
+        for (uint256 i = 0; i < originalData.length; i++) {
+            result[i + prefix.length] = originalData[i];
         }
-        
         return result;
     }
 
-    function _trimFourBytes(bytes memory input) internal returns (bytes memory) {
-        bytes memory trimmedData = new bytes(input.length - 4);
-        for(uint256 i = 0; i < input.length; i++){
+    function _trimFourBytes(bytes memory input) internal pure returns (bytes memory trimmedData,bytes memory removedBytes) {
+        removedBytes = new bytes(4);
+        for (uint256 i = 0; i < 4; i++) {
+        removedBytes[i] = input[i];
+        }
+        trimmedData = new bytes(input.length - 4);
+        for(uint256 i = 4; i < input.length; i++){
             trimmedData[i - 4] = input[i];
         }
     }
+
+    function _trimOneByte(bytes memory input) internal pure returns (bytes memory) {
+        bytes memory trimmedData = new bytes(input.length - 1);
+        for(uint256 i = 1; i < input.length; i++){
+            trimmedData[i - 1] = input[i];
+        }
+        return trimmedData;
+    }
+
 
     function getReceiptObjectRLP(
         Types.ReceiptWithoutTxType memory _ro

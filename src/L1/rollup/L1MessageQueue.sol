@@ -15,10 +15,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     address public roleManager;
 
     /// @notice The list of queued cross domain messages.
-    bytes[] public depositMessageQueue;
+    MessageData[] public depositMessageQueue;
 
     /// @notice The list of queued cross domain Withdrawal messages.
-    bytes[] public withdrawalMessageQueue;
+     MessageData[] public withdrawalMessageQueue;
 
 
     modifier onlyMessenger() {
@@ -109,7 +109,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     function getCrossDomainDepositMessage(uint256 _queueIndex)
         external
         view
-        returns (bytes memory)
+        returns (MessageData memory)
     {
         return depositMessageQueue[_queueIndex];
     }
@@ -117,109 +117,129 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     function getCrossDomainWithdrawalMessage(uint256 _queueIndex)
         external
         view
-        returns (bytes memory)
+        returns (MessageData memory)
     {
         return withdrawalMessageQueue[_queueIndex];
     }
 
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
-        address _target,
+        address _from,
         address _to,
+        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
     ) external override onlyMessenger {
-
-        address _sender = _msgSender();
-
-        _queueDepositTransaction(_sender,_to,_value, _target, _gasLimit, _data);
+        _queueDepositTransaction(_from,_to,_counterpart,_value,_gasLimit,_data);
     }
 
     /// @inheritdoc IL1MessageQueue
      function appendCrossDomainWithdrawalMessage(
-        address _target,
+        address _from,
         address _to,
+        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
     ) external onlyMessenger {
-        address _sender = _msgSender();
+        _queueWithdrawalTransaction(_from,_to,_counterpart,_value,_gasLimit,_data);
 
-        _queueWithdrawalTransaction(_sender,_to,_value, _target, _gasLimit, _data);
     }
 
     /// @dev Internal function to queue a L1 transaction.
-    /// @param _sender The address of sender who will initiate this transaction in L2.
+    /// @param _from The address of sender
+    ///@param _to The address of the receiver
+    /// @param _counterpart The address of target contract to call in L2.
     /// @param _value The value passed
-     /// @param _target The address of target contract to call in L2.
     /// @param _gasLimit The maximum gas should be used for this transaction in L2.
     /// @param _data The calldata passed to target contract.
     function _queueDepositTransaction(
-        address _sender,
+        address _from,
         address _to,
+        address _counterpart,
         uint256 _value,
-        address _target,
         uint256 _gasLimit,
         bytes calldata _data
     ) internal {
         ++ depositMessageIndex ;
+
         bytes memory depositMessageByteCode = abi.encode(
-            _sender,
             _to,
-            _value,
-            _target,
-            depositMessageIndex,
-            _gasLimit,
-            _data
-        );
-
-        depositMessageQueue.push(depositMessageByteCode);
-
-        // emit event
-        emit QueueDepositTransaction(
-            _sender,
-            _to,
-            _target,
+            _counterpart,
             _value,
             chainId,
             depositMessageIndex,
             _gasLimit,
+            block.number,
+            _data
+        );
+
+        MessageData  memory depositMessageData = MessageData({
+            messageQueueAddress : address(this),
+            fromAddressHash : _padAddress(_from),
+            dataValuesByte : depositMessageByteCode
+        });
+
+        depositMessageQueue.push(depositMessageData);
+
+        // emit event
+        emit QueueDepositTransaction(
+            _from,
+            _to,
+            _counterpart,
+            _value,
+            chainId,
+            depositMessageIndex,
+            _gasLimit,
+            block.number,
             _data
         );
     }
 
     function _queueWithdrawalTransaction(
-        address _sender,
+        address _from,
         address _to,
+        address _counterpart,
         uint256 _value,
-        address _target,
         uint256 _gasLimit,
         bytes calldata _data
     ) internal {
 
         ++ withdrawalMessageIndex;
         bytes memory withdrawMessageByteCode  = abi.encode(
-            _sender,
             _to,
-            _target,
+            _counterpart,
             _value,
+            chainId,
             withdrawalMessageIndex,
             _gasLimit,
+            block.number,
             _data
         );
-        withdrawalMessageQueue.push(withdrawMessageByteCode);
+
+        MessageData  memory withdrawMessageData = MessageData({
+            messageQueueAddress : address(this),
+            fromAddressHash : _padAddress(_from),
+            dataValuesByte : withdrawMessageByteCode
+        });
+        withdrawalMessageQueue.push(withdrawMessageData);
 
         // emit event
         emit QueueWithdrawalTransaction(
-            _sender,
+            _from,
             _to,
-            _target, 
+            _counterpart,
             _value,
-            chainId, 
-            withdrawalMessageIndex, 
-            _gasLimit, 
+            chainId,
+            depositMessageIndex,
+            _gasLimit,
+            block.number,
             _data
         );
+    }
+
+    function _padAddress(address input) public pure returns (bytes32) {
+        return bytes32(uint256(uint160(input)));
     }
 }

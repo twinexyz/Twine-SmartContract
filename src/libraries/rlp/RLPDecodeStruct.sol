@@ -12,7 +12,7 @@ library RLPDecodeStruct {
     using RLPReader for RLPReader.Iterator;
 
     function decodeReceiptObject(bytes memory rlpEncodedReceipt)
-        public
+        internal
         pure
         returns (Types.ReceiptWithoutTxType memory receipt)
     {

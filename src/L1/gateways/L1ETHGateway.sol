@@ -109,10 +109,11 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
             counterpart,
+            _from,
+            _to,
             _amount,
-            _message,
             _gasLimit,
-            _from
+            _message
         );
 
         emit DepositETH(_from, _to,  _amount,block.number);
@@ -138,12 +139,13 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
-            _type, 
-            counterpart, 
-            _amount, 
-            _message, 
-            _gasLimit, 
-            _from
+            _type,
+            counterpart,
+            _from,
+            _to,
+            _amount,
+            _gasLimit,
+            _message
         );
 
         emit ForcedWithdrawalEth(_from, _to, _amount,block.number);

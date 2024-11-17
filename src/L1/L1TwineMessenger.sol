@@ -101,23 +101,14 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,
+        address _counterpart,
+        address _from,
         address _to,
         uint256 _value,
-        bytes memory _message,
-        uint256 _gasLimit
-    ) external payable override {
-        _sendMessage(_type, _to, _value, _message, _gasLimit, _msgSender());
-    }
-
-    function sendMessage(
-        TransactionType _type,
-        address _to,
-        uint256 _value,
-        bytes calldata _message,
         uint256 _gasLimit,
-        address _refundAddress
+        bytes memory _message
     ) external payable override {
-        _sendMessage(_type, _to, _value, _message, _gasLimit, _refundAddress);
+        _sendMessage(_type, _counterpart,_from,_to, _value,  _gasLimit, _message);
     }
 
     function relayWithdrawal(
@@ -168,11 +159,13 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
     function _sendMessage(
         TransactionType _type,
+        address _counterpart,
+        address _from,
         address _to,
         uint256 _value,
-        bytes memory _message,
         uint256 _gasLimit,
-        address _from
+        bytes memory _message
+        
     ) internal {
         // If transaction type is Deposit
         if (_type == TransactionType.deposit) {
@@ -184,8 +177,9 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
             // append message to L1 depositMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
-                counterpart,
+                _from,
                 _to,
+                _counterpart,
                 _value,
                 _gasLimit,
                 _message
@@ -205,8 +199,9 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
             // append message to L1 withdrawalMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
-                counterpart,
+                _from,
                 _to,
+                _counterpart,
                 _value,
                 _gasLimit,
                 _message

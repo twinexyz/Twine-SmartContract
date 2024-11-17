@@ -217,10 +217,11 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
             counterpart,
+            _from,
+            _to,
             0,
-            _message,
             _gasLimit,
-            _from
+            _message
         );
 
         emit DepositXERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
@@ -244,12 +245,13 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
-            _type,
+            ITwineL1MessengerBase.TransactionType.withdrawal,
             counterpart,
+            _from,
+            _to,
             0,
-            _message,
             _gasLimit,
-            _from
+            _message
         );
 
     }
