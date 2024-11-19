@@ -71,10 +71,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function executeDepositTransactions(
-        bytes[] memory depositTransactions,
+        bytes memory depositTransactions,
         bytes memory proof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        bytes memory data = abi.encode(depositTransactions, proof);
+        bytes[] memory depositTxns = new bytes[](1);
+        bytes[] memory proofs = new bytes[](1);
+        depositTxns[0] = depositTransactions;
+        proofs[0] = proof;
+        bytes memory data = abi.encode(depositTxns, proofs);
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
         require(success, "Deposits failed!");
         emit L1Deposit();
@@ -84,11 +88,16 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory withdrawalTransaction,
         bytes memory proof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        bytes memory data = abi.encode(withdrawalTransaction, proof);
+        bytes[] memory withdrawalTxns = new bytes[](1);
+        bytes[] memory proofs = new bytes[](1);
+        withdrawalTxns[0] = withdrawalTransaction;
+        proofs[0] = proof;
+        bytes memory data = abi.encode(withdrawalTxns, proof);
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
         require(success, "Withdrawal failed!");
         emit ForcedWithdrawal();
     }
+    
 
     /// @dev Internal function to send cross domain message.
     /// @param _to The address of the contract to call.
