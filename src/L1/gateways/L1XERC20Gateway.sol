@@ -241,9 +241,6 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         // 2. Generate message passed to L1TwineMessenger.
         bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
 
-        // 3. Calculate the type of transaction
-        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
-
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
             counterpart,
