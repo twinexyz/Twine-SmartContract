@@ -114,48 +114,31 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     function relayWithdrawal(
         uint256 _batchNumber,
         Types.ReceiptObject memory _receiptObject,
-        bytes32 _mptKey,
+        bytes memory _mptKey,
         bytes memory _rlpProof
     ) external {
-        bytes32 _receiptObjectHash = keccak256(
-            getReceiptObjectRLP(_receiptObject)
-        );
-        require(
-            !isL2MessageExecuted[_receiptObjectHash],
-            "Message was already successfully executed"
-        );
-        require(
-            ITwineChain(rollup).isBatchFinalized(_batchNumber),
-            "Batch is not Finalized"
-        );
+        bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
+        require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
+        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
         require(_receiptObject.success == true, "Failed transaction");
         // MerklePatriciaProofVerification
-        bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(
-            ITwineChain(rollup).getReceiptRoot(_batchNumber),
-            _mptKey
-        );
-        require(
-            keccak256(receiptObjectRLP) == _receiptObjectHash,
-            "Proof of inclusion failed"
-        );
-
+        bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
+        require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
+        
         // Check if there are any logs in the ReceiptObject
         require(_receiptObject.logs.length > 0, "No logs available");
         // Fetch the first log
         // Decoding the log data using abi.decode
-        (, address to, uint256 amount, , bytes memory message) = abi.decode(
-            _receiptObject.logs[0].data,
-            (address, address, uint256, uint256, bytes)
-        );
+        (, address to, uint256 amount,, bytes memory message) = abi.decode(_receiptObject.logs[0].data, (address, address, uint256, uint256, bytes));
         (bool success, ) = to.call{value: amount}(message);
-
-        if (success) {
+        
+        if(success) {
             isL2MessageExecuted[_receiptObjectHash] = true;
             emit RelayedMessage(_receiptObjectHash);
         } else {
             emit FailedRelayedMessage(_receiptObjectHash);
         }
-    }
+    }  
 
     function _sendMessage(
         TransactionType _type,
