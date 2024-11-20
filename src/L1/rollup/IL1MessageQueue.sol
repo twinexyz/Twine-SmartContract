@@ -55,10 +55,9 @@ interface IL1MessageQueue {
      * Struct *
      **********/
 
-     struct MessageData {
+    struct MessageData {
         address messageQueueAddress;
         bytes32 fromAddressHash;
-        bytes32 chainIdHash;
         bytes dataValuesByte;
     }
 
