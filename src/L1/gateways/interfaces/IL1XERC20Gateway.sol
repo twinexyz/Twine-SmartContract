@@ -75,8 +75,8 @@ interface IL1XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) external payable;
 
     /// @notice Withdraw ERC20 form the user account in L2

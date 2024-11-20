@@ -129,6 +129,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /*****************************
      * Public Mutating Functions *
      *****************************/
+    
+     function setChainId(uint256 _chainId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        chainId = _chainId;
+    }
+
+    function setRoleManagerAddress(address _roleManagerAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+            roleManager = _roleManagerAddress;
+     }
  
     function setMessengerQueueAddress(
         address _messageQueue
@@ -146,6 +154,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
  
     /// @inheritdoc ITwineChain
     function commitBatch(CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+      
         //require(isBatchFinalized(_newBatchData.batchNumber - 1), "Previous batch must be finalized.");
  
         StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
@@ -292,16 +301,16 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
  
         // // For individual forced transaction object
         for(uint256 i = 0; i < _forcedTransactionObject.length; i++) {
-            Types.ReceiptWithoutTxType memory forcedWithdrawalReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_forcedTransactionObject[i].input)); 
-            IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(forcedTransactionsCommitted);
-            for (uint256 j=0;j<forcedWithdrawalReceipt.logs.length;j++){
-                if(forcedWithdrawalReceipt.logs[j].logAddress == dataFromQueue.messageQueueAddress) {
-                            forcedWithdrawalReceipt.logs[j].topics[1] = dataFromQueue.fromAddressHash;
-                            forcedWithdrawalReceipt.logs[j].data =  dataFromQueue.dataValuesByte;
-                            ++ forcedTransactionsCommitted;
-                }   
-            }
-            _forcedTransactionObject[i].input = getReceiptObjectRLP(forcedWithdrawalReceipt);    
+            // Types.ReceiptWithoutTxType memory forcedWithdrawalReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_forcedTransactionObject[i].input)); 
+            // IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(forcedTransactionsCommitted);
+            // for (uint256 j=0;j<forcedWithdrawalReceipt.logs.length;j++){
+            //     if(forcedWithdrawalReceipt.logs[j].logAddress == dataFromQueue.messageQueueAddress) {
+            //                 forcedWithdrawalReceipt.logs[j].topics[1] = dataFromQueue.fromAddressHash;
+            //                 forcedWithdrawalReceipt.logs[j].data =  dataFromQueue.dataValuesByte;
+            //                 ++ forcedTransactionsCommitted;
+            //     }   
+            // }
+            // _forcedTransactionObject[i].input = getReceiptObjectRLP(forcedWithdrawalReceipt);    
             forcedTransactionHash[i] = getTransactinObjectRLP((_forcedTransactionObject[i])); 
         }            
         return forcedTransactionHash;

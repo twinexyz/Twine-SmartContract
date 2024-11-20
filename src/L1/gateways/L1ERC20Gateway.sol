@@ -109,7 +109,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     {
         address _sender = _msgSender();
         address _from = _sender;
-        if (router == _sender) {
+        if (gatewayRouter == _sender) {
             // Extract real sender if this call is from L1GatewayRouter.
             (_from, _data) = abi.decode(_data, (address, bytes));
             _amount = IL1GatewayRouter(_sender).requestERC20(_from, _token, _amount);

@@ -28,10 +28,6 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address indexed newL2Token
     );
 
-    /*************
-     * Variables *
-     *************/
-
     /// @notice Mapping from l1 token address to l2 token address for ERC20 token.
     mapping(address => address) public tokenMapping;
 
@@ -45,16 +41,14 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    /// @param _counterpart The address of L2CustomERC20Gateway in L2.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     function initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
+        TwineL1GatewayBase._initialize(_router, _messenger,_roleManager);
     }
 
     /*************************
@@ -78,9 +72,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
-    function updateTokenMapping(address _l1Token, address _l2Token)
-        external
-        payable
+    function updateTokenMapping(address _l1Token, address _l2Token) external
         onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
         require(_l1Token != address(0), "token address cannot be 0");
@@ -128,20 +120,17 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
 
         // 2. Generate message passed to L2CustomERC20Gateway.
-        bytes memory _message = abi.encode(_token, _l2Token, _from, _to, _amount, _data);
+        bytes memory _message = abi.encode(_token, _l2Token, _from, _to, _amount);
 
         // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
-            counterpart,
             _from,
             _to,
-            0,
+            _gasLimit,
             _gasLimit,
             _message
         );
-
-        emit DepositERC20(_token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 
      function _forcedWithdrawalERC20(
@@ -158,17 +147,14 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         // 2. Generate message passed to L1TwineMessenger.
         bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
 
-
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
-            counterpart,
             _from,
             _to,
-            0,
+            _gasLimit,
             _gasLimit,
             _message
         );
-         emit ForcedWithdrawalCustomERC20(_l1Token, _l2Token, _from, _to, _amount,block.number);
 
     }
 }

@@ -155,13 +155,14 @@ contract L2XERC20Gateway is TwineL2GatewayBase,IL2XERC20Gateway {
             IL1XERC20Gateway.finalizeWithdrawXERC20,(_l1Token,_token, _from, _to, _amount, _data));
 
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
-            counterpartGateWay[_chainId],
-            0,
-            _message,
+            _from,
+            _to,
+            counterpartGateWay[_chainId][_l1Token],
             _gasLimit,
-            _from
+            _chainId,
+            _gasLimit,
+            _message
         );
-        emit WithdrawXERC20(_l1Token, _token, _from, _to, _amount,_chainId, _data);
 
     }
 

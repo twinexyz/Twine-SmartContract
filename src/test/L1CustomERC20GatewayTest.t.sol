@@ -99,7 +99,7 @@ contract L1CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1CustomERC20Gateway.initialize,
-                (address(0), address(router), address(l1Messenger),address(roleManager))
+                (address(router), address(l1Messenger),address(roleManager))
             )
         );
 
@@ -113,7 +113,8 @@ contract L1CustomERC20GatewayTest is Test {
         //setup gateway in router;
         vm.startPrank(initialOwner);
         router.setERC20Gateway(tokens, gateways);
-        router.setAddress(address(gateway), address(gateway));
+        router.setETHGateway(address(gateway));
+        router.setDefaultERC20Gateway(address(gateway));
         gateway.setRoleManagerAddress(address(roleManager));
         messageQueue.setMessengerAddress(address(l1Messenger));
         vm.stopPrank();

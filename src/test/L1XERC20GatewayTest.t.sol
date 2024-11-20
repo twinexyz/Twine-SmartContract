@@ -86,8 +86,6 @@ contract L1XERC20GatewayTest is Test {
 
         rollup = TwineChain(TwineChainAddress);
 
-        
-
         // Deploying an upgradeable proxy for L1TwineMessenger
         address L1TwineMessengerAddress = Upgrades.deployTransparentProxy(
             "L1TwineMessenger.sol",
@@ -100,14 +98,13 @@ contract L1XERC20GatewayTest is Test {
 
         l1Messenger = L1TwineMessenger(L1TwineMessengerAddress);
 
-
         //setup customErc20 Gateway
         address L1XERC20GatewayAddress = Upgrades.deployTransparentProxy(
             "L1XERC20Gateway.sol",
             msg.sender,
             abi.encodeCall(
                 L1XERC20Gateway.initialize,
-                (address(0), address(router), address(l1Messenger),address(roleManager))
+                (address(router), address(l1Messenger),address(roleManager))
             )
         );
         gateway = L1XERC20Gateway(L1XERC20GatewayAddress);
@@ -127,7 +124,8 @@ contract L1XERC20GatewayTest is Test {
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         router.setERC20Gateway(tokens, gateways);
-        router.setAddress(address(gateway), address(gateway));
+        router.setETHGateway(address(gateway));
+        router.setDefaultERC20Gateway(address(gateway));
         L1XERC20Gateway.XTokenConfig memory xConfig = L1XERC20Gateway
             .XTokenConfig({
                 l2Token: address(l2XToken),
@@ -163,7 +161,7 @@ contract L1XERC20GatewayTest is Test {
         l1XToken.approve(address(router), 100000);
         assertEq(l1XToken.balanceOf(initialOwner),20);
         router.depositXERC20{value: 0}(address(l1XToken), address(this), 10, 0);
-        gateway.depositXERC20(address(l1XToken), address(this), 10,10);
+        gateway.depositXERC20(address(l1XToken), address(this), 10,0);
         assertEq(l1XToken.balanceOf(initialOwner),0);
       
     }
@@ -172,7 +170,7 @@ contract L1XERC20GatewayTest is Test {
         vm.startPrank(initialOwner);
         assertEq(l1Token.balanceOf(initialOwner),10000000);
         l1Token.approve(address(gateway), 100000);
-        gateway.depositXERC20(address(l1Token), address(this), 10,  10);
+        gateway.depositXERC20(address(l1Token), address(this), 10,  0);
         assertEq(l1Token.balanceOf(initialOwner),9999990);
         assertEq(l1Token.balanceOf(address(lockBox)),10);
         gateway.finalizeWithdrawXERC20(

@@ -26,6 +26,9 @@ interface ITwineL2Gateway {
     /*************************
      * Public View Functions *
      *************************/
+    
+    /// @notice The counterpart gateway
+    function counterpartGateWay(uint256 chainId,address l1Token)external view returns (address);
 
     /// @notice The address of corresponding L1/L2 Gateway contract.
     function counterpart() external view returns (address);

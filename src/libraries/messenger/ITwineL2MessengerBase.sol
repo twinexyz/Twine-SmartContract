@@ -15,33 +15,32 @@ interface ITwineL2MessengerBase {
         address indexed newCounterpartMessenger
     );
 
+    /// @notice Emitted when the `counterpart gateway`  is updated.
+    /// @param chainId The id of a chain.
+    /// @param oldCounterpartGateway The corresponding address of the old gateway.
+    /// @param newCounterpartGateway The corresponding address of the new gateway.
+    event SetCounterpartGateway(uint256 indexed chainId, address indexed oldCounterpartGateway, address indexed newCounterpartGateway);
+
     /*****************************
      * Public Mutating Functions *
      *****************************/
 
-    /// @notice Send cross chain message from  L2 to L1.
-    /// @param target The address of account who receive the message.
-    /// @param value The amount of ether passed when call target contract.
-    /// @param message The content of the message.
-    /// @param gasLimit Gas limit required to complete the message relay on corresponding chain.
-    function sendMessage(
-        address target,
-        uint256 value,
-        bytes calldata message,
-        uint256 gasLimit
-    ) external payable;
-
     /// @notice Send cross chain message from L2 to L1.
-    /// @param target The address of contract who receive the message.
-    /// @param value The amount of ether passed when call target contract.
+    /// @param from The address of the sender
+    /// @param to The address of the receiver
+    /// @param counterpart The address of counterpart gateway
     /// @param message The content of the message.
+    /// @param value The amount of native token
+    /// @param chainId The chainId of L1
     /// @param gasLimit Gas limit required to complete the message relay on corresponding chain.
     /// @param from The address who is sending the transaction.
     function sendMessage(
-        address target,
+        address from,
+        address to,
+        address counterpart,
         uint256 value,
-        bytes calldata message,
+        uint256 chainId,
         uint256 gasLimit,
-        address from
+        bytes calldata message
     ) external payable;
 }

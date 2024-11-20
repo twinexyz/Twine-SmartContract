@@ -103,7 +103,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     function appendCrossDomainDepositMessage(
         address _from,
         address _to,
-        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
@@ -111,7 +110,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         _queueDepositTransaction(
             _from,
             _to,
-            _counterpart,
             _value,
             _gasLimit,
             _data
@@ -122,7 +120,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     function appendCrossDomainWithdrawalMessage(
         address _from,
         address _to,
-        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
@@ -130,7 +127,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         _queueWithdrawalTransaction(
             _from,
             _to,
-            _counterpart,
             _value,
             _gasLimit,
             _data
@@ -140,14 +136,12 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @dev Internal function to queue a L1 transaction.
     /// @param _from The address of sender
     ///@param _to The address of the receiver
-    /// @param _counterpart The address of target contract to call in L2.
     /// @param _value The value passed
     /// @param _gasLimit The maximum gas should be used for this transaction in L2.
     /// @param _data The calldata passed to target contract.
     function _queueDepositTransaction(
         address _from,
         address _to,
-        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
@@ -156,9 +150,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
         bytes memory depositMessageByteCode = abi.encode(
             _to,
-            _counterpart,
             _value,
-            chainId,
             depositMessageIndex,
             _gasLimit,
             block.number,
@@ -168,6 +160,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         MessageData memory depositMessageData = MessageData({
             messageQueueAddress: messageQueueProxy,
             fromAddressHash: _padAddress(_from),
+            chainIdHash: _padAddress(_from),//@note need to change
             dataValuesByte: depositMessageByteCode
         });
 
@@ -177,7 +170,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         emit QueueDepositTransaction(
             _from,
             _to,
-            _counterpart,
             _value,
             chainId,
             depositMessageIndex,
@@ -190,7 +182,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     function _queueWithdrawalTransaction(
         address _from,
         address _to,
-        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
@@ -198,7 +189,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         ++withdrawalMessageIndex;
         bytes memory withdrawMessageByteCode = abi.encode(
             _to,
-            _counterpart,
             _value,
             chainId,
             withdrawalMessageIndex,
@@ -210,6 +200,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         MessageData memory withdrawMessageData = MessageData({
             messageQueueAddress: messageQueueProxy,
             fromAddressHash: _padAddress(_from),
+            chainIdHash: _padAddress(_from),//@note need to change hash
             dataValuesByte: withdrawMessageByteCode
         });
         withdrawalMessageQueue.push(withdrawMessageData);
@@ -218,7 +209,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         emit QueueWithdrawalTransaction(
             _from,
             _to,
-            _counterpart,
             _value,
             chainId,
             depositMessageIndex,
