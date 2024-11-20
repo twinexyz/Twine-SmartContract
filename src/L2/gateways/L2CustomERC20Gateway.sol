@@ -79,7 +79,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @param _l1Token The address of ERC20 token on layer 1.
     ///@param _chainId The chain Id of l1 Token.
     function updateTokenMapping(uint256 _chainId,address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_l2Token != address(0) && _l1Token != address(0)," Token address cann't be zero");
         address _oldL1Token = tokenMapping[_chainId][_l2Token];
         tokenMapping[_chainId][_l2Token] = _l1Token;
 
