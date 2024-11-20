@@ -59,7 +59,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     /// @inheritdoc IL1MessageQueue
     function popFirstNDepositElement(uint n) external {
-        require(depositMessageQueue.length > 0, "Array is empty");
 
         // Shift elements
         for (uint i = 0; i < depositMessageQueue.length - n; i++) {
@@ -74,7 +73,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     /// @inheritdoc IL1MessageQueue
     function popFirstNWithdrawalElement(uint n) external {
-        require(withdrawalMessageQueue.length > 0, "Array is empty");
 
         // Shift elements
         for (uint i = 0; i < withdrawalMessageQueue.length - n; i++) {
@@ -160,7 +158,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         MessageData memory depositMessageData = MessageData({
             messageQueueAddress: messageQueueProxy,
             fromAddressHash: _padAddress(_from),
-            chainIdHash: _padAddress(_from),//@note need to change
             dataValuesByte: depositMessageByteCode
         });
 
@@ -200,7 +197,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         MessageData memory withdrawMessageData = MessageData({
             messageQueueAddress: messageQueueProxy,
             fromAddressHash: _padAddress(_from),
-            chainIdHash: _padAddress(_from),//@note need to change hash
             dataValuesByte: withdrawMessageByteCode
         });
         withdrawalMessageQueue.push(withdrawMessageData);

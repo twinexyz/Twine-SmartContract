@@ -180,16 +180,16 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         SP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, _proofBytes);
  
         // remove first (depositTransactionsCommitted) elements from depositQueue
-        //IL1MessageQueue(messageQueue).popFirstNDepositElement(depositTransactionsCommitted);
+        IL1MessageQueue(messageQueue).popFirstNDepositElement(depositTransactionsCommitted);
  
         // subtract the finalized deposits transactions
-        //depositTransactionsCommitted = 0;
+        depositTransactionsCommitted = 0;
  
         // remove first (forcedTransactionsCommitted) elements from withdrawQueue
-        //IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(forcedTransactionsCommitted);
+        IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(forcedTransactionsCommitted);
  
         // subtract the finalized forced transactions
-        //forcedTransactionsCommitted -= 0;
+        forcedTransactionsCommitted = 0;
  
         finalizedStateRoots[batchNumber] = committedBatches[batchNumber].stateRoot;
  
