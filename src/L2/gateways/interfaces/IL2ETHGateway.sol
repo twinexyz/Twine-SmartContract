@@ -2,15 +2,6 @@
 pragma solidity ^0.8.24;
 
 interface IL2ETHGateway {
-    /**********
-     * Events *
-     **********/
-
-    /// @notice Emitted when someone withdraw ETH from L2 to L1.
-    /// @param from The address of sender in L2.
-    /// @param to The address of recipient in L1.
-    /// @param amount The amount of ETH will be deposited from L2 to L1.
-    event WithdrawETH(address indexed from, address indexed to, uint256 amount,uint256 chainId);
 
     /*****************************
      * Public Mutating Functions *

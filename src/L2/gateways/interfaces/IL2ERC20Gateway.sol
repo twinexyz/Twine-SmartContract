@@ -3,26 +3,6 @@
 pragma solidity ^0.8.24;
 
 interface IL2ERC20Gateway {
-    /**********
-     * Events *
-     **********/
-
-    /// @notice Emitted when someone withdraw ERC20 token from L2 to L1.
-    /// @param l1Token The address of the token in L1.
-    /// @param l2Token The address of the token in L2.
-    /// @param from The address of sender in L2.
-    /// @param to The address of recipient in L1.
-    /// @param amount The amount of token will be deposited from L2 to L1.
-    /// @param data The optional calldata passed to recipient in L1.
-    event WithdrawERC20(
-        address indexed l1Token,
-        address indexed l2Token,
-        address indexed from,
-        address to,
-        uint256 amount,
-        uint256 chainId,
-        bytes data
-    );
 
     /*************************
      * Public View Functions *

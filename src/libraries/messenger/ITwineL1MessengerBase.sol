@@ -23,13 +23,11 @@ interface ITwineL1MessengerBase {
 
     /// @notice Send cross chain message from L1 to L2.
     /// @param transactionType The type of transaction (deposit or withdrawal).
-    /// @param counterpart The address of contract that receive the message.
     /// @param value The amount of ether passed when call target contract.
     /// @param message The content of the message.
     /// @param gasLimit Gas limit required to complete the message relay on corresponding chain.
     function sendMessage(
         TransactionType transactionType,
-        address counterpart,
         address from,
         address to,
         uint256 value,

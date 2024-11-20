@@ -3,10 +3,11 @@ pragma solidity ^0.8.24;
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {IL1ERC20Gateway} from "../L1/gateways/interfaces/IL1ERC20Gateway.sol";
+import {ITwineL2Gateway} from "../libraries/gateway/ITwineL2Gateway.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
-    
     /// @notice The address of Consensus Proving Precompile
     address public consensusPrecompileAddress;
 
@@ -28,81 +29,147 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         _disableInitializers();
     }
 
-    function initialize(uint256 _ethChaindId,address _ethCounterpart, address _roleManager)
-        external
-        initializer
-    {
-        TwineL2MessengerBase.__TwineMessengerBase_init(_ethChaindId,_ethCounterpart,_roleManager);
+    function initialize(
+        uint256 _ethChaindId,
+        address _ethCounterpart,
+        address _roleManager
+    ) external initializer {
+        TwineL2MessengerBase.__TwineMessengerBase_init(
+            _ethChaindId,
+            _ethCounterpart,
+            _roleManager
+        );
     }
 
-    function setPrecompileAddress(address _consensusPrecompileAddress,address _bridgingPrecompileAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setPrecompileAddress(
+        address _consensusPrecompileAddress,
+        address _bridgingPrecompileAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         consensusPrecompileAddress = _consensusPrecompileAddress;
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
 
     /// @inheritdoc ITwineL2MessengerBase
     function sendMessage(
+        address _from,
         address _to,
+        address _counterpart,
         uint256 _value,
-        bytes memory _message,
-        uint256 _gasLimit
-    ) external payable override {
-        _sendMessage(_to, _value, _message, _gasLimit);
-    }
-
-    /// @inheritdoc ITwineL2MessengerBase
-    function sendMessage(
-        address _to,
-        uint256 _value,
-        bytes calldata _message,
+        uint256 _chainId,
         uint256 _gasLimit,
-        address
+        bytes memory _message
     ) external payable override {
-        _sendMessage(_to, _value, _message, _gasLimit);
+        _sendMessage(
+            _from,
+            _to,
+            _counterpart,
+            _value,
+            _chainId,
+            _gasLimit,
+            _message
+        );
     }
 
-    function verifyConsensusProof(
-        bytes memory consensusData
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        (bool success, bytes memory output) = consensusPrecompileAddress.call(consensusData);
-        require(success, "Consensus proof Failed!");
-        emit consensusVerified(consensusData);
-        
-    }
-
-    function executeDepositTransactions(
+    function verifyConsensusProofAndExecuteDeposit(
+        uint256 chainId,
+        bytes memory consensusProof,
         bytes[] memory depositTransactions,
-        bytes memory proof
+        bytes[] memory depositTxnProofs
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        bytes memory data = abi.encode(depositTransactions, proof);
-        (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
-        require(success, "Deposits failed!");
-        emit L1Deposit();
+        _verifyConsensusProof(consensusProof);
+        if (depositTransactions.length > 0) {
+            bytes memory data = abi.encode(
+                chainId,
+                depositTransactions,
+                depositTxnProofs
+            );
+            (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
+            require(success, "Deposits failed!");
+            emit L1TokenDeposit();
+        }
     }
 
     function executeForcedWithdrawal(
+        uint256 chainId,
         bytes memory withdrawalTransaction,
         bytes memory proof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        bytes memory data = abi.encode(withdrawalTransaction, proof);
-        (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
+        bytes[] memory withdrawalTxns = new bytes[](1);
+        bytes[] memory proofs = new bytes[](1);
+        withdrawalTxns[0] = withdrawalTransaction;
+        proofs[0] = proof;
+        (bool success, bytes memory output) = bridgingPrecompileAddress.call(
+            abi.encode(chainId, withdrawalTxns, proof)
+        );
         require(success, "Withdrawal failed!");
-        emit ForcedWithdrawal();
+        WithdrawalDetails memory details = _decodeWithdrawalDetails(output);
+
+        emit ForcedWithdrawal(
+            details.from,
+            details.to,
+            tokenCounterpartGateWay[chainId][details.l1Token],
+            counterpartMessenger[chainId],
+            0,
+            chainId,
+            block.number,
+            0,
+            abi.encodeCall(IL1ERC20Gateway.finalizeWithdrawERC20,(details.l1Token,details.l2Token,details.from,details.to,details.amount,bytes(""))
+            )
+        );
     }
 
     /// @dev Internal function to send cross domain message.
     /// @param _to The address of the contract to call.
-    /// @param _value The amount of ether passed when call target contract.
+    /// @param _value The amount of native token
+    /// @param _counterpart The L1 token gateway
     /// @param _message The content of the message.
     /// @param _gasLimit Optional gas limit to complete the message relay on corresponding chain.
     function _sendMessage(
+        address _from,
         address _to,
+        address _counterpart,
         uint256 _value,
-        bytes memory _message,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _message
     ) internal {
-        require(msg.value == _value, "msg.value mismatch");
+        require(msg.value == _gasLimit, "msg.value mismatch");
+        emit SentMessage(
+            _from,
+            _to,
+            _counterpart,
+            counterpartMessenger[_chainId],
+            _value,
+            _chainId,
+            block.number,
+            _gasLimit,
+            _message
+        );
+    }
 
-        emit SentMessage(_msgSender(), _to, _value, _gasLimit, _message);
+    function _verifyConsensusProof(bytes memory consensusProof) internal {
+        (bool success, bytes memory output) = consensusPrecompileAddress.call(
+            consensusProof
+        );
+        require(success, "Consensus proof Failed!");
+        emit consensusVerified(consensusProof);
+    }
+
+    function _decodeWithdrawalDetails(
+        bytes memory output
+    ) internal pure returns (WithdrawalDetails memory) {
+        (
+            address l1Token,
+            address l2Token,
+            address from,
+            address to,
+            uint256 amount
+        ) = abi.decode(
+                abi.decode(output, (bytes)),
+                (address, address, address, address, uint256)
+            );
+        return WithdrawalDetails(l1Token, l2Token, from, to, amount);
     }
 }
+
+

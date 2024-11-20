@@ -84,12 +84,13 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
             (_from, _to, _amount)
         );
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
-            counterpartGateWay[_chainId],
-            _amount,
-            _message,
-            _gasLimit
+            _from,
+            _to,
+            counterpartGateWay[_chainId][address(0)],
+            _amount+_gasLimit,
+            _chainId,
+            _gasLimit,
+            _message
         );
-
-        emit WithdrawETH(_from, _to, _amount,_chainId);
     }
 }

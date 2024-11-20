@@ -85,12 +85,12 @@ contract DeployL2Contracts is Script {
         // Logging the address of the deployed proxies
         console.log("Deployed Contracts :");
         console.log("L2 ERC20 Token :", address(l2Token));
-        console.log("L2 Rolemanager contract Address :", roleManagerAddress);
-        console.log("L2 Eth Gateway contract address :", L2ETHGatewayAddress);
-        console.log("L2 Gateway Router contract Address :", L2GatewayRouterAddress);
-        console.log("L2 XERC20 Gateway contract Address :", L2XERC20GatewayAddress);
-        console.log("L2 Twine Messenger contract Address :", L2TwineMessengerAddress);
-        console.log("Custom L2 ERC20 Gateway contract Address :", L2CustomERC20GatewayAddress);
+        console.log("L2 Rolemanager :", roleManagerAddress);
+        console.log("L2 Eth Gateway :", L2ETHGatewayAddress);
+        console.log("L2 Gateway Router :", L2GatewayRouterAddress);
+        console.log("L2 XERC20 Gateway :", L2XERC20GatewayAddress);
+        console.log("L2 Twine Messenger :", L2TwineMessengerAddress);
+        console.log("L2 Custom ERC20 Gateway :", L2CustomERC20GatewayAddress);
     }
 }
 

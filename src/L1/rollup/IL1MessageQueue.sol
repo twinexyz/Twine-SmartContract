@@ -9,7 +9,6 @@ interface IL1MessageQueue {
     /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
     /// @param from The address of account who initiates the transaction.
     /// @param to The address of receiver
-     /// @param counterpart The address of the counterpart gateway.
     /// @param value The value passed with the transaction.
     /// @param chainId The id of the L1 chain
     /// @param depositMessageIndex The index of the transaction.
@@ -18,7 +17,6 @@ interface IL1MessageQueue {
     event QueueDepositTransaction(
         address indexed from,
         address to,
-        address counterpart,
         uint256 value,
         uint256 chainId,
         uint256 depositMessageIndex,
@@ -30,7 +28,6 @@ interface IL1MessageQueue {
     /// @notice Emitted when a new L1 => L2 forced withdrawal transaction is appended to the queue.
     /// @param from The address of account who initiates the transaction.
     /// @param to The address of receiver
-    /// @param counterpart The address of the counterpart gateway.
     /// @param value The value passed with the transaction.
     /// @param chainId The id of the L1 chain
     /// @param withdrawalMessageIndex The index of the transaction
@@ -39,7 +36,6 @@ interface IL1MessageQueue {
     event QueueWithdrawalTransaction(
         address indexed from,
         address to,
-        address counterpart,
         uint256 value,
         uint256 chainId,
         uint256 withdrawalMessageIndex,
@@ -62,16 +58,9 @@ interface IL1MessageQueue {
      struct MessageData {
         address messageQueueAddress;
         bytes32 fromAddressHash;
+        bytes32 chainIdHash;
         bytes dataValuesByte;
     }
-    struct MessageDataTest {
-        address messageQueueAddress;
-        bytes32 l1AddressHash;
-        bytes32 l2AddressHash;
-        bytes32 fromAddressHash;
-        bytes dataValuesByte;
-    }
-
 
     /// @notice Return the index of next appended message.
     /// @dev Also the total number of appended messages.
@@ -96,33 +85,32 @@ interface IL1MessageQueue {
     /// @notice Removes the first N message from the Withdrawal Queue
     function popFirstNWithdrawalElement(uint n) external;
 
+    ///@notice set the proxy Address of MessageQueue
+    function setMessageQueueProxy(address proxyAddress) external;
+
     /// @notice Return the amount of ETH should pay for cross domain message.
     /// @param gasLimit Gas limit required to complete the message relay on L2.
     //function estimateCrossDomainMessageFee(uint256 gasLimit) external view returns (uint256);
 
     /// @notice Append a L1 to L2 deposit message into this contract.
-    /// @param _counterpart The address of target contract to call in L2.
     /// @param _gasLimit The maximum gas should be used for relay this message in L2.
-    /// @param _data The calldata passed to target contract.
+    /// @param _data message data
     function appendCrossDomainDepositMessage(
         address _from,
         address _to,
-        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data
     ) external;
 
     /// @notice Append a L1 to L2 withdrawal message into this contract.
-    /// @param _counterpart The address of target contract to call in L2.
     /// @param _from The address of the sender
     /// @param _to The address of the receiver
     /// @param _gasLimit The maximum gas should be used for relay this message in L2.
-    /// @param _data The calldata passed to target contract.
+    /// @param _data message data
     function appendCrossDomainWithdrawalMessage(
         address _from,
         address _to,
-        address _counterpart,
         uint256 _value,
         uint256 _gasLimit,
         bytes calldata _data

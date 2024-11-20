@@ -30,7 +30,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
      *************/
 
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
-    // solhint-disable-next-line var-name-mixedcase
+    /// chainId=>l2Token=>l1Token
     mapping(uint256=>mapping(address => address)) public tokenMapping;
 
     /***************
@@ -77,6 +77,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     ///
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
     /// @param _l1Token The address of ERC20 token on layer 1.
+    ///@param _chainId The chain Id of l1 Token.
     function updateTokenMapping(uint256 _chainId,address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_l2Token != address(0) && _l1Token != address(0)," Token address cann't be zero");
         address _oldL1Token = tokenMapping[_chainId][_l2Token];
@@ -118,13 +119,14 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
         // 4. Send message to L2TwineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
-            counterpartGateWay[_chainId],
-            0,
-            _message,
+            _from,
+            _to,
+            counterpartGateWay[_chainId][_l1Token],
             _gasLimit,
-            _from
+            _chainId,
+            _gasLimit,
+            _message
         );
         
-        emit WithdrawERC20(_l1Token, _token, _from, _to, _amount,_chainId, _data);
     }
 }

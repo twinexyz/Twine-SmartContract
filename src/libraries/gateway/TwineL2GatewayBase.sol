@@ -32,8 +32,8 @@ abstract contract TwineL2GatewayBase is
 
     address public roleManager;
     
-     //chainId=> L1Gateway
-    mapping(uint256 => address) counterpartGateWay;
+    //chainId=> L1Gateway
+    mapping(uint256=>mapping(address => address)) public override counterpartGateWay;
 
     /**********************
      * Function Modifiers *
@@ -78,28 +78,17 @@ abstract contract TwineL2GatewayBase is
         messenger = _messenger;
     }
 
-    function setCounterpartGateway(uint256[] memory _chainId,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_chainId.length == _counterpartGateWay.length, "length mismatch");
+    function setCounterpartGateway(uint256[] memory _chainId,address[]memory _l1TokenAddress,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_chainId.length == _counterpartGateWay.length && _chainId.length == _l1TokenAddress.length, "length mismatch");
         for (uint256 i = 0; i < _chainId.length; i++) {
+            require(_l1TokenAddress[i] != address(0)," Value cann't be zero");
             require(_counterpartGateWay[i] != address(0)," Value cann't be zero");
-            address _oldCounterPart = counterpartGateWay[_chainId[i]];
-            counterpartGateWay[_chainId[i]] = _counterpartGateWay[i];
+            address _oldCounterPart = counterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
+            counterpartGateWay[_chainId[i]][_l1TokenAddress[i]] = _counterpartGateWay[i];
             emit SetCounterpartGateway(_chainId[i], _oldCounterPart, _counterpartGateWay[i]);
         }
     }
 
-    /**********************
-     * Internal Functions *
-     **********************/
-
-    /// @dev Internal function to forward calldata to target contract.
-    /// @param _to The address of contract to call.
-    /// @param _data The calldata passed to the contract.
-    function _doCallback(address _to, bytes memory _data) internal {
-        if (_data.length > 0 && _to.code.length > 0) {
-            ITwineGatewayCallback(_to).onTwineGatewayCallback(_data);
-        }
-    }
 
     /// @dev The storage slots for future usage.
     uint256[46] private __gap;

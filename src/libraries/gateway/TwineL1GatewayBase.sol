@@ -21,10 +21,7 @@ abstract contract TwineL1GatewayBase is
      *************/
 
     /// @inheritdoc ITwineL1Gateway
-    address public override counterpart;
-
-    /// @inheritdoc ITwineL1Gateway
-    address public override router;
+    address public override gatewayRouter;
 
     /// @inheritdoc ITwineL1Gateway
     address public override messenger;
@@ -44,14 +41,12 @@ abstract contract TwineL1GatewayBase is
     }
 
     function _initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        counterpart = _counterpart;
-        router = _router;
+        gatewayRouter = _router;
         messenger = _messenger;
         roleManager = _roleManager;
     }
@@ -62,12 +57,17 @@ abstract contract TwineL1GatewayBase is
         roleManager = _roleManagerAddress;
     }
 
-    function setAddress(address _counterpart, address _router, address _messenger)
+    function setGatewayRouter(address _gatewayRouter)
         external
         onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
     {
-        counterpart = _counterpart;
-        router = _router;
+        gatewayRouter = _gatewayRouter;
+    }
+
+    function setTwineMessenger(address _messenger)
+        external
+        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
+    {
         messenger = _messenger;
     }
 

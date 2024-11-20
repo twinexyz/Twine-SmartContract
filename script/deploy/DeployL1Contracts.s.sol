@@ -18,38 +18,39 @@ contract DeployL1Contracts is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
 
-        vm.startBroadcast(deployerPrivateKey); // Start broadcasting transactions
+        // Start broadcasting transactions
+        vm.startBroadcast(deployerPrivateKey);
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(RoleManager.initialize, (initialOwner))
         );
 
         // Deploying an upgradeable proxy for L1CustomERC20Gateway
         address L1CustomERC20GatewayAddress = Upgrades.deployTransparentProxy(
             "L1CustomERC20Gateway.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 L1CustomERC20Gateway.initialize,
-                (address(0), address(0), address(0),roleManagerAddress)
+                (address(0), address(0), roleManagerAddress)
             )
         );
 
         // Deploying an upgradeable proxy for L1ETHGateway
         address L1ETHGatewayAddress = Upgrades.deployTransparentProxy(
             "L1ETHGateway.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(0), address(0), address(0),roleManagerAddress)
+                (address(0), address(0), roleManagerAddress)
             )
         );
 
         // Deploying an upgradeable proxy for L1GatewayRouter
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 L1GatewayRouter.initialize,
                 (address(0), address(0), roleManagerAddress)
@@ -59,17 +60,17 @@ contract DeployL1Contracts is Script {
         // Deploying an upgradeable proxy for L1XERC20Gateway
         address L1XERC20GatewayAddress = Upgrades.deployTransparentProxy(
             "L1XERC20Gateway.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 L1XERC20Gateway.initialize,
-                (address(0), address(0), address(0),roleManagerAddress)
+                (address(0), address(0), roleManagerAddress)
             )
         );
 
         // Deploying an upgradeable proxy for L1MessageQueue
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
             "L1MessageQueue.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 L1MessageQueue.initialize,
                 (0, address(0), roleManagerAddress)
@@ -79,17 +80,17 @@ contract DeployL1Contracts is Script {
         // Deploying an upgradeable proxy for TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 TwineChain.initialize,
-                (L1MessageQueueAddress, address(0),roleManagerAddress)
+                (L1MessageQueueAddress, address(0), roleManagerAddress)
             )
         );
 
         // Deploying an upgradeable proxy for L1TwineMessenger
         address L1TwineMessengerAddress = Upgrades.deployTransparentProxy(
             "L1TwineMessenger.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
                 (
@@ -106,13 +107,14 @@ contract DeployL1Contracts is Script {
 
         // Logging the address of the deployed proxies
         console.log("Deployed Contracts :");
-        console.log("L1 Eth contract Address :", L1ETHGatewayAddress);
-        console.log("Twine chain contract Address :", TwineChainAddress);
-        console.log("L1 Rolemanager contract Address :", roleManagerAddress);
-        console.log("Message Queue contract Address :", L1MessageQueueAddress);
-        console.log("L1 Gateway Router contract Address :", L1GatewayRouterAddress);
-        console.log("L1 XERC20 contract contract Address :", L1XERC20GatewayAddress);
-        console.log("L1 Twine Messenger contract Address :", L1TwineMessengerAddress);
-        console.log("Custom L1 ERC20 contract Address :", L1CustomERC20GatewayAddress);
+
+        console.log("Twine chain :", TwineChainAddress);
+        console.log("L1 Eth Gatway :", L1ETHGatewayAddress);
+        console.log("L1 Rolemanager :", roleManagerAddress);
+        console.log("L1 Message Queue :", L1MessageQueueAddress);
+        console.log("L1 XERC20 Gateway:", L1XERC20GatewayAddress);
+        console.log("L1 Gateway Router :", L1GatewayRouterAddress);
+        console.log("L1 Twine Messenger :", L1TwineMessengerAddress);
+        console.log("L1 Custom ERC20 Gateway:", L1CustomERC20GatewayAddress);
     }
 }

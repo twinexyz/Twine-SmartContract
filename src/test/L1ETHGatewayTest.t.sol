@@ -99,7 +99,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(0), address(router), address(l1Messenger),address(roleManager))
+                (address(router), address(l1Messenger),address(roleManager))
             )
         );
         gateway = L1ETHGateway(L1ETHGatewayAddress);
@@ -107,7 +107,8 @@ contract L1ETHGatewayTest is Test {
        
         //setup gateway in router;
         vm.startPrank(initialOwner);
-        router.setAddress(address(gateway), address(gateway));
+        router.setETHGateway(address(gateway));
+        router.setDefaultERC20Gateway(address(gateway));
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));

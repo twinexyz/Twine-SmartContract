@@ -50,16 +50,14 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    /// @param _counterpart The address of L2CustomERC20Gateway in L2.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     function initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
+        TwineL1GatewayBase._initialize(_router, _messenger,_roleManager);
     }
 
     /*************************
@@ -99,7 +97,7 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_token, _to, _amount, new bytes(0), _gasLimit);
+        _deposit(_token, _to, _amount, _gasLimit,new bytes(0));
     }
 
      /// @inheritdoc IL1XERC20Gateway
@@ -107,10 +105,10 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) external payable override {
-        _deposit(_token, _to, _amount, _data, _gasLimit);
+        _deposit(_token, _to, _amount,_gasLimit,_data);
     }
 
      /// @inheritdoc IL1XERC20Gateway
@@ -186,8 +184,8 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal {
         require(_amount > 0, "Amount can not be zero");
         address _from;
@@ -198,7 +196,7 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
             bool isNative = IXERC20Lockbox(xTokenInfo.l1LockBox).IS_NATIVE();
             if (isNative) {
                 _from = _msgSender();
-                if (router == _from) {
+                if (gatewayRouter == _from) {
                     (_from, _data) = abi.decode(_data, (address, bytes));
                 }
             IXERC20Lockbox(xTokenInfo.l1LockBox).depositNative{value: _amount}();
@@ -216,10 +214,9 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
 
          IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
-            counterpart,
             _from,
             _to,
-            0,
+            _gasLimit,
             _gasLimit,
             _message
         );
@@ -241,15 +238,11 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         // 2. Generate message passed to L1TwineMessenger.
         bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
 
-        // 3. Calculate the type of transaction
-        ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
-
-         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
-            counterpart,
             _from,
             _to,
-            0,
+            _gasLimit,
             _gasLimit,
             _message
         );
@@ -270,7 +263,7 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
     {
         address _sender = _msgSender();
         address _from = _sender;
-        if (router == _sender) {
+        if (gatewayRouter == _sender) {
             // Extract real sender if this call is from L1GatewayRouter.
             (_from, _data) = abi.decode(_data, (address, bytes));
             _amount = IL1GatewayRouter(_sender).requestERC20(_from, _token, _amount);

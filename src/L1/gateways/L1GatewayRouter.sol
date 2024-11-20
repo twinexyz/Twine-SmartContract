@@ -84,13 +84,6 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
         roleManager = _roleManager;
     }
 
-    function setAddress(address _ethGateway, address _defaultERC20Gateway)
-        external 
-    {
-        ethGateway = _ethGateway;
-        defaultERC20Gateway = _defaultERC20Gateway;
-    }
-
     /// @inheritdoc IL1ERC20Gateway
     function getL2ERC20Address(address _l1Address)
         external
@@ -182,7 +175,7 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override{
-        depositXERC20AndCall(_token, _to, _amount, new bytes(0), _gasLimit);
+        depositXERC20AndCall(_token, _to, _amount, _gasLimit,new bytes(0));
     }
 
    
@@ -191,8 +184,8 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
         address _token,
         address _to,
         uint256 _amount,
-        bytes memory _data,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) public onlyNotInContext payable override {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
@@ -203,7 +196,7 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL1XERC20Gateway(_gateway).depositXERC20AndCall{value: msg.value}(_token, _to, _amount, _routerData, _gasLimit);
+        IL1XERC20Gateway(_gateway).depositXERC20AndCall{value: msg.value}(_token, _to, _amount, _gasLimit,_routerData);
 
         // leave deposit context
         gatewayInContext = address(0);

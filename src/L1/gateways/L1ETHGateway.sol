@@ -10,6 +10,9 @@ import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1Messenger
 
 
 contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
+
+    address l2TokenAddress;
+
     /***************
      * Constructor *
      ***************/
@@ -20,16 +23,14 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     }
 
     /// @notice Initialize the storage of L1CustomERC20Gateway.
-    /// @param _counterpart The address of L1CustomERC20Gateway in L2.
     /// @param _router The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     function initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
+        TwineL1GatewayBase._initialize(_router, _messenger,_roleManager);
     }
 
     /*****************************
@@ -80,6 +81,13 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         emit FinalizeWithdrawETH(_from, _to,block.number, _amount);
     }
 
+    /// @notice Set the l2TokenAddress
+    function setL2TokenAddress(address _l2TokenAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()){
+        
+        l2TokenAddress = _l2TokenAddress;
+
+    }
+
     /// @dev The internal ETH deposit implementation.
     /// @param _to The address of recipient's account on L2.
     /// @param _amount The amount of ETH to be deposited.
@@ -94,29 +102,26 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
         // 1. Extract real sender if this call is from L1GatewayRouter.
         address _from = _msgSender();
-        if (router == _from) {
+        if (gatewayRouter == _from) {
             (_from, _data) = abi.decode(_data, (address, bytes));
         }
 
         // @note no rate limit here, since ETH is limited in messenger
 
         // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encode(_from, _to, _amount);
+        bytes memory _message = abi.encode(address(0), l2TokenAddress, _from, _to, _amount);
 
         // 3. Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.deposit;
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
-            counterpart,
             _from,
             _to,
-            _amount,
+            (_amount+_gasLimit),
             _gasLimit,
             _message
         );
-
-        emit DepositETH(_from, _to,  _amount,block.number);
     }
 
     /// @dev The internal ETH forced withdrawal implementation.
@@ -133,22 +138,20 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         address _from = _msgSender();
 
         // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encode(_from, _to, _amount);
+        bytes memory _message = abi.encode(address(0), l2TokenAddress, _from, _to, _amount);
 
         // 3. Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
-            counterpart,
             _from,
             _to,
-            _amount,
+            (_amount+_gasLimit),
             _gasLimit,
             _message
         );
-
-        emit ForcedWithdrawalEth(_from, _to, _amount,block.number);
+        
     }
 
 }
