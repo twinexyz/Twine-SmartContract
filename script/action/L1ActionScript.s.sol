@@ -24,18 +24,15 @@ contract L1ActionScript is Script {
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
-    address tokenAddress;
     address twineChainAddress;
     address roleManagerAddress;
     address l1ETHGatewayAddress;
+    address l1ERC20TokenAddress;
     address l1MessageQueueAddress;
     address l1GatewayRouterAddress;
     address l1XERC20GatewayAddress;
     address l1TwineMessengerAddress;
     address l1CustomERC20GatewayAddress;
-
-    uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-    address Owner = vm.addr(deployerPrivateKey);
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
@@ -44,7 +41,7 @@ contract L1ActionScript is Script {
 
         roleManagerAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.RoleManager"
+            ".Dev1.L1RoleManager"
         );
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
@@ -82,22 +79,27 @@ contract L1ActionScript is Script {
             ".Dev1.L1TwineMessenger"
         );
 
-        tokenAddress = 0x9323d71E54CFFE145Ae15Ad711a5aD52255A7866;
-
+        l1ERC20TokenAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Dev1.L1ERC20Token"
+        );
         twineChain = TwineChain(twineChainAddress);
         l1CustomERC20Gateway = L1CustomERC20Gateway(
             l1CustomERC20GatewayAddress
         );
-        roleManager = RoleManager(roleManager);
+        roleManager = RoleManager(roleManagerAddress);
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
         l1XERC20Gateway = L1XERC20Gateway(l1XERC20GatewayAddress);
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
-        token = MockERC20(tokenAddress);
+        token = MockERC20(l1ERC20TokenAddress);
     }
 
     function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
+        
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
@@ -105,14 +107,14 @@ contract L1ActionScript is Script {
         token.approve(l1GatewayRouterAddress, 100000);
 
         l1GatewayRouter.depositERC20{value: 0}(
-            tokenAddress,
+            l1ERC20TokenAddress,
             0x14dC79964da2C08b23698B3D3cc7Ca32193d9955,
             912,
             0
         );
         
         l1GatewayRouter.depositETH{value: 1 ether}(
-            Owner,
+            admin,
             1000000000000000000,
             0
         );
@@ -120,4 +122,3 @@ contract L1ActionScript is Script {
         vm.stopBroadcast();
     }
 }
-

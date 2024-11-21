@@ -93,7 +93,6 @@ abstract contract TwineL2MessengerBase is
     function setCounterpartGateway(uint256[] memory _chainId,address[]memory _l1TokenAddress,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_chainId.length == _counterpartGateWay.length && _chainId.length == _l1TokenAddress.length, "length mismatch");
         for (uint256 i = 0; i < _chainId.length; i++) {
-            require(_l1TokenAddress[i] != address(0)," Value cann't be zero");
             require(_counterpartGateWay[i] != address(0)," Value cann't be zero");
             address _oldCounterPart = tokenCounterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
             tokenCounterpartGateWay[_chainId[i]][_l1TokenAddress[i]] = _counterpartGateWay[i];

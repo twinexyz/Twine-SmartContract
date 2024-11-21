@@ -169,7 +169,6 @@ contract L2SetupScript is Script {
         chainIds[0] = chainId;
         counterpartMessenger[0] = l1TwineMessengerAddress;
         l2TwineMessenger.setCounterpartMessenger(chainIds,counterpartMessenger);
-        l2ETHGateway.setCounterpartGateway(GatewaychainId,l1Tokens, CounterpartGateWay);
 
         //L2CustomERC20Gateway
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
@@ -188,6 +187,11 @@ contract L2SetupScript is Script {
         l1Token[0] = l1ERC20TokenAddress;
         erc20CounterpartGateWay[0] = l1CustomERC20GatewayAddress;
         l2CustomERC20Gateway.setCounterpartGateway(
+            chainIdset,
+            l1Token,
+            erc20CounterpartGateWay
+        );
+         l2TwineMessenger.setCounterpartGateway(
             chainIdset,
             l1Token,
             erc20CounterpartGateWay
