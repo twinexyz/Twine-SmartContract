@@ -101,7 +101,6 @@ contract L2ActionScript is Script {
     function run() external {
         // Start broadcasting transactions
         vm.startBroadcast();
-        l2GatewayRouter.withdrawETH(Owner,1, 0, 0);
         // Stop broadcasting transactions
         vm.stopBroadcast();
     }
