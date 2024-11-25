@@ -103,7 +103,7 @@ interface IL1XERC20Gateway {
     /// @param _to The address of recipient in L1 to receive the token.
     /// @param _amount The amount of the token to withdraw.
     /// @param _data Optional data to forward to recipient's account.
-    function finalizeWithdrawXERC20(
+    function finalizeTokenWithdrawal(
         address _l1Token,
         address _l2Token,
         address _from,

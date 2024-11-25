@@ -56,5 +56,6 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     address from;
     address to;
     uint256 amount;
+    uint256 value;
 }
 }

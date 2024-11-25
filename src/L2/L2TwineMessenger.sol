@@ -99,21 +99,21 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         withdrawalTxns[0] = withdrawalTransaction;
         proofs[0] = proof;
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(
-            abi.encode(chainId, withdrawalTxns, proof)
+            abi.encode(chainId, withdrawalTxns, proofs)
         );
         require(success, "Withdrawal failed!");
-        WithdrawalDetails memory details = _decodeWithdrawalDetails(output);
-
+        (WithdrawalDetails memory details) = _decodeWithdrawalDetails(output);
+        
         emit ForcedWithdrawal(
             details.from,
             details.to,
             tokenCounterpartGateWay[chainId][details.l1Token],
             counterpartMessenger[chainId],
-            0,
+            details.value,
             chainId,
             block.number,
             0,
-            abi.encodeCall(IL1ERC20Gateway.finalizeWithdrawERC20,(details.l1Token,details.l2Token,details.from,details.to,details.amount,bytes(""))
+            abi.encodeCall(IL1ERC20Gateway.finalizeTokenWithdrawal,(details.l1Token,details.l2Token,details.from,details.to,details.amount,bytes(""))
             )
         );
     }
@@ -133,7 +133,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 _gasLimit,
         bytes memory _message
     ) internal {
-        require(msg.value == _gasLimit, "msg.value mismatch");
         emit SentMessage(
             _from,
             _to,
@@ -165,11 +164,18 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             address to,
             uint256 amount
         ) = abi.decode(
-                abi.decode(output, (bytes)),
+                output,
                 (address, address, address, address, uint256)
             );
-        return WithdrawalDetails(l1Token, l2Token, from, to, amount);
+        uint256 value;
+        if( l1Token == address(0)){
+               value = amount;
+            } else {
+                value = 0;
+         }
+        return WithdrawalDetails(l1Token, l2Token, from, to, amount,value);
     }
+
 }
 
 

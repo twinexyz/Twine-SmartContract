@@ -52,21 +52,17 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     }
 
     /// @inheritdoc IL1ERC20Gateway
-    function finalizeWithdrawERC20(
+    function finalizeTokenWithdrawal(
         address _l1Token,
         address _l2Token,
         address _from,
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) external payable virtual override nonReentrant  onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()){
+    ) external payable virtual override nonReentrant{
         _beforeFinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
-
-        // @note can possible trigger reentrant call to this contract or messenger,
-        // but it seems not a big problem.
+        
         IERC20(_l1Token).safeTransfer(_to, _amount);
-
-        _doCallback(_to, _data);
 
         emit FinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
     }
