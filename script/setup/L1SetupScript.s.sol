@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
-
 import "forge-std/Script.sol";
-import"forge-std/console.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "../../src/test/mocks/MockERC20.sol";
@@ -41,6 +39,7 @@ contract L1SetupScript is Script {
     address l1XERC20GatewayAddress;
     address twineOperationsHandler;
     address l1TwineMessengerAddress;
+    address l2TwineMessengerAddress;
     address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
 
@@ -92,6 +91,11 @@ contract L1SetupScript is Script {
         l1TwineMessengerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Dev1.L1TwineMessenger"
+        );
+
+        l2TwineMessengerAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2TwineMessenger"
         );
 
         verifierAddress = vm.parseJsonAddress(deployedJson, ".Dev1.Verifier");
@@ -181,6 +185,7 @@ contract L1SetupScript is Script {
         l1TwineMessenger.setRoleManager(roleManagerAddress);
         l1TwineMessenger.setRollupAddress(twineChainAddress);
         l1TwineMessenger.setMessengerQueueAddress(l1MessageQueueAddress);
+        l1TwineMessenger.setCounterpartMessenger(l2TwineMessengerAddress);
 
         //L1CustomERC20Gateway setup
         l1CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);

@@ -12,7 +12,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     uint256 depositMessageIndex;
     uint256 withdrawalMessageIndex;
     address public messenger;
-    address messageQueueProxy;
+    address public messageQueueProxy;
     address public roleManager;
 
     /// @notice The list of queued cross domain messages.
@@ -149,6 +149,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         bytes memory depositMessageByteCode = abi.encode(
             _to,
             _value,
+            chainId,
             depositMessageIndex,
             _gasLimit,
             block.number,

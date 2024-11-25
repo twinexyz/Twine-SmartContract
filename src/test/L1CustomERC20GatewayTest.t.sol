@@ -130,7 +130,7 @@ contract L1CustomERC20GatewayTest is Test {
         assertEq(l1Token.balanceOf(initialOwner),99990);
     }
 
-    function testWithdrawERC20() public {
+    function testWithdrawERC20Demo() public {
         vm.startPrank(initialOwner);
         gateway.updateTokenMapping(address(l1Token), address(l2Token));
         assertEq(l1Token.balanceOf(initialOwner),100000);
@@ -138,7 +138,7 @@ contract L1CustomERC20GatewayTest is Test {
         l1Token.approve(address(router), 100000);
         router.depositERC20{value: 0}(address(l1Token), address(this), 10, 0);
         assertEq(l1Token.balanceOf(initialOwner),99990);
-        gateway.finalizeWithdrawERC20(
+        gateway.finalizeTokenWithdrawal(
             address(l1Token),
             address(l2Token),
             initialOwner,

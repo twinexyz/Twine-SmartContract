@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {Types} from "../libraries/rlp/Types.sol";
 import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
@@ -18,12 +19,12 @@ import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.
 contract L1ETHGatewayTest is Test {
     MockERC20 l1Token;
     MockERC20 l2Token;
-    TwineChain private rollup;
+    TwineChain private twineChain;
     L1ETHGateway private gateway;
     L1GatewayRouter private router;
     RoleManager private roleManager;
     L1MessageQueue private messageQueue;
-    L1TwineMessenger private l1Messenger;
+    L1TwineMessenger private l1TwineMessenger;
     L2TwineMessenger private l2Messenger;
     L2ETHGateway private counterpartGateway;
    
@@ -79,7 +80,7 @@ contract L1ETHGatewayTest is Test {
             abi.encodeCall(TwineChain.initialize, (address(0), address(0),address(roleManager)))
         );
 
-        rollup = TwineChain(TwineChainAddress);
+        twineChain = TwineChain(TwineChainAddress);
 
         // Deploying an upgradeable proxy for L1TwineMessenger
         address L1TwineMessengerAddress = Upgrades.deployTransparentProxy(
@@ -91,7 +92,7 @@ contract L1ETHGatewayTest is Test {
             )
         );
 
-        l1Messenger = L1TwineMessenger(L1TwineMessengerAddress);
+        l1TwineMessenger = L1TwineMessenger(L1TwineMessengerAddress);
 
         //setup ETH Gateway
         address L1ETHGatewayAddress = Upgrades.deployTransparentProxy(
@@ -99,7 +100,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(router), address(l1Messenger),address(roleManager))
+                (address(router), address(l1TwineMessenger),address(roleManager))
             )
         );
         gateway = L1ETHGateway(L1ETHGatewayAddress);
@@ -112,7 +113,7 @@ contract L1ETHGatewayTest is Test {
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));
-        messageQueue.setMessengerAddress(address(l1Messenger));
+        messageQueue.setMessengerAddress(address(l1TwineMessenger));
         vm.stopPrank();
 
     }
@@ -127,6 +128,24 @@ contract L1ETHGatewayTest is Test {
             depositAmount,
             0
         );
-        assertEq(address(l1Messenger).balance,2 ether);
+        assertEq(address(l1TwineMessenger).balance,2 ether);
     }
+ 
+
+ function prependBytes(
+        bytes memory prefix,
+        bytes memory originalData
+    ) public pure returns (bytes memory) {
+        require(prefix.length == 4, "Prefix must be exactly 4 bytes");
+        bytes memory result = new bytes(prefix.length + originalData.length);
+ 
+        for (uint256 i = 0; i < prefix.length; i++) {
+            result[i] = prefix[i];
+        }
+        for (uint256 i = 0; i < originalData.length; i++) {
+            result[i + prefix.length] = originalData[i];
+        }
+        return result;
+    }
+   
 }

@@ -123,7 +123,7 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
     }
 
      /// @inheritdoc IL1XERC20Gateway
-    function finalizeWithdrawXERC20(
+    function finalizeTokenWithdrawal(
         address _l1Token,
         address _l2Token,
         address _from,
@@ -150,7 +150,6 @@ contract L1XERC20Gateway is TwineL1GatewayBase,IL1XERC20Gateway {
         }else{
             IXERC20(xTokenInfo.l1xToken).mint(_to, _amount);
         }
-        _doCallback(_to, _data);
         emit FinalizeWithdrawXERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
     }
 

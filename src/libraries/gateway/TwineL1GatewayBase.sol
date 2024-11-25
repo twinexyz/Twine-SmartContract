@@ -70,17 +70,4 @@ abstract contract TwineL1GatewayBase is
     {
         messenger = _messenger;
     }
-
-    /**********************
-     * Internal Functions *
-     **********************/
-
-    /// @dev Internal function to forward calldata to target contract.
-    /// @param _to The address of contract to call.
-    /// @param _data The calldata passed to the contract.
-    function _doCallback(address _to, bytes memory _data) internal {
-        if (_data.length > 0 && _to.code.length > 0) {
-            ITwineGatewayCallback(_to).onTwineGatewayCallback(_data);
-        }
-    }
 }

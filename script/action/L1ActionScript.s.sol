@@ -108,7 +108,7 @@ contract L1ActionScript is Script {
 
         l1GatewayRouter.depositERC20{value: 0}(
             l1ERC20TokenAddress,
-            0x14dC79964da2C08b23698B3D3cc7Ca32193d9955,
+            admin,
             912,
             0
         );

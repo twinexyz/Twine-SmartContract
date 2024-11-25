@@ -173,7 +173,7 @@ contract L1XERC20GatewayTest is Test {
         gateway.depositXERC20(address(l1Token), address(this), 10,  0);
         assertEq(l1Token.balanceOf(initialOwner),9999990);
         assertEq(l1Token.balanceOf(address(lockBox)),10);
-        gateway.finalizeWithdrawXERC20(
+        gateway.finalizeTokenWithdrawal(
             address(l1Token),
             address(l2XToken),
             initialOwner,
@@ -188,7 +188,7 @@ contract L1XERC20GatewayTest is Test {
      function testWithdrawOfXERC20() public {
         vm.startPrank(initialOwner);
         assertEq(l1XToken.balanceOf(initialOwner),0);
-        gateway.finalizeWithdrawXERC20(
+        gateway.finalizeTokenWithdrawal(
             address(l1XToken),
             address(l2XToken),
             initialOwner,

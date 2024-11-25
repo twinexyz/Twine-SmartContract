@@ -15,7 +15,7 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 /// @title L1GatewayRouter
 /// @notice The `L1GatewayRouter` is the main entry for depositing Ether and ERC20 tokens.
 /// All deposited tokens are routed to corresponding gateways.
-contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
+contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter,IL1ETHGateway, IL1ERC20Gateway,IL1XERC20Gateway {
     using SafeERC20 for IERC20;
     /// @notice The address of L1ETHGateway.
     address public ethGateway;
@@ -202,15 +202,14 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
         gatewayInContext = address(0);
     }
 
-    /// @inheritdoc IL1ERC20Gateway
-    function finalizeWithdrawERC20(
+    function finalizeTokenWithdrawal(
         address,
         address,
         address,
         address,
         uint256,
         bytes calldata
-    ) external payable virtual override {
+    ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway,IL1XERC20Gateway) {
         revert("should never be called");
     }
 
@@ -259,35 +258,15 @@ contract L1GatewayRouter is ContextUpgradeable, IL1GatewayRouter {
         revert("should never be called");
     }
 
-    /// @inheritdoc IL1ETHGateway
-    function finalizeWithdrawETH(
-        address,
-        address,
-        uint256
-    ) external payable virtual override {
-        revert("should never be called");
-    }
 
     /// @inheritdoc IL1XERC20Gateway
       function forcedWithdrawalXERC20(
-        address ,
-        address,
-        address,
-        uint256 ,
-        uint256 
-    ) external payable virtual override{
-        revert("should never be called");
-    }
-
-    /// @inheritdoc IL1XERC20Gateway
-    function finalizeWithdrawXERC20(
-        address,
         address,
         address,
         address,
         uint256,
-        bytes calldata
-    ) external payable virtual override {
+        uint256 
+    ) external payable virtual override{
         revert("should never be called");
     }
 

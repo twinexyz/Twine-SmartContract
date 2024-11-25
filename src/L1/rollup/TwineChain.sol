@@ -156,7 +156,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function commitBatch(CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
       
         //require(isBatchFinalized(_newBatchData.batchNumber - 1), "Previous batch must be finalized.");
- 
+        depositTransactionsCommitted = 0;
+        forcedTransactionsCommitted = 0;
         StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
         committedBatches[batchToCommit.batchNumber] = batchToCommit;
         lastCommittedBatchNumber = batchToCommit.batchNumber;
@@ -273,23 +274,22 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
  
         // For individual deposit transaction object
         for(uint256 i = 0; i < _depositTransactionObject.length; i++) {
-            (bytes memory trimmedInput,bytes memory removedInput) = _trimFourBytes(_depositTransactionObject[i].input);
-            // Array that contains RLP encoded Receipt Object for Individual deposit object
-            (bytes[] memory encodedReceiptObjects,bytes[] memory proofs) = abi.decode(trimmedInput, (bytes[], bytes[]));
-            // Extract the datas from the log
-            for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
-                Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects[j]));
-                IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(depositTransactionsCommitted);
-                    for(uint256 k = 0; k < decodedReceipt.logs.length; k++){
-                        if(decodedReceipt.logs[k].logAddress == dataFromQueue.messageQueueAddress) {
-                            decodedReceipt.logs[k].topics[1] = dataFromQueue.fromAddressHash;
-                            decodedReceipt.logs[k].data =  dataFromQueue.dataValuesByte;
-                             ++ depositTransactionsCommitted;
-                        }
-                    }
-                encodedReceiptObjects[j]= getReceiptObjectRLP(decodedReceipt);
-            }
-            _depositTransactionObject[i].input = prependBytes(removedInput,abi.encode(encodedReceiptObjects,proofs));
+//             (bytes memory trimmedInput,bytes memory removedInput) = _trimFourBytes(_depositTransactionObject[i].input);
+//             // Array that contains RLP encoded Receipt Object for Individual deposit object
+// ( uint _chainId, bytes memory _consensusProof , bytes[] memory encodedReceiptObjects,bytes[] memory proofs) = abi.decode(trimmedInput, (uint, bytes, bytes[], bytes[]));            // Extract the datas from the log
+//             for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
+//                 Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects[j]));
+//                 IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(depositTransactionsCommitted);
+//                     for(uint256 k = 0; k < decodedReceipt.logs.length; k++){
+//                         if(decodedReceipt.logs[k].logAddress == dataFromQueue.messageQueueAddress) {
+//                             decodedReceipt.logs[k].topics[1] = dataFromQueue.fromAddressHash;
+//                             decodedReceipt.logs[k].data =  dataFromQueue.dataValuesByte;
+//                              ++ depositTransactionsCommitted;
+//                         }
+//                     }
+//                 encodedReceiptObjects[j]= getReceiptObjectRLP(decodedReceipt);
+//             }
+//             _depositTransactionObject[i].input = prependBytes(removedInput,abi.encode(_chainId,_consensusProof,encodedReceiptObjects,proofs));
             depositTransactionHash[i] = getTransactinObjectRLP( _depositTransactionObject[i]); 
         }
         return depositTransactionHash;
@@ -298,8 +298,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function _handleForcedTransaction(TransactionObject[] memory _forcedTransactionObject) internal returns (bytes32[] memory)
     {
         bytes32[] memory forcedTransactionHash = new bytes32[](_forcedTransactionObject.length);
- 
-        // // For individual forced transaction object
+        // For individual forced transaction object
         for(uint256 i = 0; i < _forcedTransactionObject.length; i++) {
             // Types.ReceiptWithoutTxType memory forcedWithdrawalReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_forcedTransactionObject[i].input)); 
             // IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(forcedTransactionsCommitted);

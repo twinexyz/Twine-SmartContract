@@ -98,11 +98,9 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         bytes memory _data
     ) internal virtual override  {
         address _l1Token = tokenMapping[_chainId][_token];
-        require(_l1Token != address(0), "no corresponding l1 token");
         
         require(_amount > 0, "Amout must be greater than zero");
-        
-
+    
         // 1. Extract real sender if this call is from L2GatewayRouter.
         address _from = _msgSender();
         if (router == _from) {
@@ -114,14 +112,20 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
         // 3. Generate message passed to L1CustomERC20Gateway.
         bytes memory _message = abi.encodeCall(
-            IL1ERC20Gateway.finalizeWithdrawERC20,(_l1Token,_token, _from, _to, _amount, _data));
+            IL1ERC20Gateway.finalizeTokenWithdrawal,(_l1Token,_token, _from, _to, _amount, _data));
+            uint256 value;
+            if(_l1Token == address(0)){
+                value = _amount;
+            } else {
+                value = 0;
+            }
 
         // 4. Send message to L2TwineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
             _from,
             _to,
             counterpartGateWay[_chainId][_l1Token],
-            _gasLimit,
+            value,
             _chainId,
             _gasLimit,
             _message

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+import "forge-std/console.sol";
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
@@ -66,19 +67,20 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     }
 
     /// @inheritdoc IL1ETHGateway
-    function finalizeWithdrawETH(
+    function finalizeTokenWithdrawal(
+        address _l1Token,
+        address _l2Token,
         address _from,
         address _to,
-        uint256 _amount
-    ) external payable override onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(msg.value == _amount, "msg.value mismatch");
-
+        uint256 _amount,
+        bytes calldata data
+    ) external payable override  {
         // @note can possible trigger reentrant call to messenger,
         // but it seems not a big problem.
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_from, _to,block.number, _amount);
+        emit FinalizeWithdrawETH(_l1Token,_l2Token,_from, _to,block.number, _amount);
     }
 
     /// @notice Set the l2TokenAddress
@@ -105,8 +107,6 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         if (gatewayRouter == _from) {
             (_from, _data) = abi.decode(_data, (address, bytes));
         }
-
-        // @note no rate limit here, since ETH is limited in messenger
 
         // 2. Generate message passed to L1TwineMessenger.
         bytes memory _message = abi.encode(address(0), l2TokenAddress, _from, _to, _amount);

@@ -12,6 +12,8 @@ interface IL2ETHGateway {
     /// @param amount The amount of ETH to be withdrawn.
     /// @param gasLimit Optional, gas limit used to complete the withdraw on L1.
     function withdrawETH(
+        address _l1Token,
+        address _l2Token,
         address to,
         uint256 amount,
         uint256 chainId,
@@ -24,6 +26,8 @@ interface IL2ETHGateway {
     /// @param data Optional data to forward to recipient's account.
     /// @param gasLimit Optional, gas limit used to complete the withdraw on L1.
     function withdrawETHAndCall(
+        address _l1Token,
+        address _l2Token,
         address to,
         uint256 amount,
         uint256 chainId,

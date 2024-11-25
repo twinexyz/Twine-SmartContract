@@ -59,11 +59,14 @@ abstract contract TwineL1MessengerBase is
         roleManager = _roleManagerAddress;
     }
 
-    function setAddressMessengerBase(
-        address _counterpart,
+
+    function setCounterpartMessenger(address _counterpart) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        counterpart = _counterpart;
+    }
+
+    function setFeeVault(
         address _feeVault
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        counterpart = _counterpart;
         feeVault = _feeVault;
     }
 

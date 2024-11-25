@@ -12,11 +12,16 @@ import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {IL1MessageQueue} from "../L1/rollup/IL1MessageQueue.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {SP1Verifier} from "@sp1-contracts/v3.0.0/SP1VerifierGroth16.sol";
+import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
+import {RLPEncodeStruct, Types} from "../libraries/rlp/RLPEncodeStruct.sol";
+import {IL1ETHGateway, L1ETHGateway} from "../L1/gateways/L1ETHGateway.sol";
 
 contract TwineChainTest is Test {
     RoleManager roleManager;
     TwineChain public twineChain;
     L1MessageQueue public messageQueue;
+    L1TwineMessenger public l1TwineMessenger;
+    L1ETHGateway private gateway;
     
     address public verifier;
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
@@ -26,6 +31,7 @@ contract TwineChainTest is Test {
 
     function setUp() public {
         vm.startPrank(initialOwner);
+        deal(initialOwner, 10 ether);
 
         verifier = address(new SP1Verifier());
 
@@ -61,6 +67,22 @@ contract TwineChainTest is Test {
         );
 
         twineChain = TwineChain(TwineChainAddress);
+         address L1TwineMessengerAddress = Upgrades.deployTransparentProxy(
+            "L1TwineMessenger.sol",
+            initialOwner,
+            abi.encodeCall(
+                L1TwineMessenger.initialize,
+                (
+                    address(0),
+                    address(messageQueue),
+                    TwineChainAddress,
+                    roleManagerAddress
+                )
+            )
+        );
+
+        l1TwineMessenger = L1TwineMessenger(L1TwineMessengerAddress);
+
     }
 
     //  function testFinalizationWithCommitment() public {
@@ -151,4 +173,9 @@ contract TwineChainTest is Test {
             twineChain.getTransactinObjectRLP(_transactionObject)
         );
     }
+
+
+
+
+   
 }

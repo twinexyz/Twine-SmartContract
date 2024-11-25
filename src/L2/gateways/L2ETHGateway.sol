@@ -41,23 +41,27 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
 
     /// @inheritdoc IL2ETHGateway
     function withdrawETH(
+        address _l1Token,
+        address _l2Token,
         address _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
     ) external payable override nonReentrant {
-        _withdraw(_to, _amount,_chainId, _gasLimit,new bytes(0));
+        _withdraw(_l1Token,_l2Token,_to, _amount,_chainId, _gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL2ETHGateway
     function withdrawETHAndCall(
+        address _l1Token,
+        address _l2Token,
         address _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
         bytes memory _data
     ) external payable override nonReentrant{
-        _withdraw(_to, _amount,_chainId, _gasLimit,_data);
+        _withdraw(_l1Token,_l2Token,_to, _amount,_chainId, _gasLimit,_data);
     }
 
     /// @dev The internal ETH withdraw implementation.
@@ -66,6 +70,8 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     /// @param _gasLimit Optional gas limit to complete the deposit on L1.
     function _withdraw(
         address _to,
+        address _l1Token,
+        address _l2Token,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -78,11 +84,12 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
         if (router == _from) {
             (_from, _data) = abi.decode(_data, (address, bytes));
         }
-
+        
         bytes memory _message = abi.encodeCall(
-            IL1ETHGateway.finalizeWithdrawETH,
-            (_from, _to, _amount)
+            IL1ETHGateway.finalizeTokenWithdrawal,
+            (_l1Token,_l2Token,_from, _to, _amount,bytes(""))
         );
+        
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
             _from,
             _to,
