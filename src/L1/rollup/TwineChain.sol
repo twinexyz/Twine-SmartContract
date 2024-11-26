@@ -7,6 +7,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 import {ITwineChain} from "./ITwineChain.sol";
 import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
+import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {RLPDecodeStruct} from "../../libraries/rlp/RLPDecodeStruct.sol";
 import {RLPEncodeStruct, Types} from "../../libraries/rlp/RLPEncodeStruct.sol";
@@ -21,7 +22,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     error ErrorZeroAddress();
  
     /*************
-     * Constants *
+     * Variables *
      *************/
  
     ///@notice The chai ID for the L1 where this contract is deployed
@@ -38,11 +39,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
  
     /// @notice Address of the rolemanager contract
     address roleManager;
- 
-    /*************
-     * Variables *
-     *************/
- 
+
     /// @notice The Number of Last Batch Committed
     uint256 public override lastCommittedBatchNumber;
  
@@ -54,6 +51,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
  
     /// @notice The number of forced Transaction of this L1 that is committed but not finalized
     uint256 public forcedTransactionsCommitted;
+
+    ///@notice endpointId of the Layerzero v1 as v2Eid = 30000+v1Eid
+    uint256 eId;
+
+    ///@notice address of the DVN
+    address dvnAddress;
+
+    /// @notice The list of queued cross domain messages.
+    LzPayloadData[] public lzPayloadQueue;
  
  
     /*************
@@ -151,6 +157,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function setProgramVKey(bytes32 _programVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         ProgramVKey = _programVKey;
     }
+
+    /// @notice set the EID of layerzero 
+    function setEid(uint256 _eId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        eId = _eId;
+    }
+    
+    function setDvn(address _dvnAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        dvnAddress = _dvnAddress;
+    }
  
     /// @inheritdoc ITwineChain
     function commitBatch(CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
@@ -215,6 +230,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 depositTransactionHashes: commitmentData._depositTransactionHash,
                 forcedTransactionHashes: commitmentData._forcedTransactionHash,
                 otherTransactionHashes: commitmentData._otherTransactionHash,
+                lzDvnTransactionHashes: commitmentData._lzDvnTransactionHash,
                 publicInput: commitmentData._proofInput
             });
     }   
@@ -227,6 +243,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32[] memory depositTransactionHash;
         bytes32[] memory otherTransactionHash;
         bytes32[] memory forcedTransactionHash;
+        bytes32[] memory lzDvnTransactionHash;
  
         proofInput = abi.encodePacked(
             _newBatchData.batchNumber,
@@ -247,6 +264,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 proofInput = abi.encodePacked(proofInput, forcedTransactionHash[i]);
             }
         }
+
         // Append each `otherTransactionHash` element
         if(_newBatchData.otherTransactions.length != 0){
             otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
@@ -255,11 +273,20 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 proofInput = abi.encodePacked(proofInput, otherTransactionHash[i]);
             }
         }
+
+        if(_newBatchData.lzDvnTransactions.length != 0){
+            lzDvnTransactionHash = _handleLzTransaction(_newBatchData.lzDvnTransactions);
+            for (uint256 i = 0; i < lzDvnTransactionHash.length; i++) {
+                proofInput = abi.encodePacked(proofInput, lzDvnTransactionHash[i]);
+            }
+        }
+        
         CommitmentData memory commitData = CommitmentData({
             _proofInput: proofInput,
             _depositTransactionHash: depositTransactionHash,
             _forcedTransactionHash: forcedTransactionHash,
-            _otherTransactionHash: otherTransactionHash
+            _otherTransactionHash: otherTransactionHash,
+            _lzDvnTransactionHash: lzDvnTransactionHash
         });
  
         return (commitData);
@@ -326,7 +353,37 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
         return otherTransactionHash;
     } 
- 
+
+    function _handleLzTransaction(TransactionObject[] memory _lzDvnTransactionObject)
+        internal 
+        returns (bytes32[] memory) 
+    {
+        bytes32[] memory lzDvnTransactionHash = new bytes32[](_lzDvnTransactionObject.length);    
+        for(uint256 i = 0; i < _lzDvnTransactionObject.length; i++){
+            Types.ReceiptWithoutTxType memory lzDvnTransactionReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_lzDvnTransactionObject[i].input)); 
+            for (uint256 j=0;j<lzDvnTransactionReceipt.logs.length;j++){
+                uint32 endPointId = uint32(uint256(lzDvnTransactionReceipt.logs[j].topics[1]));
+                if(endPointId == uint32(eId) || endPointId == uint32(eId+30000) ){
+                     LzPayloadData memory payloadData = LzPayloadData({
+                        dstEid: endPointId,
+                        otherData: lzDvnTransactionReceipt.logs[j].data
+                    });
+                    lzPayloadQueue.push(payloadData);
+                }
+            }
+        }
+        return lzDvnTransactionHash;
+     } 
+
+    function verifyPayload(uint256 _batchNumber,uint256[] memory _payLoadQueueIndex) external {
+        require(isBatchFinalized(_batchNumber), "Batch is not Finalized");
+        require(_payLoadQueueIndex.length > 0,"Index can not be empty");
+        for(uint256 i=0;i<_payLoadQueueIndex.length;i++){
+            require(_payLoadQueueIndex[i] <= _payLoadQueueIndex.length, "Index out of bounds"); 
+            ITwineDVN(dvnAddress).validatePayload(lzPayloadQueue[_payLoadQueueIndex[i]].otherData);
+            deleteSpecificPosition(_payLoadQueueIndex[i]);
+        }
+    }
     function prependBytes(
         bytes memory prefix,
         bytes memory originalData
@@ -375,5 +432,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         });
  
         return abi.encodePacked(ro.txType, ro.encodeReceiptObject());
-    }     
+    }  
+    function deleteSpecificPosition(uint _index) public {
+        require(lzPayloadQueue.length > 0, "Queue is empty");
+        require(_index < lzPayloadQueue.length, "Index out of bounds");
+        for (uint i = _index; i < lzPayloadQueue.length - 1; i++) {
+            lzPayloadQueue[i] = lzPayloadQueue[i + 1];
+        }
+        lzPayloadQueue.pop();
+    }  
 }

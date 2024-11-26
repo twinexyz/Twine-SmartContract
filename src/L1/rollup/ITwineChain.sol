@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.24;
 
 /// @title ITwineChain
@@ -60,6 +59,7 @@ interface ITwineChain {
         TransactionObject[] depositTransactionObject;
         TransactionObject[] forcedTransactionObjects;
         TransactionObject[] otherTransactions;
+        TransactionObject[] lzDvnTransactions;
     }
 
     struct StoredBatchInfo{
@@ -72,6 +72,7 @@ interface ITwineChain {
         bytes32[] depositTransactionHashes;
         bytes32[] forcedTransactionHashes;
         bytes32[] otherTransactionHashes;
+        bytes32[] lzDvnTransactionHashes;
         bytes publicInput;
     }
 
@@ -80,6 +81,7 @@ interface ITwineChain {
         bytes32[] _depositTransactionHash;
         bytes32[] _forcedTransactionHash;
         bytes32[] _otherTransactionHash;
+        bytes32[] _lzDvnTransactionHash;
     }
 
     struct ReceiptData {
@@ -91,6 +93,11 @@ interface ITwineChain {
         uint256 MessageIndex;
         uint256 gasLimit;
         bytes data;
+    }
+
+    struct LzPayloadData{
+        uint32 dstEid;
+        bytes otherData;
     }
 
     /*************************
@@ -123,7 +130,6 @@ interface ITwineChain {
     ///
     /// @param _newBatchData The struct containing the batch's information
     function commitBatch(CommitBatchInfo calldata _newBatchData) external;
-
 
     /// @notice Finalize a bath on Layer 1.
     ///

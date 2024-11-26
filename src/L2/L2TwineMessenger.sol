@@ -117,6 +117,26 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             )
         );
     }
+    function verifyLayerZeroPayload(
+        uint256 chainId,
+        bytes memory lzPayload,
+        bytes memory payloadProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        bytes[] memory lzPayloads = new bytes[](1);
+        bytes[] memory payloadProofs = new bytes[](1);
+        lzPayloads[0] = lzPayload;
+        payloadProofs[0] = payloadProof;
+            (bool success, bytes memory output) = consensusPrecompileAddress.call(abi.encode(chainId, lzPayloads, payloadProofs));
+            require(success, "Deposits failed!");
+            (PayloadDetails memory details) = _decodePayloadDetails(output);
+            emit LayerzeroPayload(
+                details.dstEid,
+                details.blockConfirmation,
+                details.requiredBlockNumber,
+                details.receiveLibrary,
+                details.payloadHash,
+                details.packetHeader);
+    }
 
     /// @dev Internal function to send cross domain message.
     /// @param _to The address of the contract to call.
@@ -174,6 +194,17 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 value = 0;
          }
         return WithdrawalDetails(l1Token, l2Token, from, to, amount,value);
+    }
+
+    function _decodePayloadDetails (bytes memory output
+    ) internal pure returns (PayloadDetails memory) {
+        (uint32 dstEid,
+        uint64 blockConfirmation,
+        uint120 requiredBlockNumber,
+        address receiveLibrary,
+        bytes32 payloadHash,
+        bytes memory packetHeader) =abi.decode(output,(uint32,uint64,uint120,address,bytes32,bytes));
+        return PayloadDetails(dstEid,blockConfirmation,requiredBlockNumber,receiveLibrary,payloadHash,packetHeader);
     }
 
 }
