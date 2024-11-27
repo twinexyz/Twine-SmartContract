@@ -10,9 +10,9 @@ import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {ISendLib, MessageLibType} from "./interfaces/ISendLib.sol";
 import {ILayerZeroEndpoint} from "./interfaces/ILayerZeroEndpoint.sol";
 import {ILayerZeroEndpointV2} from "./interfaces/ILayerZeroEndpointV2.sol";
-import { IReceiveUlnE2, Verification, UlnConfig } from "./interfaces/IReceiveUlnE2.sol";
+import {IReceiveUlnE2, Verification, UlnConfig} from "./interfaces/IReceiveUlnE2.sol";
 
-contract TwineDVN is ILayerZeroDVN,ITwineDVN, ContextUpgradeable {
+contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
     ILayerZeroEndpoint public layerZeroEndpointV1;
     ILayerZeroEndpointV2 public layerZeroEndpointV2;
 
@@ -94,6 +94,21 @@ contract TwineDVN is ILayerZeroDVN,ITwineDVN, ContextUpgradeable {
         );
     }
 
+    // @dev to support ULNv2
+    /// @dev dvn network can reject job from _sender by adding/removing them from allowlist/denylist
+    /// @param _dstEid destination EndpointId
+    /// @param //_outboundProofType outbound proof type
+    /// @param _confirmations block confirmations
+    /// @param _sender message sender address
+    function assignJob(
+        uint16 _dstEid,
+        uint16 /*_outboundProofType*/,
+        uint64 _confirmations,
+        address _sender
+    ) external returns (uint256 fee) {
+        fee = chainFeeLookup[_dstEid];
+    }
+
     /// @inheritdoc ILayerZeroDVN
     function getFee(
         uint32 _dstEid,
@@ -104,13 +119,16 @@ contract TwineDVN is ILayerZeroDVN,ITwineDVN, ContextUpgradeable {
         fee = chainFeeLookup[_dstEid];
     }
 
-    function validatePayload(bytes memory payloadData)
-        external
-        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    function validatePayload(
+        bytes memory payloadData
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         PayloadOtherData memory data = getPayloadOtherData(payloadData);
         require(data.requiredBlockNumber > block.number);
-        IReceiveUlnE2(data.receiveLibrary).verify(data.packetHeader, data.payloadHash, data.blockConfirmation);
+        IReceiveUlnE2(data.receiveLibrary).verify(
+            data.packetHeader,
+            data.payloadHash,
+            data.blockConfirmation
+        );
         emit PayloadVerified(data.packetHeader, data.payloadHash);
     }
 
@@ -226,17 +244,24 @@ contract TwineDVN is ILayerZeroDVN,ITwineDVN, ContextUpgradeable {
         }
     }
 
-    function getPayloadOtherData(bytes memory otherData) internal returns (PayloadOtherData memory) {
-        (uint64 blockConfirmation,
-        uint120 requiredBlockNumber,
-        address receiveLibrary,
-        bytes32 payloadHash,
-        bytes memory packetHeader) = abi.decode(otherData,(uint64,uint120,address,bytes32,bytes));
+    function getPayloadOtherData(
+        bytes memory otherData
+    ) internal returns (PayloadOtherData memory) {
+        (
+            uint64 blockConfirmation,
+            uint120 requiredBlockNumber,
+            address receiveLibrary,
+            bytes32 payloadHash,
+            bytes memory packetHeader
+        ) = abi.decode(otherData, (uint64, uint120, address, bytes32, bytes));
 
-        return PayloadOtherData(blockConfirmation,requiredBlockNumber,receiveLibrary,payloadHash,packetHeader);
-
-
+        return
+            PayloadOtherData(
+                blockConfirmation,
+                requiredBlockNumber,
+                receiveLibrary,
+                payloadHash,
+                packetHeader
+            );
     }
 }
-
-
