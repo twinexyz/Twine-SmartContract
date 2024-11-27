@@ -366,7 +366,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 if(endPointId == uint32(eId) || endPointId == uint32(eId+30000) ){
                      LzPayloadData memory payloadData = LzPayloadData({
                         dstEid: endPointId,
-                        otherData: lzDvnTransactionReceipt.logs[j].data
+                        otherData: abi.encode(endPointId,lzDvnTransactionReceipt.logs[j].data)
                     });
                     lzPayloadQueue.push(payloadData);
                 }
@@ -375,14 +375,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return lzDvnTransactionHash;
      } 
 
-    function verifyPayload(uint256 _batchNumber,uint256[] memory _payLoadQueueIndex) external {
+    function verifyPayload(uint256 _batchNumber,uint256 _payLoadQueueIndex) external {
         require(isBatchFinalized(_batchNumber), "Batch is not Finalized");
-        require(_payLoadQueueIndex.length > 0,"Index can not be empty");
-        for(uint256 i=0;i<_payLoadQueueIndex.length;i++){
-            require(_payLoadQueueIndex[i] <= _payLoadQueueIndex.length, "Index out of bounds"); 
-            ITwineDVN(dvnAddress).validatePayload(lzPayloadQueue[_payLoadQueueIndex[i]].otherData);
-            deleteSpecificPosition(_payLoadQueueIndex[i]);
-        }
+            require(_payLoadQueueIndex <= lzPayloadQueue.length, "Index out of bounds"); 
+            ITwineDVN(dvnAddress).validatePayload(lzPayloadQueue[_payLoadQueueIndex].otherData);
+            deleteSpecificPosition(_payLoadQueueIndex);
     }
     function prependBytes(
         bytes memory prefix,

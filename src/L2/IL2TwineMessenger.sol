@@ -3,6 +3,10 @@ pragma solidity ^0.8.24;
 
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
+    enum TransactionType {
+         BridgeTxns,
+         LayerZeroDVN
+    }
     /// @notice Emitted when a cross domain message is sent.
     /// @param from The address of the sender who initiates the message.
     /// @param to The address of the receiver
@@ -52,9 +56,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @notice Emitted when the Layerzero payload is successfully verified
     event LayerzeroPayload(
         uint32 indexed dstEid,
-        uint64 blockConfirmation,
-        uint120 requiredBlockNumber,
-        address receiveLibrary,
+        address receiverAddress,
         bytes32 payloadHash,
         bytes packetHeader
     );
@@ -70,9 +72,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     struct PayloadDetails {
         uint32 dstEid;
-        uint64 blockConfirmation;
-        uint120 requiredBlockNumber;
-        address receiveLibrary;
+        address receiverAddress;
         bytes32 payloadHash;
         bytes packetHeader;
     }
