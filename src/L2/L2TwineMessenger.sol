@@ -71,7 +71,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function verifyConsensusProofAndExecuteDeposit(
-        TransactionType _transactionType,
         uint256 chainId,
         bytes memory consensusProof,
         bytes[] memory depositTransactions,
@@ -80,7 +79,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         _verifyConsensusProof(consensusProof);
         if (depositTransactions.length > 0) {
             bytes memory data = abi.encode(
-                _transactionType,
                 chainId,
                 depositTransactions,
                 depositTxnProofs
@@ -92,7 +90,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function executeForcedWithdrawal(
-        TransactionType _transactionType,
         uint256 chainId,
         bytes memory withdrawalTransaction,
         bytes memory proof
@@ -102,7 +99,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         withdrawalTxns[0] = withdrawalTransaction;
         proofs[0] = proof;
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(
-            abi.encode(_transactionType,chainId, withdrawalTxns, proofs)
+            abi.encode(chainId, withdrawalTxns, proofs)
         );
         require(success, "Withdrawal failed!");
         (WithdrawalDetails memory details) = _decodeWithdrawalDetails(output);
@@ -121,7 +118,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         );
     }
     function verifyLayerZeroPayload(
-        TransactionType _transactionType,
         uint256 chainId,
         bytes memory lzPayload,
         bytes memory payloadProof
@@ -130,14 +126,10 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes[] memory payloadProofs = new bytes[](1);
         lzPayloads[0] = lzPayload;
         payloadProofs[0] = payloadProof;
-            (bool success, bytes memory output) = consensusPrecompileAddress.call(abi.encode(_transactionType,chainId, lzPayloads, payloadProofs));
+            (bool success, bytes memory output) = consensusPrecompileAddress.call(abi.encode(chainId, lzPayloads, payloadProofs));
             require(success, "Deposits failed!");
-            (PayloadDetails memory details) = _decodePayloadDetails(output);
-            emit LayerzeroPayload(
-                details.dstEid,
-                details.receiverAddress,
-                details.payloadHash,
-                details.packetHeader);
+            (bytes32 guId) = abi.decode(output,(bytes32));
+            emit LayerzeroPayload(chainId,guId);
     }
 
     /// @dev Internal function to send cross domain message.
@@ -198,14 +190,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         return WithdrawalDetails(l1Token, l2Token, from, to, amount,value);
     }
 
-    function _decodePayloadDetails (bytes memory output
-) internal pure returns (PayloadDetails memory) {
-        (uint32 dstEid,
-        address receiverAddress,
-        bytes32 payloadHash,
-        bytes memory packetHeader) =abi.decode(output,(uint32,address,bytes32,bytes));
-        return PayloadDetails(dstEid,receiverAddress,payloadHash,packetHeader);
-    }
 }
 
 

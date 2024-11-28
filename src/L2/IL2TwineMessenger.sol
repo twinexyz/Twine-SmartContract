@@ -55,10 +55,8 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     /// @notice Emitted when the Layerzero payload is successfully verified
     event LayerzeroPayload(
-        uint32 indexed dstEid,
-        address receiverAddress,
-        bytes32 payloadHash,
-        bytes packetHeader
+        uint256 indexed sourceChainId,
+        bytes32 indexed guId
     );
 
     struct WithdrawalDetails {
@@ -70,10 +68,4 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 value;
     }
 
-    struct PayloadDetails {
-        uint32 dstEid;
-        address receiverAddress;
-        bytes32 payloadHash;
-        bytes packetHeader;
-    }
 }

@@ -4,14 +4,13 @@ pragma solidity ^0.8.24;
 import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MockSetOapp is OApp {
-    string public data;
-    string Message;
+contract MockOApp is OApp {
+    string public message;
 
     constructor(
-        address _endpoint,
-        address _owner
-    ) OApp(_endpoint, _owner) Ownable(_owner) {}
+        address _endpointAddres,
+        address _ownerAddress
+    ) OApp(_endpointAddres, _ownerAddress) Ownable(_ownerAddress) {}
 
     /**
      * @notice Sends a message from the source to destination chain.
@@ -53,6 +52,13 @@ contract MockSetOapp is OApp {
     ) internal override {
         // Decode the payload to get the message
         // In this case, type is string, but depends on your encoding!
-        data = abi.decode(payload, (string));
+        message = abi.decode(payload, (string));
     }
+
+    function quote(
+        uint32 _dstEid, // Destination chain's endpoint ID.
+        string memory _message, // The message to send.
+        bytes calldata _options, // Message execution options
+        bool _payInLzToken // boolean for which token to return fee in
+    ) public view returns (uint256 nativeFee, uint256 lzTokenFee) {}
 }

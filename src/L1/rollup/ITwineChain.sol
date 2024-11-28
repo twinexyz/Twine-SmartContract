@@ -58,8 +58,8 @@ interface ITwineChain {
         bytes32 receiptRoot;
         TransactionObject[] depositTransactionObject;
         TransactionObject[] forcedTransactionObjects;
-        TransactionObject[] otherTransactions;
         TransactionObject[] lzDvnTransactions;
+        TransactionObject[] otherTransactions;
     }
 
     struct StoredBatchInfo{
@@ -71,8 +71,8 @@ interface ITwineChain {
         bytes32 receiptRoot;
         bytes32[] depositTransactionHashes;
         bytes32[] forcedTransactionHashes;
-        bytes32[] otherTransactionHashes;
         bytes32[] lzDvnTransactionHashes;
+        bytes32[] otherTransactionHashes;
         bytes publicInput;
     }
 
@@ -80,8 +80,8 @@ interface ITwineChain {
         bytes _proofInput;
         bytes32[] _depositTransactionHash;
         bytes32[] _forcedTransactionHash;
-        bytes32[] _otherTransactionHash;
         bytes32[] _lzDvnTransactionHash;
+        bytes32[] _otherTransactionHash;
     }
 
     struct ReceiptData {

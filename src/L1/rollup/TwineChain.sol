@@ -53,10 +53,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     uint256 public forcedTransactionsCommitted;
 
     ///@notice endpointId of the Layerzero v1 as v2Eid = 30000+v1Eid
-    uint256 eId;
+    uint32 public eId;
 
     ///@notice address of the DVN
-    address dvnAddress;
+    address public dvnAddress;
 
     /// @notice The list of queued cross domain messages.
     LzPayloadData[] public lzPayloadQueue;
@@ -159,7 +159,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @notice set the EID of layerzero 
-    function setEid(uint256 _eId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setEid(uint32 _eId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         eId = _eId;
     }
     
@@ -229,8 +229,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 receiptRoot: _newBatchData.receiptRoot,
                 depositTransactionHashes: commitmentData._depositTransactionHash,
                 forcedTransactionHashes: commitmentData._forcedTransactionHash,
-                otherTransactionHashes: commitmentData._otherTransactionHash,
                 lzDvnTransactionHashes: commitmentData._lzDvnTransactionHash,
+                otherTransactionHashes: commitmentData._otherTransactionHash,
                 publicInput: commitmentData._proofInput
             });
     }   
@@ -241,9 +241,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     {
         bytes memory proofInput;
         bytes32[] memory depositTransactionHash;
-        bytes32[] memory otherTransactionHash;
         bytes32[] memory forcedTransactionHash;
         bytes32[] memory lzDvnTransactionHash;
+        bytes32[] memory otherTransactionHash;
+        
  
         proofInput = abi.encodePacked(
             _newBatchData.batchNumber,
@@ -265,6 +266,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             }
         }
 
+        if(_newBatchData.lzDvnTransactions.length != 0){
+            lzDvnTransactionHash = _handleLzTransaction(_newBatchData.lzDvnTransactions);
+            for (uint256 i = 0; i < lzDvnTransactionHash.length; i++) {
+                proofInput = abi.encodePacked(proofInput, lzDvnTransactionHash[i]);
+            }
+        }
+
         // Append each `otherTransactionHash` element
         if(_newBatchData.otherTransactions.length != 0){
             otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
@@ -273,20 +281,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 proofInput = abi.encodePacked(proofInput, otherTransactionHash[i]);
             }
         }
-
-        if(_newBatchData.lzDvnTransactions.length != 0){
-            lzDvnTransactionHash = _handleLzTransaction(_newBatchData.lzDvnTransactions);
-            for (uint256 i = 0; i < lzDvnTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(proofInput, lzDvnTransactionHash[i]);
-            }
-        }
         
         CommitmentData memory commitData = CommitmentData({
             _proofInput: proofInput,
             _depositTransactionHash: depositTransactionHash,
             _forcedTransactionHash: forcedTransactionHash,
-            _otherTransactionHash: otherTransactionHash,
-            _lzDvnTransactionHash: lzDvnTransactionHash
+            _lzDvnTransactionHash: lzDvnTransactionHash,
+            _otherTransactionHash: otherTransactionHash
         });
  
         return (commitData);
@@ -363,7 +364,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             Types.ReceiptWithoutTxType memory lzDvnTransactionReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_lzDvnTransactionObject[i].input)); 
             for (uint256 j=0;j<lzDvnTransactionReceipt.logs.length;j++){
                 uint32 endPointId = uint32(uint256(lzDvnTransactionReceipt.logs[j].topics[1]));
-                if(endPointId == uint32(eId) || endPointId == uint32(eId+30000) ){
+                if(endPointId == eId){
                      LzPayloadData memory payloadData = LzPayloadData({
                         dstEid: endPointId,
                         otherData: abi.encode(endPointId,lzDvnTransactionReceipt.logs[j].data)
@@ -378,8 +379,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function verifyPayload(uint256 _batchNumber,uint256 _payLoadQueueIndex) external {
         require(isBatchFinalized(_batchNumber), "Batch is not Finalized");
             require(_payLoadQueueIndex <= lzPayloadQueue.length, "Index out of bounds"); 
-            ITwineDVN(dvnAddress).validatePayload(lzPayloadQueue[_payLoadQueueIndex].otherData);
-            deleteSpecificPosition(_payLoadQueueIndex);
+            bool sucess = ITwineDVN(dvnAddress).validatePayload(lzPayloadQueue[_payLoadQueueIndex].otherData);
+            if(sucess){deleteSpecificPosition(_payLoadQueueIndex);}
     }
     function prependBytes(
         bytes memory prefix,
