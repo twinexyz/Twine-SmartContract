@@ -126,8 +126,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes[] memory payloadProofs = new bytes[](1);
         lzPayloads[0] = lzPayload;
         payloadProofs[0] = payloadProof;
-            (bool success, bytes memory output) = consensusPrecompileAddress.call(abi.encode(chainId, lzPayloads, payloadProofs));
-            require(success, "Deposits failed!");
+            (bool success, bytes memory output) = bridgingPrecompileAddress.call(abi.encode(chainId, lzPayloads, payloadProofs));
+            require(success, "LayerZero verification failed!");
             (bytes32 guId) = abi.decode(output,(bytes32));
             emit LayerzeroPayload(chainId,guId);
     }
