@@ -77,7 +77,6 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
         if (!isSupportedMessageLib(msg.sender)) revert UnsupportedSendLib();
         fee = chainFeeLookup[_param.dstEid];
         (bytes32 guId, address receiver) = getIDAddress(_param.packetHeader);
-
         emit TwineNotified(
             _param.dstEid,
             _param.confirmations,
@@ -103,7 +102,11 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
     /// @inheritdoc ITwineDVN
     function validatePayload(
         bytes memory payloadData
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) returns (bool){
+    )
+        external
+        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
+        returns (bool)
+    {
         PayloadOtherData memory data = getPayloadOtherData(payloadData);
         (address receiverLib, ) = layerZeroEndpointV2.getReceiveLibrary(
             data.receiverAddress,
@@ -233,6 +236,64 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
     function getPayloadOtherData(
         bytes memory otherData
     ) internal pure returns (PayloadOtherData memory) {
+        (uint32 dstEid,bytes memory reaminingData) = abi.decode(otherData,(uint32,bytes));
+        (
+            uint64 blockConfirmations,
+            address receiverAddress,
+            ,
+            ,
+            bytes32 payloadHash,
+            ,
+            bytes memory packetHeader
+        ) = abi.decode(
+                reaminingData,
+                (
+                    uint64,
+                    address,
+                    uint256,
+                    uint256,
+                    bytes32,
+                    bytes32,
+                    bytes
+                )
+            );
+
+        return
+            PayloadOtherData(
+                dstEid,
+                blockConfirmations,
+                receiverAddress,
+                payloadHash,
+                packetHeader
+            );
+    }
+
+    function getIDAddress(
+        bytes memory _packetHeader
+    ) internal pure returns (bytes32 guId, address receiverAddress) {
+        uint8 version;
+        uint64 nonce;
+        uint32 srcEid;
+        bytes32 sender;
+        uint32 dstEid;
+        bytes32 receiver;
+        assembly {
+            version := mload(add(_packetHeader, 1))
+            nonce := mload(add(_packetHeader, 9))
+            srcEid := mload(add(_packetHeader, 13))
+            sender := mload(add(_packetHeader, 45))
+            dstEid := mload(add(_packetHeader, 49))
+            receiver := mload(add(_packetHeader, 81))
+        }
+        guId = keccak256(
+            abi.encodePacked(nonce, srcEid, sender, dstEid, receiver)
+        );
+        receiverAddress = address(uint160(uint256(receiver)));
+    }
+
+    function getPayloadOtherDataTest(
+        bytes memory otherData
+    ) external pure returns (PayloadOtherData memory) {
         (
             uint32 dstEid,
             uint64 blockConfirmations,
@@ -264,31 +325,5 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
                 payloadHash,
                 packetHeader
             );
-    }
-
-    function getIDAddress(
-        bytes memory _packetHeader
-    ) internal pure returns (bytes32 guId, address receiverAddress) {
-        (
-            ,
-            uint64 _nonce,
-            uint32 _srcEid,
-            address _sender,
-            uint32 _dstEid,
-            bytes32 _receiver
-        ) = abi.decode(
-                _packetHeader,
-                (uint8, uint64, uint32, address, uint32, bytes32)
-            );
-        guId = keccak256(
-            abi.encodePacked(
-                _nonce,
-                _srcEid,
-                bytes32(uint256(uint160(_sender))),
-                _dstEid,
-                _receiver
-            )
-        );
-        receiverAddress = address(uint160(uint256(_receiver)));
     }
 }

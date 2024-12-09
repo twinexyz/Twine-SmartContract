@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
- 
+
 import {SP1Verifier} from "@sp1-contracts/v3.0.0/SP1VerifierGroth16.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
- 
+
 import {ITwineChain} from "./ITwineChain.sol";
 import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
@@ -11,7 +11,7 @@ import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {RLPDecodeStruct} from "../../libraries/rlp/RLPDecodeStruct.sol";
 import {RLPEncodeStruct, Types} from "../../libraries/rlp/RLPEncodeStruct.sol";
- 
+
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
@@ -20,156 +20,151 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
- 
+
     /*************
      * Variables *
      *************/
- 
+
     ///@notice The chai ID for the L1 where this contract is deployed
     uint256 public chainId;
- 
+
     /// @notice The verification key.
     bytes32 public ProgramVKey;
- 
+
     /// @notice The address of L1MessageQueue contract.
     address public messageQueue;
- 
+
     /// @notice The address of RollupVerifier.
     address public verifier;
- 
+
     /// @notice Address of the rolemanager contract
     address roleManager;
 
     /// @notice The Number of Last Batch Committed
     uint256 public override lastCommittedBatchNumber;
- 
+
     /// @notice The Number of Last Batch Finalized
     uint256 public override lastFinalizedBatchNumber;
- 
+
     /// @notice The number of deposit Transaction of this L1 that is committed but not finalized.
     uint256 public depositTransactionsCommitted;
- 
+
     /// @notice The number of forced Transaction of this L1 that is committed but not finalized
     uint256 public forcedTransactionsCommitted;
 
     ///@notice endpointId of the Layerzero v1 as v2Eid = 30000+v1Eid
     uint32 public eId;
 
-    ///@notice address of the DVN
+    ///@notice address of this chain DVN
     address public dvnAddress;
 
     /// @notice The list of queued cross domain messages.
     LzPayloadData[] public lzPayloadQueue;
- 
- 
+
     /*************
      * Mappings  *
      *************/
- 
+
     /// @notice The mapping of batchNumber => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
- 
+
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
- 
+    mapping(uint256 => address) public chainsDvn;
+
     /**********************
      * Function Modifiers *
      **********************/
- 
+
     modifier onlyRoles(bytes32 role) {
         IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
- 
+
     /***************
      * Constructor *
      ***************/
- 
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
- 
+
     /// @notice Initialize the storage of TwineChain.
     /// @param _messageQueue The address of `L1MessageQueue` contract.
     /// @param _verifier The address of zkevm verifier contract.
-    function initialize(address _messageQueue, address _verifier,address _roleManager)
-        external
-        initializer
-    {
+    function initialize(address _messageQueue, address _verifier,  address _roleManager) external initializer {
         messageQueue = _messageQueue;
         verifier = _verifier;
         roleManager = _roleManager;
     }
- 
+
     /*************************
      * Public View Functions *
      *************************/
- 
+
     /// @inheritdoc ITwineChain
-    function isBatchFinalized(uint256 _batchNumber) public view override returns (bool)
-    {
+    function isBatchFinalized( uint256 _batchNumber) public view override returns (bool) {
         return _batchNumber <= lastFinalizedBatchNumber;
     }
- 
-    function isBatchCommitted(uint256 _batchNumber) public view returns (bool)
-    {
+
+    function isBatchCommitted(uint256 _batchNumber) public view returns (bool) {
         return _batchNumber <= lastCommittedBatchNumber;
     }
- 
+
     function getReceiptRoot(uint256 _batchNumber) public view returns (bytes32) {
         require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
         return committedBatches[_batchNumber].receiptRoot;
     }
- 
-    function getTransactinObjectRLP(
-        ITwineChain.TransactionObject memory _transactionObject
-    ) public pure returns (bytes32 transactionObjectHash) {
+
+    function getTransactinObjectRLP( ITwineChain.TransactionObject memory _transactionObject) public pure returns (bytes32 transactionObjectHash) {
         uint8 transactionType = 2;
-        bytes memory returnedRlp = abi.encodePacked(transactionType,_transactionObject.encodeTransactionObject());
-        transactionObjectHash = keccak256(
-            returnedRlp
+        bytes memory returnedRlp = abi.encodePacked(
+            transactionType,
+            _transactionObject.encodeTransactionObject()
         );
+        transactionObjectHash = keccak256(returnedRlp);
     }
- 
+
     /*****************************
      * Public Mutating Functions *
      *****************************/
-    
-     function setChainId(uint256 _chainId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+
+    function setChainId(uint256 _chainId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         chainId = _chainId;
     }
 
     function setRoleManagerAddress(address _roleManagerAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-            roleManager = _roleManagerAddress;
-     }
- 
-    function setMessengerQueueAddress(
-        address _messageQueue
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        roleManager = _roleManagerAddress;
+    }
+
+    function setMessengerQueueAddress( address _messageQueue) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messageQueue = _messageQueue;
     }
- 
-    function setVeriferAddress(address _verifier) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+
+    function setVeriferAddress( address _verifier ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         verifier = _verifier;
     }
- 
-    function setProgramVKey(bytes32 _programVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+
+    function setProgramVKey( bytes32 _programVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         ProgramVKey = _programVKey;
     }
 
-    /// @notice set the EID of layerzero 
-    function setEid(uint32 _eId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    /// @notice set the EID of layerzero
+    function setEid( uint32 _eId ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         eId = _eId;
     }
-    
-    function setDvn(address _dvnAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+
+    function setDvn(address _dvnAddress ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         dvnAddress = _dvnAddress;
     }
- 
+
+    function setChainsDvn(uint256 _chainId,address _dvnAddress)external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        chainsDvn[_chainId] = _dvnAddress;
+    }
+
     /// @inheritdoc ITwineChain
-    function commitBatch(CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-      
+    function commitBatch( CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         //require(isBatchFinalized(_newBatchData.batchNumber - 1), "Previous batch must be finalized.");
         depositTransactionsCommitted = 0;
         forcedTransactionsCommitted = 0;
@@ -177,48 +172,50 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         committedBatches[batchToCommit.batchNumber] = batchToCommit;
         lastCommittedBatchNumber = batchToCommit.batchNumber;
     }
- 
+
     /// @inheritdoc ITwineChain
-    function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        
+    function finalizeBatch(uint256 batchNumber,bytes calldata _proofBytes) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(
-            isBatchCommitted(batchNumber), 
+            isBatchCommitted(batchNumber),
             "Batch needs to be committed before finalization"
         );
- 
+
         // require(
         //     committedBatches[lastFinalizedBatchNumber].stateRoot == committedBatches[batchNumber].previousStateRoot,
         //     "Only next batch can be finalized."
         // );
- 
+
         bytes memory publicValues = committedBatches[batchNumber].publicInput;
- 
-        SP1Verifier(verifier).verifyProof(ProgramVKey, publicValues, _proofBytes);
- 
+
+        SP1Verifier(verifier).verifyProof( ProgramVKey, publicValues, _proofBytes
+        );
+
         // remove first (depositTransactionsCommitted) elements from depositQueue
-        IL1MessageQueue(messageQueue).popFirstNDepositElement(depositTransactionsCommitted);
- 
+        IL1MessageQueue(messageQueue).popFirstNDepositElement( depositTransactionsCommitted
+        );
+
         // subtract the finalized deposits transactions
         depositTransactionsCommitted = 0;
- 
+
         // remove first (forcedTransactionsCommitted) elements from withdrawQueue
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(forcedTransactionsCommitted);
- 
+
         // subtract the finalized forced transactions
         forcedTransactionsCommitted = 0;
- 
-        finalizedStateRoots[batchNumber] = committedBatches[batchNumber].stateRoot;
- 
+
+        finalizedStateRoots[batchNumber] = committedBatches[batchNumber] .stateRoot;
+
         lastFinalizedBatchNumber = batchNumber;
-    }  
- 
- 
+    }
+
     /**********************
      * Internal Functions *
      **********************/
- 
-    function _commitBatch(CommitBatchInfo calldata _newBatchData) internal returns (StoredBatchInfo memory) {
-       CommitmentData memory commitmentData = _calculateProofInput(_newBatchData);
+
+    function _commitBatch(
+        CommitBatchInfo calldata _newBatchData
+    ) internal returns (StoredBatchInfo memory) {
+        CommitmentData memory commitmentData = _calculateProofInput( _newBatchData);
         return
             StoredBatchInfo({
                 batchNumber: _newBatchData.batchNumber,
@@ -227,25 +224,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 stateRoot: _newBatchData.stateRoot,
                 transactionRoot: _newBatchData.transactionRoot,
                 receiptRoot: _newBatchData.receiptRoot,
-                depositTransactionHashes: commitmentData._depositTransactionHash,
+                depositTransactionHashes: commitmentData ._depositTransactionHash,
                 forcedTransactionHashes: commitmentData._forcedTransactionHash,
                 lzDvnTransactionHashes: commitmentData._lzDvnTransactionHash,
                 otherTransactionHashes: commitmentData._otherTransactionHash,
                 publicInput: commitmentData._proofInput
             });
-    }   
- 
-    function _calculateProofInput(CommitBatchInfo memory _newBatchData)
-        internal
-        returns (CommitmentData memory)
-    {
+    }
+
+    function _calculateProofInput(CommitBatchInfo memory _newBatchData) internal returns (CommitmentData memory) {
         bytes memory proofInput;
         bytes32[] memory depositTransactionHash;
         bytes32[] memory forcedTransactionHash;
         bytes32[] memory lzDvnTransactionHash;
         bytes32[] memory otherTransactionHash;
-        
- 
+
         proofInput = abi.encodePacked(
             _newBatchData.batchNumber,
             _newBatchData.batchHash,
@@ -254,34 +247,51 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             _newBatchData.transactionRoot,
             _newBatchData.receiptRoot
         );
-        if(_newBatchData.depositTransactionObject.length != 0){
-            depositTransactionHash = _handleDeposit(_newBatchData.depositTransactionObject);
+        if (_newBatchData.depositTransactionObject.length != 0) {
+            depositTransactionHash = _handleDeposit(
+                _newBatchData.depositTransactionObject
+            );
             proofInput = abi.encodePacked(proofInput, depositTransactionHash);
         }
-        proofInput = abi.encodePacked(proofInput, uint32(_newBatchData.forcedTransactionObjects.length));
-        if(_newBatchData.forcedTransactionObjects.length != 0){
-            forcedTransactionHash = _handleForcedTransaction(_newBatchData.forcedTransactionObjects);
+        proofInput = abi.encodePacked(
+            proofInput,
+            uint32(_newBatchData.forcedTransactionObjects.length)
+        );
+        if (_newBatchData.forcedTransactionObjects.length != 0) {
+            forcedTransactionHash = _handleForcedTransaction(
+                _newBatchData.forcedTransactionObjects
+            );
             for (uint256 i = 0; i < forcedTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(proofInput, forcedTransactionHash[i]);
+                proofInput = abi.encodePacked(
+                    proofInput,
+                    forcedTransactionHash[i]
+                );
             }
         }
 
-        if(_newBatchData.lzDvnTransactions.length != 0){
-            lzDvnTransactionHash = _handleLzTransaction(_newBatchData.lzDvnTransactions);
+        if (_newBatchData.lzDvnTransactions.length != 0) {
+            lzDvnTransactionHash = _handleLzTransaction(
+                _newBatchData.lzDvnTransactions);
             for (uint256 i = 0; i < lzDvnTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(proofInput, lzDvnTransactionHash[i]);
+                proofInput = abi.encodePacked(
+                    proofInput,
+                    lzDvnTransactionHash[i]
+                );
             }
         }
 
         // Append each `otherTransactionHash` element
-        if(_newBatchData.otherTransactions.length != 0){
-            otherTransactionHash = _handleOtherTransaction(_newBatchData.otherTransactions);
- 
+        if (_newBatchData.otherTransactions.length != 0) {
+            otherTransactionHash = _handleOtherTransaction(   _newBatchData.otherTransactions );
+
             for (uint256 i = 0; i < otherTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(proofInput, otherTransactionHash[i]);
+                proofInput = abi.encodePacked(
+                    proofInput,
+                    otherTransactionHash[i]
+                );
             }
         }
-        
+
         CommitmentData memory commitData = CommitmentData({
             _proofInput: proofInput,
             _depositTransactionHash: depositTransactionHash,
@@ -289,106 +299,126 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             _lzDvnTransactionHash: lzDvnTransactionHash,
             _otherTransactionHash: otherTransactionHash
         });
- 
+
         return (commitData);
     }
- 
- 
-    function _handleDeposit(TransactionObject[] memory _depositTransactionObject)
-        internal 
-        returns (bytes32[] memory) 
-    {   
-        bytes32[] memory depositTransactionHash = new bytes32[](_depositTransactionObject.length);
- 
+
+    function _handleDeposit(
+        TransactionObject[] memory _depositTransactionObject
+    ) internal returns (bytes32[] memory) {
+        bytes32[] memory depositTransactionHash = new bytes32[](
+            _depositTransactionObject.length
+        );
+
         // For individual deposit transaction object
-        for(uint256 i = 0; i < _depositTransactionObject.length; i++) {
-//             (bytes memory trimmedInput,bytes memory removedInput) = _trimFourBytes(_depositTransactionObject[i].input);
-//             // Array that contains RLP encoded Receipt Object for Individual deposit object
-// ( uint _chainId, bytes memory _consensusProof , bytes[] memory encodedReceiptObjects,bytes[] memory proofs) = abi.decode(trimmedInput, (uint, bytes, bytes[], bytes[]));            // Extract the datas from the log
-//             for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
-//                 Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects[j]));
-//                 IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(depositTransactionsCommitted);
-//                     for(uint256 k = 0; k < decodedReceipt.logs.length; k++){
-//                         if(decodedReceipt.logs[k].logAddress == dataFromQueue.messageQueueAddress) {
-//                             decodedReceipt.logs[k].topics[1] = dataFromQueue.fromAddressHash;
-//                             decodedReceipt.logs[k].data =  dataFromQueue.dataValuesByte;
-//                              ++ depositTransactionsCommitted;
-//                         }
-//                     }
-//                 encodedReceiptObjects[j]= getReceiptObjectRLP(decodedReceipt);
-//             }
-//             _depositTransactionObject[i].input = prependBytes(removedInput,abi.encode(_chainId,_consensusProof,encodedReceiptObjects,proofs));
-            depositTransactionHash[i] = getTransactinObjectRLP( _depositTransactionObject[i]); 
+        for (uint256 i = 0; i < _depositTransactionObject.length; i++) {
+            //             (bytes memory trimmedInput,bytes memory removedInput) = _trimFourBytes(_depositTransactionObject[i].input);
+            //             // Array that contains RLP encoded Receipt Object for Individual deposit object
+            // ( uint _chainId, bytes memory _consensusProof , bytes[] memory encodedReceiptObjects,bytes[] memory proofs) = abi.decode(trimmedInput, (uint, bytes, bytes[], bytes[]));            // Extract the datas from the log
+            // for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
+            //     Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects[j]));
+            //     IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(depositTransactionsCommitted);
+            //         for(uint256 k = 0; k < decodedReceipt.logs.length; k++){
+            //             if(decodedReceipt.logs[k].logAddress == dataFromQueue.messageQueueAddress) {
+            //                 decodedReceipt.logs[k].topics[1] = dataFromQueue.fromAddressHash;
+            //                 decodedReceipt.logs[k].data =  dataFromQueue.dataValuesByte;
+            //                  ++ depositTransactionsCommitted;
+            //             }
+            //         }
+            //     encodedReceiptObjects[j]= getReceiptObjectRLP(decodedReceipt);
+            // }
+            //             _depositTransactionObject[i].input = prependBytes(removedInput,abi.encode(_chainId,_consensusProof,encodedReceiptObjects,proofs));
+            depositTransactionHash[i] = getTransactinObjectRLP(
+                _depositTransactionObject[i]
+            );
         }
         return depositTransactionHash;
     }
- 
-    function _handleForcedTransaction(TransactionObject[] memory _forcedTransactionObject) internal returns (bytes32[] memory)
-    {
-        bytes32[] memory forcedTransactionHash = new bytes32[](_forcedTransactionObject.length);
+
+    function _handleForcedTransaction(TransactionObject[] memory _forcedTransactionObject ) internal returns (bytes32[] memory) {
+        bytes32[] memory forcedTransactionHash = new bytes32[](
+            _forcedTransactionObject.length
+        );
         // For individual forced transaction object
-        for(uint256 i = 0; i < _forcedTransactionObject.length; i++) {
-            // Types.ReceiptWithoutTxType memory forcedWithdrawalReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_forcedTransactionObject[i].input)); 
+        for (uint256 i = 0; i < _forcedTransactionObject.length; i++) {
+            // Types.ReceiptWithoutTxType memory forcedWithdrawalReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_forcedTransactionObject[i].input));
             // IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(forcedTransactionsCommitted);
             // for (uint256 j=0;j<forcedWithdrawalReceipt.logs.length;j++){
             //     if(forcedWithdrawalReceipt.logs[j].logAddress == dataFromQueue.messageQueueAddress) {
             //                 forcedWithdrawalReceipt.logs[j].topics[1] = dataFromQueue.fromAddressHash;
             //                 forcedWithdrawalReceipt.logs[j].data =  dataFromQueue.dataValuesByte;
             //                 ++ forcedTransactionsCommitted;
-            //     }   
+            //     }
             // }
-            // _forcedTransactionObject[i].input = getReceiptObjectRLP(forcedWithdrawalReceipt);    
-            forcedTransactionHash[i] = getTransactinObjectRLP((_forcedTransactionObject[i])); 
-        }            
+            // _forcedTransactionObject[i].input = getReceiptObjectRLP(forcedWithdrawalReceipt);
+            forcedTransactionHash[i] = getTransactinObjectRLP(
+                (_forcedTransactionObject[i])
+            );
+        }
         return forcedTransactionHash;
     }
- 
-    function _handleOtherTransaction(TransactionObject[] memory _otherTransactionObject)
-        internal 
-        pure 
-        returns (bytes32[] memory) 
-    {
-        bytes32[] memory otherTransactionHash = new bytes32[](_otherTransactionObject.length);    
-        for(uint256 i = 0; i < _otherTransactionObject.length; i++){
-            otherTransactionHash[i] = getTransactinObjectRLP((_otherTransactionObject[i]));
+
+    function _handleOtherTransaction( TransactionObject[] memory _otherTransactionObject ) internal pure returns (bytes32[] memory) {
+        bytes32[] memory otherTransactionHash = new bytes32[](
+            _otherTransactionObject.length
+        );
+        for (uint256 i = 0; i < _otherTransactionObject.length; i++) {
+            otherTransactionHash[i] = getTransactinObjectRLP(
+                (_otherTransactionObject[i])
+            );
         }
         return otherTransactionHash;
-    } 
+    }
 
-    function _handleLzTransaction(TransactionObject[] memory _lzDvnTransactionObject)
-        internal 
-        returns (bytes32[] memory) 
-    {
-        bytes32[] memory lzDvnTransactionHash = new bytes32[](_lzDvnTransactionObject.length);    
-        for(uint256 i = 0; i < _lzDvnTransactionObject.length; i++){
-            Types.ReceiptWithoutTxType memory lzDvnTransactionReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_lzDvnTransactionObject[i].input)); 
-            for (uint256 j=0;j<lzDvnTransactionReceipt.logs.length;j++){
-                uint32 endPointId = uint32(uint256(lzDvnTransactionReceipt.logs[j].topics[1]));
-                if(endPointId == eId){
-                     LzPayloadData memory payloadData = LzPayloadData({
-                        dstEid: endPointId,
-                        otherData: abi.encode(endPointId,lzDvnTransactionReceipt.logs[j].data)
-                    });
-                    lzPayloadQueue.push(payloadData);
+    function _handleLzTransaction(TransactionObject[] memory _lzDvnTransactionObject) internal returns (bytes32[] memory) {
+        bytes32[] memory lzDvnTransactionHash = new bytes32[](_lzDvnTransactionObject.length);
+        for (uint256 i = 0; i < _lzDvnTransactionObject.length; i++) {
+            (
+                bytes memory trimmedInput,
+            ) = _trimFourBytes(_lzDvnTransactionObject[i].input);
+            (uint256 _chainId, bytes memory encodedReceiptObjects, ) = abi.decode(
+                trimmedInput,
+                (uint256, bytes, bytes)
+            );
+                Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects));
+                for (uint256 j = 0; j < decodedReceipt.logs.length; j++) {
+                    if (decodedReceipt.logs[j].logAddress == chainsDvn[_chainId]) {uint32 endPointId = uint32(uint256(decodedReceipt.logs[j].topics[1]));
+                        if (endPointId == eId) {
+                            LzPayloadData memory payloadData = LzPayloadData({
+                                dstEid: endPointId,
+                                otherData: abi.encode(
+                                    endPointId,
+                                    decodedReceipt.logs[j].data
+                                )
+                            });
+                            lzPayloadQueue.push(payloadData);
+                        }
+                    }
                 }
-            }
+            lzDvnTransactionHash[i] = getTransactinObjectRLP(
+                (_lzDvnTransactionObject[i])
+            );
         }
         return lzDvnTransactionHash;
-     } 
-
-    function verifyPayload(uint256 _batchNumber,uint256 _payLoadQueueIndex) external {
-        require(isBatchFinalized(_batchNumber), "Batch is not Finalized");
-            require(_payLoadQueueIndex <= lzPayloadQueue.length, "Index out of bounds"); 
-            bool sucess = ITwineDVN(dvnAddress).validatePayload(lzPayloadQueue[_payLoadQueueIndex].otherData);
-            if(sucess){deleteSpecificPosition(_payLoadQueueIndex);}
     }
-    function prependBytes(
-        bytes memory prefix,
-        bytes memory originalData
-    ) public pure returns (bytes memory) {
+
+    function verifyPayload(uint256 _batchNumber, uint256 _payLoadQueueIndex ) external {
+        require(isBatchFinalized(_batchNumber), "Batch is not Finalized");
+        require(
+            _payLoadQueueIndex <= lzPayloadQueue.length,
+            "Index out of bounds"
+        );
+        bool success = ITwineDVN(dvnAddress).validatePayload(
+            lzPayloadQueue[_payLoadQueueIndex].otherData
+        );
+        if (success) {
+            deleteSpecificPosition(_payLoadQueueIndex);
+        }
+    }
+    function prependBytes(bytes memory prefix, bytes memory originalData ) public pure returns (bytes memory) {
         require(prefix.length == 4, "Prefix must be exactly 4 bytes");
         bytes memory result = new bytes(prefix.length + originalData.length);
- 
+
         for (uint256 i = 0; i < prefix.length; i++) {
             result[i] = prefix[i];
         }
@@ -397,30 +427,31 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
         return result;
     }
- 
-    function _trimFourBytes(bytes memory input) internal pure returns (bytes memory trimmedData,bytes memory removedBytes) {
+
+    function _trimFourBytes( bytes memory input)
+        internal
+        pure
+        returns (bytes memory trimmedData, bytes memory removedBytes)
+    {
         removedBytes = new bytes(4);
         for (uint256 i = 0; i < 4; i++) {
-        removedBytes[i] = input[i];
+            removedBytes[i] = input[i];
         }
         trimmedData = new bytes(input.length - 4);
-        for(uint256 i = 4; i < input.length; i++){
+        for (uint256 i = 4; i < input.length; i++) {
             trimmedData[i - 4] = input[i];
         }
     }
- 
-    function _trimOneByte(bytes memory input) internal pure returns (bytes memory) {
+
+    function _trimOneByte( bytes memory input) internal pure returns (bytes memory) {
         bytes memory trimmedData = new bytes(input.length - 1);
-        for(uint256 i = 1; i < input.length; i++){
+        for (uint256 i = 1; i < input.length; i++) {
             trimmedData[i - 1] = input[i];
         }
         return trimmedData;
     }
 
-    function getReceiptObjectRLP(
-        Types.ReceiptWithoutTxType memory _ro
-    ) public pure returns (bytes memory) {
- 
+    function getReceiptObjectRLP( Types.ReceiptWithoutTxType memory _ro ) public pure returns (bytes memory) {
         Types.ReceiptObject memory ro = Types.ReceiptObject({
             txType: Types.TxType.Eip1559,
             success: _ro.success,
@@ -428,9 +459,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             bloom: _ro.bloom,
             logs: _ro.logs
         });
- 
         return abi.encodePacked(ro.txType, ro.encodeReceiptObject());
-    }  
+    }
     function deleteSpecificPosition(uint _index) public {
         require(lzPayloadQueue.length > 0, "Queue is empty");
         require(_index < lzPayloadQueue.length, "Index out of bounds");
@@ -438,5 +468,5 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             lzPayloadQueue[i] = lzPayloadQueue[i + 1];
         }
         lzPayloadQueue.pop();
-    }  
+    }
 }
