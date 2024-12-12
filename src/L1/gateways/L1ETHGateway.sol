@@ -80,7 +80,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_l1Token,_l2Token,_from, _to,block.number, _amount);
+        emit FinalizeWithdrawETH(_l1Token,_l2Token,_from, _to,_amount,block.number);
     }
 
     /// @notice Set the l2TokenAddress

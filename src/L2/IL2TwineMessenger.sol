@@ -3,6 +3,10 @@ pragma solidity ^0.8.24;
 
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
+    enum TransactionType {
+         BridgeTxns,
+         LayerZeroDVN
+    }
     /// @notice Emitted when a cross domain message is sent.
     /// @param from The address of the sender who initiates the message.
     /// @param to The address of the receiver
@@ -27,8 +31,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event consensusVerified(bytes consensusProof);
 
     /// @notice Emitted when L1 Token is deposited in L2
-    event L1TokenDeposit(
-    );
+    event L1TokenDeposit();
 
     /// @notice Emitted when the forcedWithdrawal is successful
     /// @param from The address of the sender who initiates the message.
@@ -50,12 +53,19 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes message
     );
 
+    /// @notice Emitted when the Layerzero payload is successfully verified
+    event LayerzeroPayload(
+        uint256 indexed sourceChainId,
+        bytes32 indexed guId
+    );
+
     struct WithdrawalDetails {
-    address l1Token;
-    address l2Token;
-    address from;
-    address to;
-    uint256 amount;
-    uint256 value;
-}
+        address l1Token;
+        address l2Token;
+        address from;
+        address to;
+        uint256 amount;
+        uint256 value;
+    }
+
 }
