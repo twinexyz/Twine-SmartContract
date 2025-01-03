@@ -17,9 +17,10 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @param message The calldata passed to the target contract.
     event SentMessage(
         address indexed from,
-        address to,
+        string to,
         address counterpartGateway,
         address counterpartMessenger,
+        uint256 nonce,
         uint256 value,
         uint256 indexed chainId,
         uint256 blockNumber,
@@ -57,6 +58,12 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event LayerzeroPayload(
         uint256 indexed sourceChainId,
         bytes32 indexed guId
+    );
+
+    event ParityHash(
+        bytes32 parityHash,
+        uint256 blockNumber,
+        bytes32 blockHash
     );
 
     struct WithdrawalDetails {

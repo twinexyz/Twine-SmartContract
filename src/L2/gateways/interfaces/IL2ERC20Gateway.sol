@@ -25,7 +25,7 @@ interface IL2ERC20Gateway {
     /// @param gasLimit Unused, but included for potential forward compatibility considerations.
     function withdrawERC20(
         address token,
-        address to,
+        string memory to,
         uint256 amount,
         uint256 chainId,
         uint256 gasLimit
@@ -40,7 +40,7 @@ interface IL2ERC20Gateway {
     /// @param gasLimit Unused, but included for potential forward compatibility considerations.
     function withdrawERC20AndCall(
         address token,
-        address to,
+        string memory to,
         uint256 amount,
         uint256 chainId,
         uint256 gasLimit,

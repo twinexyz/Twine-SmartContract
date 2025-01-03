@@ -52,7 +52,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @inheritdoc ITwineL2MessengerBase
     function sendMessage(
         address _from,
-        address _to,
+        string memory _to,
         address _counterpart,
         uint256 _value,
         uint256 _chainId,
@@ -74,7 +74,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 chainId,
         bytes memory consensusProof,
         bytes[] memory depositTransactions,
-        bytes[] memory depositTxnProofs
+        bytes[] memory depositTxnProofs,
+        bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         _verifyConsensusProof(consensusProof);
         if (depositTransactions.length > 0) {
@@ -83,27 +84,29 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 depositTransactions,
                 depositTxnProofs
             );
-            (bool success, bytes memory output) = bridgingPrecompileAddress.call(data);
+            (bool success, bytes memory output) = bridgingPrecompileAddress
+                .call(data);
             require(success, "Deposits failed!");
             emit L1TokenDeposit();
         }
+        emit ParityHash(parityHash, block.number, blockhash(block.number));
     }
 
     function executeForcedWithdrawal(
         uint256 chainId,
         bytes memory withdrawalTransaction,
-        bytes memory proof
+        bytes memory proof,
+        bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        bytes[] memory withdrawalTxns = new bytes[](1);
-        bytes[] memory proofs = new bytes[](1);
-        withdrawalTxns[0] = withdrawalTransaction;
-        proofs[0] = proof;
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(
-            abi.encode(chainId, withdrawalTxns, proofs)
+            abi.encode(
+                chainId,
+                _packWithdrawalData(withdrawalTransaction, proof)
+            )
         );
         require(success, "Withdrawal failed!");
-        (WithdrawalDetails memory details) = _decodeWithdrawalDetails(output);
-        
+        WithdrawalDetails memory details = _decodeWithdrawalDetails(output);
+
         emit ForcedWithdrawal(
             details.from,
             details.to,
@@ -113,9 +116,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             chainId,
             block.number,
             0,
-            abi.encodeCall(IL1ERC20Gateway.finalizeTokenWithdrawal,(details.l1Token,details.l2Token,details.from,details.to,details.amount,bytes(""))
-            )
+            _encodeFinalizeTokenWithdrawal(details)
         );
+        emit ParityHash(parityHash, block.number, blockhash(block.number));
     }
     function verifyLayerZeroPayload(
         uint256 chainId,
@@ -126,10 +129,12 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes[] memory payloadProofs = new bytes[](1);
         lzPayloads[0] = lzPayload;
         payloadProofs[0] = payloadProof;
-            (bool success, bytes memory output) = bridgingPrecompileAddress.call(abi.encode(chainId, lzPayloads, payloadProofs));
-            require(success, "LayerZero verification failed!");
-            (bytes32 guId) = abi.decode(output,(bytes32));
-            emit LayerzeroPayload(chainId,guId);
+        (bool success, bytes memory output) = bridgingPrecompileAddress.call(
+            abi.encode(chainId, lzPayloads, payloadProofs)
+        );
+        require(success, "LayerZero verification failed!");
+        bytes32 guId = abi.decode(output, (bytes32));
+        emit LayerzeroPayload(chainId, guId);
     }
 
     /// @dev Internal function to send cross domain message.
@@ -140,7 +145,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @param _gasLimit Optional gas limit to complete the message relay on corresponding chain.
     function _sendMessage(
         address _from,
-        address _to,
+        string memory _to,
         address _counterpart,
         uint256 _value,
         uint256 _chainId,
@@ -153,6 +158,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             _counterpart,
             counterpartMessenger[_chainId],
             _value,
+            messageCount++,
             _chainId,
             block.number,
             _gasLimit,
@@ -167,6 +173,29 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         require(success, "Consensus proof Failed!");
         emit consensusVerified(consensusProof);
     }
+    function _packWithdrawalData(
+        bytes memory withdrawalTransaction,
+        bytes memory proof
+    ) internal pure returns (bytes memory) {
+        return abi.encode(withdrawalTransaction, proof);
+    }
+
+    function _encodeFinalizeTokenWithdrawal(
+        WithdrawalDetails memory details
+    ) private pure returns (bytes memory) {
+        return
+            abi.encodeCall(
+                IL1ERC20Gateway.finalizeTokenWithdrawal,
+                (
+                    details.l1Token,
+                    details.l2Token,
+                    details.from,
+                    details.to,
+                    details.amount,
+                    bytes("")
+                )
+            );
+    }
 
     function _decodeWithdrawalDetails(
         bytes memory output
@@ -177,19 +206,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             address from,
             address to,
             uint256 amount
-        ) = abi.decode(
-                output,
-                (address, address, address, address, uint256)
-            );
+        ) = abi.decode(output, (address, address, address, address, uint256));
         uint256 value;
-        if( l1Token == address(0)){
-               value = amount;
-            } else {
-                value = 0;
-         }
-        return WithdrawalDetails(l1Token, l2Token, from, to, amount,value);
+        if (l1Token == address(0)) {
+            value = amount;
+        } else {
+            value = 0;
+        }
+        return WithdrawalDetails(l1Token, l2Token, from, to, amount, value);
     }
-
 }
-
-

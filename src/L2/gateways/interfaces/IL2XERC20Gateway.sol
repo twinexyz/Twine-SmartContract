@@ -18,7 +18,7 @@ interface IL2XERC20Gateway {
         address indexed l1Token,
         address indexed l2Token,
         address indexed from,
-        address to,
+        string to,
         uint256 amount,
         uint256 chainId,
         bytes data
@@ -44,7 +44,7 @@ interface IL2XERC20Gateway {
     /// @param gasLimit Unused, but included for potential forward compatibility considerations.
     function withdrawXERC20(
         address token,
-        address to,
+        string memory to,
         uint256 amount,
         uint256 chainId,
         uint256 gasLimit
@@ -59,7 +59,7 @@ interface IL2XERC20Gateway {
     /// @param gasLimit Unused, but included for potential forward compatibility considerations.
     function withdrawXERC20AndCall(
         address token,
-        address to,
+        string memory to,
         uint256 amount,
         uint256 chainId,
         uint256 gasLimit,

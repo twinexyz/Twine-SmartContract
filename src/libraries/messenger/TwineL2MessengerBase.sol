@@ -26,6 +26,9 @@ abstract contract TwineL2MessengerBase is
 
     //chainId=> L1Gateway
     mapping(uint256=>mapping(address => address)) public  tokenCounterpartGateWay;
+    
+    //count for the messages 
+    uint256 public messageCount;
 
     /**********************
      * Function Modifiers *
