@@ -59,7 +59,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 indexed sourceChainId,
         bytes32 indexed guId
     );
-
+    
     event ParityHash(
         bytes32 parityHash,
         uint256 blockNumber,

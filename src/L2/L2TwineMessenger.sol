@@ -136,6 +136,20 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes32 guId = abi.decode(output, (bytes32));
         emit LayerzeroPayload(chainId, guId);
     }
+    function verifyLayerZeroPayload(
+        uint256 chainId,
+        bytes memory lzPayload,
+        bytes memory payloadProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        bytes[] memory lzPayloads = new bytes[](1);
+        bytes[] memory payloadProofs = new bytes[](1);
+        lzPayloads[0] = lzPayload;
+        payloadProofs[0] = payloadProof;
+            (bool success, bytes memory output) = bridgingPrecompileAddress.call(abi.encode(chainId, lzPayloads, payloadProofs));
+            require(success, "LayerZero verification failed!");
+            (bytes32 guId) = abi.decode(output,(bytes32));
+            emit LayerzeroPayload(chainId,guId);
+    }
 
     /// @dev Internal function to send cross domain message.
     /// @param _to The address of the contract to call.
