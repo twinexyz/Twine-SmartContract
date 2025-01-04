@@ -24,7 +24,7 @@ contract L1SetupScript is Script {
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
-    uint256 chainId;
+    uint64 chainId;
     bytes32 programVkey;
     address tokenAddress;
     address verifierAddress;

@@ -8,9 +8,9 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The address of L1TwineMessenger contract.
-    uint256 chainId;
-    uint256 depositMessageIndex;
-    uint256 withdrawalMessageIndex;
+    uint64 chainId;
+    uint64 depositMessageIndex;
+    uint64 withdrawalMessageIndex;
     address public messenger;
     address public messageQueueProxy;
     address public roleManager;
@@ -48,7 +48,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @param _messenger The address of L1TwineMessenger in L1.
     /// @param _roleManager The address of roleManager Contract.
     function initialize(
-        uint256 _chainId,
+        uint64 _chainId,
         address _messenger,
         address _roleManager
     ) external initializer {
@@ -99,119 +99,95 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes calldata _data
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) external override onlyMessenger {
         _queueDepositTransaction(
-            _from,
-            _to,
-            _value,
-            _gasLimit,
-            _data
+          to,
+          l1_token,
+          l2_token,
+          amount
         );
     }
 
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainWithdrawalMessage(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes calldata _data
-    ) external onlyMessenger {
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
+    ) external override onlyMessenger {
         _queueWithdrawalTransaction(
-            _from,
-            _to,
-            _value,
-            _gasLimit,
-            _data
+          to,
+          l1_token,
+          l2_token,
+          amount
         );
     }
 
-    /// @dev Internal function to queue a L1 transaction.
-    /// @param _from The address of sender
-    ///@param _to The address of the receiver
-    /// @param _value The value passed
-    /// @param _gasLimit The maximum gas should be used for this transaction in L2.
-    /// @param _data The calldata passed to target contract.
     function _queueDepositTransaction(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes calldata _data
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) internal {
         ++depositMessageIndex;
 
-        bytes memory depositMessageByteCode = abi.encode(
-            _to,
-            _value,
-            chainId,
-            depositMessageIndex,
-            _gasLimit,
-            block.number,
-            _data
-        );
-
         MessageData memory depositMessageData = MessageData({
-            messageQueueAddress: messageQueueProxy,
-            fromAddressHash: _padAddress(_from),
-            dataValuesByte: depositMessageByteCode
+            nonce: depositMessageIndex,
+            to_address: to,
+            l1_token: l1_token,
+            l2_token: l2_token,
+            chainId: chainId,
+            amount: amount,
+            block_number: uint64(block.number)
         });
 
         depositMessageQueue.push(depositMessageData);
 
         // emit event
         emit QueueDepositTransaction(
-            _from,
-            _to,
-            _value,
-            chainId,
             depositMessageIndex,
-            _gasLimit,
-            block.number,
-            _data
+            to,
+            l1_token,
+            l2_token,
+            chainId,
+            amount,
+            uint64(block.number)
         );
     }
 
     function _queueWithdrawalTransaction(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes calldata _data
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) internal {
         ++withdrawalMessageIndex;
-        bytes memory withdrawMessageByteCode = abi.encode(
-            _to,
-            _value,
-            chainId,
-            withdrawalMessageIndex,
-            _gasLimit,
-            block.number,
-            _data
-        );
-
+        
         MessageData memory withdrawMessageData = MessageData({
-            messageQueueAddress: messageQueueProxy,
-            fromAddressHash: _padAddress(_from),
-            dataValuesByte: withdrawMessageByteCode
+            nonce: depositMessageIndex,
+            to_address: to,
+            l1_token: l1_token,
+            l2_token: l2_token,
+            chainId: chainId,
+            amount: amount,
+            block_number: uint64(block.number)
         });
+
         withdrawalMessageQueue.push(withdrawMessageData);
 
         // emit event
         emit QueueWithdrawalTransaction(
-            _from,
-            _to,
-            _value,
+            withdrawalMessageIndex,
+            to,
+            l1_token,
+            l2_token,
             chainId,
-            depositMessageIndex,
-            _gasLimit,
-            block.number,
-            _data
+            amount,
+            uint64(block.number)
         );
     }
 
@@ -226,7 +202,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     function setChainId(
-        uint256 _chainId
+        uint64 _chainId
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         chainId = _chainId;
     }

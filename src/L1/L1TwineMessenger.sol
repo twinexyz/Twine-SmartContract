@@ -6,14 +6,10 @@ import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
-import {RLPEncodeStruct, Types} from "../libraries/rlp/RLPEncodeStruct.sol";
 import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.sol";
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
-import {MerklePatriciaProofVerifier} from "../libraries/mpt/MerklePatriciaProofVerifier.sol";
 
 contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
-    using MerklePatriciaProofVerifier for bytes;
-    using RLPEncodeStruct for Types.ReceiptObject;
 
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
@@ -73,91 +69,81 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes memory _message
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) external payable override {
-        _sendMessage(_type, _from,_to, _value,  _gasLimit, _message);
+        _sendMessage(_type, to, l1_token, l2_token,  amount);
     }
 
-    function relayWithdrawal(
-        uint256 _batchNumber,
-        Types.ReceiptObject memory _receiptObject,
-        bytes memory _mptKey,
-        bytes memory _rlpProof
-    ) external {
-        bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
-        require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
-        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
-        require(_receiptObject.success == true, "Failed transaction");
-        // MerklePatriciaProofVerification
-        bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
-        require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
+    // function relayWithdrawal(
+    //     uint256 _batchNumber,
+    //     Types.ReceiptObject memory _receiptObject,
+    //     bytes memory _mptKey,
+    //     bytes memory _rlpProof
+    // ) external {
+    //     bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
+    //     require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
+    //     require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
+    //     require(_receiptObject.success == true, "Failed transaction");
+    //     // MerklePatriciaProofVerification
+    //     bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
+    //     require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
         
-        // Check if there are any logs in the ReceiptObject
-        require(_receiptObject.logs.length > 0, "No logs available");
-        // Fetch the first log
-          for(uint256 i = 0; i < _receiptObject.logs.length; i++) {
-            // check if the log was emitted form L2TwineMessenger
-            if(_receiptObject.logs[i].logAddress == counterpart) {
-                // Decoding the log data
-                (, address counterpartGateway, , uint256 _value, , , bytes memory message) = abi.decode(
-                    _receiptObject.logs[i].data, 
-                    (address, address, address, uint256, uint256, uint256, bytes)
-                );
-                (bool success, ) = counterpartGateway.call{value: _value}(message);
+    //     // Check if there are any logs in the ReceiptObject
+    //     require(_receiptObject.logs.length > 0, "No logs available");
+    //     // Fetch the first log
+    //       for(uint256 i = 0; i < _receiptObject.logs.length; i++) {
+    //         // check if the log was emitted form L2TwineMessenger
+    //         if(_receiptObject.logs[i].logAddress == counterpart) {
+    //             // Decoding the log data
+    //             (, address counterpartGateway, , uint256 _value, , , bytes memory message) = abi.decode(
+    //                 _receiptObject.logs[i].data, 
+    //                 (address, address, address, uint256, uint256, uint256, bytes)
+    //             );
+    //             (bool success, ) = counterpartGateway.call{value: _value}(message);
 
-                if (success) {
-                    isL2MessageExecuted[_receiptObjectHash] = true;
-                    emit RelayedMessage(_receiptObjectHash);
-                } else {
-                    emit FailedRelayedMessage(_receiptObjectHash);
-                }
-            }
-        }   
+    //             if (success) {
+    //                 isL2MessageExecuted[_receiptObjectHash] = true;
+    //                 emit RelayedMessage(_receiptObjectHash);
+    //             } else {
+    //                 emit FailedRelayedMessage(_receiptObjectHash);
+    //             }
+    //         }
+    //     }   
        
-    }  
+    // }  
 
     function _sendMessage(
         TransactionType _type,
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes memory _message
-        
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) internal {
         // If transaction type is Deposit
         if (_type == TransactionType.deposit) {
-            require(msg.value >= _value, "Insufficient msg.value");
+            // require(msg.value >= _value, "Insufficient msg.value");
 
             // append message to L1 depositMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
-                _from,
-                _to,
-                _value,
-                _gasLimit,
-                _message
+                to,
+                l1_token,
+                l2_token,
+                amount
             );
 
         } else {
 
             // append message to L1 withdrawalMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
-                _from,
-                _to,
-                _value,
-                _gasLimit,
-                _message
+                to,
+                l1_token,
+                l2_token,
+                amount
             );
         }
     }
 
-    function getReceiptObjectRLP(
-        Types.ReceiptObject memory _ro
-    ) public pure returns (bytes memory) {
-        return abi.encodePacked(_ro.txType, _ro.encodeReceiptObject());
-    }
 }

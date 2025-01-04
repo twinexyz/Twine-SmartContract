@@ -7,41 +7,39 @@ interface IL1MessageQueue {
      **********/
 
     /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
-    /// @param from The address of account who initiates the transaction.
-    /// @param to The address of receiver
-    /// @param value The value passed with the transaction.
-    /// @param chainId The id of the L1 chain
-    /// @param depositMessageIndex The index of the transaction.
-    /// @param gasLimit Gas limit required to complete the message relay on L2.
-    /// @param data The calldata of the transaction.
+    /// @param nonce The nonce of the message.
+    /// @param to_twine_address The address of receiver.
+    /// @param l1_token Address of token to send from L1.
+    /// @param l2_token address of token to receive on L2.
+    /// @param chainId Chain Id of this L1.
+    /// @param amount The amount of token to send.
+    /// @param block_number The block number in which this transaction occured.
     event QueueDepositTransaction(
-        address indexed from,
-        address to,
-        uint256 value,
-        uint256 chainId,
-        uint256 depositMessageIndex,
-        uint256 gasLimit,
-        uint256 blockNumber,
-        bytes data
+        uint64 nonce,
+        string to_twine_address,
+        string l1_token,
+        string l2_token,
+        uint64 chainId,
+        string amount,
+        uint64 block_number
     );
 
     /// @notice Emitted when a new L1 => L2 forced withdrawal transaction is appended to the queue.
-    /// @param from The address of account who initiates the transaction.
-    /// @param to The address of receiver
-    /// @param value The value passed with the transaction.
-    /// @param chainId The id of the L1 chain
-    /// @param withdrawalMessageIndex The index of the transaction
-    /// @param gasLimit Gas limit required to complete the message relay on L2.
-    /// @param data The calldata of the transaction.
+    /// @param nonce The nonce of the message.
+    /// @param to_twine_address The address of receiver.
+    /// @param l1_token Address of token to receive on L1.
+    /// @param l2_token address of token to send from L2.
+    /// @param chainId Chain Id of this L1.
+    /// @param amount The amount of token to send.
+    /// @param block_number The block number in which this transaction occured.
     event QueueWithdrawalTransaction(
-        address indexed from,
-        address to,
-        uint256 value,
-        uint256 chainId,
-        uint256 withdrawalMessageIndex,
-        uint256 gasLimit,
-        uint256 blockNumber,
-        bytes data
+        uint64 nonce,
+        string to_twine_address,
+        string l1_token,
+        string l2_token,
+        uint64 chainId,
+        string amount,
+        uint64 block_number
     );
 
     /**********
@@ -56,9 +54,13 @@ interface IL1MessageQueue {
      **********/
 
     struct MessageData {
-        address messageQueueAddress;
-        bytes32 fromAddressHash;
-        bytes dataValuesByte;
+        uint64 nonce;
+        string to_address;
+        string l1_token;
+        string l2_token;
+        uint64 chainId;
+        string amount;
+        uint64 block_number;
     }
 
     /// @notice Return the index of next appended message.
@@ -87,31 +89,17 @@ interface IL1MessageQueue {
     ///@notice set the proxy Address of MessageQueue
     function setMessageQueueProxy(address proxyAddress) external;
 
-    /// @notice Return the amount of ETH should pay for cross domain message.
-    /// @param gasLimit Gas limit required to complete the message relay on L2.
-    //function estimateCrossDomainMessageFee(uint256 gasLimit) external view returns (uint256);
-
-    /// @notice Append a L1 to L2 deposit message into this contract.
-    /// @param _gasLimit The maximum gas should be used for relay this message in L2.
-    /// @param _data message data
     function appendCrossDomainDepositMessage(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes calldata _data
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) external;
 
-    /// @notice Append a L1 to L2 withdrawal message into this contract.
-    /// @param _from The address of the sender
-    /// @param _to The address of the receiver
-    /// @param _gasLimit The maximum gas should be used for relay this message in L2.
-    /// @param _data message data
     function appendCrossDomainWithdrawalMessage(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes calldata _data
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) external;
 }

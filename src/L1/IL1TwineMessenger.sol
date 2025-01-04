@@ -10,10 +10,10 @@ interface IL1TwineMessenger is ITwineL1MessengerBase {
     /// @param _receiptObject The object for the receipt of withdrawal transaction.
     /// @param _mptKey The trie key of the node whose inclusion we are proving.
     /// @param _rlpProof The stack of MPT nodes (starting with the root) that need to be traversed during verification.
-    function relayWithdrawal(
-        uint256 _batchNumber,
-        Types.ReceiptObject memory _receiptObject,
-        bytes memory _mptKey,
-        bytes memory _rlpProof
-    ) external;
+    // function relayWithdrawal(
+    //     uint256 _batchNumber,
+    //     Types.ReceiptObject memory _receiptObject,
+    //     bytes memory _mptKey,
+    //     bytes memory _rlpProof
+    // ) external;
 }

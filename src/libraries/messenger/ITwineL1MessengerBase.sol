@@ -21,18 +21,12 @@ interface ITwineL1MessengerBase {
      * Public Mutating Functions *
      *****************************/
 
-    /// @notice Send cross chain message from L1 to L2.
-    /// @param transactionType The type of transaction (deposit or withdrawal).
-    /// @param value The amount of ether passed when call target contract.
-    /// @param message The content of the message.
-    /// @param gasLimit Gas limit required to complete the message relay on corresponding chain.
     function sendMessage(
-        TransactionType transactionType,
-        address from,
-        address to,
-        uint256 value,
-        uint256 gasLimit,
-        bytes memory message
+        TransactionType _type,
+        string memory to,
+        string memory l1_token,
+        string memory l2_token,
+        string memory amount
     ) external payable;
     
 }
