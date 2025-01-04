@@ -36,7 +36,7 @@ interface ITwineL2MessengerBase {
     /// @param from The address who is sending the transaction.
     function sendMessage(
         address from,
-        address to,
+        string memory to,
         address counterpart,
         uint256 value,
         uint256 chainId,

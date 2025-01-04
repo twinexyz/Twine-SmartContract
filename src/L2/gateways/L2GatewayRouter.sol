@@ -95,7 +95,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20(
         address _token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
@@ -106,7 +106,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20AndCall(
         address _token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -124,7 +124,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
      /// @inheritdoc IL2XERC20Gateway
      function withdrawXERC20(
         address _token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
@@ -135,7 +135,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     /// @inheritdoc IL2XERC20Gateway
     function withdrawXERC20AndCall(
         address _token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -155,7 +155,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     function withdrawETH(
         address _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
@@ -167,7 +167,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     function withdrawETHAndCall(
         address _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,

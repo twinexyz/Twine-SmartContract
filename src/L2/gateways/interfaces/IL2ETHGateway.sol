@@ -14,7 +14,7 @@ interface IL2ETHGateway {
     function withdrawETH(
         address _l1Token,
         address _l2Token,
-        address to,
+        string memory to,
         uint256 amount,
         uint256 chainId,
         uint256 gasLimit
@@ -28,7 +28,7 @@ interface IL2ETHGateway {
     function withdrawETHAndCall(
         address _l1Token,
         address _l2Token,
-        address to,
+        string memory to,
         uint256 amount,
         uint256 chainId,
         uint256 gasLimit,

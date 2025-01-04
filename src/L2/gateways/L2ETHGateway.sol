@@ -43,7 +43,7 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     function withdrawETH(
         address _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
@@ -55,7 +55,7 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     function withdrawETHAndCall(
         address _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -69,9 +69,9 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     /// @param _amount The amount of ETH to be withdrawn.
     /// @param _gasLimit Optional gas limit to complete the deposit on L1.
     function _withdraw(
-        address _to,
         address _l1Token,
         address _l2Token,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -87,7 +87,7 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
         
         bytes memory _message = abi.encodeCall(
             IL1ETHGateway.finalizeTokenWithdrawal,
-            (_l1Token,_l2Token,_from, _to, _amount,bytes(""))
+            (_l1Token,_l2Token,_from,stringToAddress(_to), _amount,bytes(""))
         );
         
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
@@ -100,4 +100,25 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
             _message
         );
     }
+
+    function stringToAddress(string memory _addressString) public pure returns (address) {
+    bytes memory stringBytes = bytes(_addressString);
+    require(stringBytes.length == 42 && stringBytes[0] == '0' && stringBytes[1] == 'x', "Invalid address format");
+    
+    uint160 result = 0;
+    for (uint i = 2; i < 42; i++) {
+        result *= 16;
+        uint8 digit = uint8(stringBytes[i]);
+        if (digit >= 48 && digit <= 57) {
+            result += (digit - 48);
+        } else if (digit >= 65 && digit <= 70) {
+            result += (digit - 55);
+        } else if (digit >= 97 && digit <= 102) {
+            result += (digit - 87);
+        } else {
+            revert("Invalid character in address string");
+        }
+    }
+    return address(result);
+}
 }

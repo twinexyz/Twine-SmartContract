@@ -25,6 +25,9 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @param newL1Token The address of the new corresponding ERC20 token in layer 1.
     event UpdateTokenMapping(uint256 indexed chainId,address indexed l2Token, address indexed oldL1Token, address newL1Token);
 
+     /// @notice Evm Chain 
+    event UpdateEvmChains(uint256 chainId, bool status);
+
     /*************
      * Variables *
      *************/
@@ -32,6 +35,8 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
     /// chainId=>l2Token=>l1Token
     mapping(uint256=>mapping(address => address)) public tokenMapping;
+     /// @notice Mapping the evm chains
+    mapping(uint256=>bool) evmChains;
 
     /***************
      * Constructor *
@@ -84,6 +89,13 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
         emit UpdateTokenMapping(_chainId,_l2Token, _oldL1Token, _l1Token);
     }
+
+    function updateEvmChains(uint256 _chainId,bool status) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        evmChains[_chainId] = status;
+
+        emit UpdateEvmChains(_chainId, status);
+
+    }
     /**********************
      * Internal Functions *
      **********************/
@@ -91,7 +103,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @inheritdoc L2ERC20Gateway
     function _withdraw(
         address _token,
-        address _to,
+        string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -109,16 +121,22 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
         // 2. Burn token.
         ITwineERC20(_token).burn(_from, _amount);
+         bytes memory _message;
+        uint256 value;
 
         // 3. Generate message passed to L1CustomERC20Gateway.
-        bytes memory _message = abi.encodeCall(
-            IL1ERC20Gateway.finalizeTokenWithdrawal,(_l1Token,_token, _from, _to, _amount, _data));
-            uint256 value;
+        if(evmChains[_chainId] == true) {
+        _message = abi.encodeCall(
+            IL1ERC20Gateway.finalizeTokenWithdrawal,(_l1Token,_token, _from,stringToAddress(_to) , _amount, _data));
             if(_l1Token == address(0)){
                 value = _amount;
             } else {
                 value = 0;
             }
+        } else {
+            _message =  new bytes(0);
+            value = _amount;
+        }
 
         // 4. Send message to L2TwineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
@@ -132,4 +150,25 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         );
         
     }
+
+    function stringToAddress(string memory _addressString) public pure returns (address) {
+    bytes memory stringBytes = bytes(_addressString);
+    require(stringBytes.length == 42 && stringBytes[0] == '0' && stringBytes[1] == 'x', "Invalid address format");
+    
+    uint160 result = 0;
+    for (uint i = 2; i < 42; i++) {
+        result *= 16;
+        uint8 digit = uint8(stringBytes[i]);
+        if (digit >= 48 && digit <= 57) {
+            result += (digit - 48);
+        } else if (digit >= 65 && digit <= 70) {
+            result += (digit - 55);
+        } else if (digit >= 97 && digit <= 102) {
+            result += (digit - 87);
+        } else {
+            revert("Invalid character in address string");
+        }
+    }
+    return address(result);
+}
 }
