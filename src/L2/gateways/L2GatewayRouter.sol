@@ -8,7 +8,6 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
-import {IL2XERC20Gateway} from "./interfaces/IL2XERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title L2GatewayRouter
@@ -119,35 +118,6 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
         IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount,_chainId,_gasLimit, _routerData);
-    }
-
-     /// @inheritdoc IL2XERC20Gateway
-     function withdrawXERC20(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit
-    ) external payable  {
-        withdrawXERC20AndCall(_token, _to, _amount, _chainId,_gasLimit, new bytes(0) );
-    }
-
-    /// @inheritdoc IL2XERC20Gateway
-    function withdrawXERC20AndCall(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit,
-        bytes memory _data
-    ) public payable override {
-        address _gateway = getERC20Gateway(_token);
-        require(_gateway != address(0), "no gateway available");
-
-        // encode msg.sender with _data
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
-
-        IL2XERC20Gateway(_gateway).withdrawXERC20AndCall{value: msg.value}(_token, _to, _amount,_chainId,_gasLimit, _routerData);
     }
 
     

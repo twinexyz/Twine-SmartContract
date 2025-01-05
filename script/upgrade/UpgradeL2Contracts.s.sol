@@ -9,14 +9,12 @@ import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transp
 import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
 import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
-import {L2XERC20Gateway} from "../../src/L2/gateways/L2XERC20Gateway.sol";
 import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract UpgradeL2Contracts is Script {
     L2CustomERC20Gateway l2CustomERC20Gateway;
     L2ETHGateway l2ETHGateway;
     L2GatewayRouter l2GatewayRouter;
-    L2XERC20Gateway l2XERC20Gateway;
     L2TwineMessenger l2TwineMessenger;
 
     address l2CustomERC20GatewayAddress;
@@ -84,13 +82,6 @@ contract UpgradeL2Contracts is Script {
         getProxyAdmin(l2CustomERC20GatewayAddress).upgradeAndCall(
             ITransparentUpgradeableProxy(l2CustomERC20GatewayAddress),
             address(newL2CustomERC20Gateway),
-            data
-        );
-
-        L2XERC20Gateway newL2XERC20Gateway = new L2XERC20Gateway();
-        getProxyAdmin(l2XERC20GatewayAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l2XERC20GatewayAddress),
-            address(newL2XERC20Gateway),
             data
         );
 

@@ -4,6 +4,7 @@ import "forge-std/console.sol";
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
@@ -89,6 +90,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         l2TokenAddress = _l2TokenAddress;
 
     }
+    
 
     /// @dev The internal ETH deposit implementation.
     /// @param _to The address of recipient's account on L2.
@@ -116,11 +118,10 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
-            _from,
-            _to,
-            (_amount+_gasLimit),
-            _gasLimit,
-            _message
+            addressToString(_to),
+            addressToString(address(0)),
+            addressToString(l2TokenAddress),
+            Strings.toString(_amount)
         );
     }
 
@@ -145,13 +146,27 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
-            _from,
-            _to,
-            (_amount+_gasLimit),
-            _gasLimit,
-            _message
+            addressToString(_to),
+            addressToString(address(0)),
+            addressToString(l2TokenAddress),
+            Strings.toString(_amount)
         );
         
+    }
+
+     function addressToString(
+        address _address
+    ) public pure returns (string memory) {
+        bytes32 _bytes = bytes32(uint256(uint160(_address)));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
     }
 
 }

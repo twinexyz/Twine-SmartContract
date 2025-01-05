@@ -13,7 +13,6 @@ import {L1ETHGateway} from "../../src/L1/gateways/L1ETHGateway.sol";
 import {L1MessageQueue} from "../../src/L1/rollup/L1MessageQueue.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
 import {L1GatewayRouter} from "../../src/L1/gateways/L1GatewayRouter.sol";
-import {L1XERC20Gateway} from "../../src/L1/gateways/L1XERC20Gateway.sol";
 import {L1CustomERC20Gateway} from "../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract UpgradeL1Contracts is Script {
@@ -23,7 +22,6 @@ contract UpgradeL1Contracts is Script {
     L1ETHGateway l1ETHGateway;
     L1MessageQueue l1MessageQueue;
     L1GatewayRouter l1GatewayRouter;
-    L1XERC20Gateway l1XERC20Gateway;
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
@@ -118,13 +116,6 @@ contract UpgradeL1Contracts is Script {
         getProxyAdmin(l1MessageQueueAddress).upgradeAndCall(
             ITransparentUpgradeableProxy(l1MessageQueueAddress),
             address(newMessageQueue),
-            data
-        );
-
-        L1XERC20Gateway newL1XERC20Gateway = new L1XERC20Gateway();
-        getProxyAdmin(l1XERC20GatewayAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l1XERC20GatewayAddress),
-            address(newL1XERC20Gateway),
             data
         );
 

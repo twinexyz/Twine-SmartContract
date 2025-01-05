@@ -9,7 +9,6 @@ import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
-import {L2XERC20Gateway} from "../../src/L2/gateways/L2XERC20Gateway.sol";
 import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract DeployL2Contracts is Script {
@@ -59,16 +58,6 @@ contract DeployL2Contracts is Script {
             )
         );
 
-        // Deploying an upgradeable proxy for L2XERC20Gateway
-        address L2XERC20GatewayAddress = Upgrades.deployTransparentProxy(
-            "L2XERC20Gateway.sol",
-            initialOwner,
-            abi.encodeCall(
-                L2XERC20Gateway.initialize,
-                (address(0), L2GatewayRouterAddress, address(0),roleManagerAddress)
-            )
-        );
-
         // Deploying an upgradeable proxy for L2TwineMessenger
         address L2TwineMessengerAddress = Upgrades.deployTransparentProxy(
             "L2TwineMessenger.sol",
@@ -88,7 +77,6 @@ contract DeployL2Contracts is Script {
         console.log("L2 Rolemanager :", roleManagerAddress);
         console.log("L2 Eth Gateway :", L2ETHGatewayAddress);
         console.log("L2 Gateway Router :", L2GatewayRouterAddress);
-        console.log("L2 XERC20 Gateway :", L2XERC20GatewayAddress);
         console.log("L2 Twine Messenger :", L2TwineMessengerAddress);
         console.log("L2 Custom ERC20 Gateway :", L2CustomERC20GatewayAddress);
     }
