@@ -70,11 +70,11 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     function sendMessage(
         TransactionType _type,
         string memory to,
-        string memory l1_token,
-        string memory l2_token,
+        string memory l1Token,
+        string memory l2Token,
         string memory amount
     ) external payable override {
-        _sendMessage(_type, to, l1_token, l2_token,  amount);
+        _sendMessage(_type, to, l1Token, l2Token,  amount);
     }
 
     // function relayWithdrawal(
@@ -118,8 +118,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     function _sendMessage(
         TransactionType _type,
         string memory to,
-        string memory l1_token,
-        string memory l2_token,
+        string memory l1Token,
+        string memory l2Token,
         string memory amount
     ) internal {
         // If transaction type is Deposit
@@ -129,8 +129,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
             // append message to L1 depositMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
                 to,
-                l1_token,
-                l2_token,
+                l1Token,
+                l2Token,
                 amount
             );
 
@@ -139,8 +139,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
             // append message to L1 withdrawalMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
                 to,
-                l1_token,
-                l2_token,
+                l1Token,
+                l2Token,
                 amount
             );
         }

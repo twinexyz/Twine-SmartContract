@@ -69,6 +69,21 @@ interface ITwineChain {
         bytes inclusionProof;
     }
 
+    struct FinalizeWithdrawalInput {
+        WithdrawalPublicInput publicInput;
+        bytes inclusionProof;
+    }
+
+    struct WithdrawalPublicInput {
+        uint64 chainId;
+        uint64 batchNumber;
+        uint64 nonce;
+        bytes32 receiptRoot;
+        string l1ReceiverAddress;
+        string l1TokenAddress;
+        string amount;
+    }
+
     /*************************
      * Public View Functions *
      *************************/

@@ -21,6 +21,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The list of queued cross domain Withdrawal messages.
     MessageData[] public withdrawalMessageQueue;
 
+    /// @notice The list of queued transactions that are ready for execution.
+    MessageData[] public executionMessageQueue;
+
     modifier onlyMessenger() {
         require(
             _msgSender() == messenger,
@@ -69,6 +72,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         for (uint i = 0; i < n; i++) {
             depositMessageQueue.pop();
         }
+
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -100,49 +104,71 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
         string memory to,
-        string memory l1_token,
-        string memory l2_token,
+        string memory l1Token,
+        string memory l2Token,
         string memory amount
     ) external override onlyMessenger {
         _queueDepositTransaction(
           to,
-          l1_token,
-          l2_token,
+          l1Token,
+          l2Token,
           amount
         );
     }
 
     /// @inheritdoc IL1MessageQueue
+    function appendExecutionMessage(
+        uint64 _nonce,
+        string memory _to,
+        string memory _l1Token,
+        string memory _l2Token,
+        uint64 _chainId,
+        string memory _amount,
+        uint64 _blockNumber
+    ) external override {
+        _queueExecutionTransaction(
+         _nonce,
+         _to,
+         _l1Token,
+         _l2Token,
+         _chainId,
+         _amount,
+         _blockNumber
+        );
+    }
+
+
+    /// @inheritdoc IL1MessageQueue
     function appendCrossDomainWithdrawalMessage(
         string memory to,
-        string memory l1_token,
-        string memory l2_token,
+        string memory l1Token,
+        string memory l2Token,
         string memory amount
     ) external override onlyMessenger {
         _queueWithdrawalTransaction(
           to,
-          l1_token,
-          l2_token,
+          l1Token,
+          l2Token,
           amount
         );
     }
 
     function _queueDepositTransaction(
         string memory to,
-        string memory l1_token,
-        string memory l2_token,
+        string memory l1Token,
+        string memory l2Token,
         string memory amount
     ) internal {
         ++depositMessageIndex;
 
         MessageData memory depositMessageData = MessageData({
             nonce: depositMessageIndex,
-            to_address: to,
-            l1_token: l1_token,
-            l2_token: l2_token,
+            toAddress: to,
+            l1Token: l1Token,
+            l2Token: l2Token,
             chainId: chainId,
             amount: amount,
-            block_number: uint64(block.number)
+            blockNumber: uint64(block.number)
         });
 
         depositMessageQueue.push(depositMessageData);
@@ -151,8 +177,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         emit QueueDepositTransaction(
             depositMessageIndex,
             to,
-            l1_token,
-            l2_token,
+            l1Token,
+            l2Token,
             chainId,
             amount,
             uint64(block.number)
@@ -161,20 +187,20 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     function _queueWithdrawalTransaction(
         string memory to,
-        string memory l1_token,
-        string memory l2_token,
+        string memory l1Token,
+        string memory l2Token,
         string memory amount
     ) internal {
         ++withdrawalMessageIndex;
         
         MessageData memory withdrawMessageData = MessageData({
             nonce: depositMessageIndex,
-            to_address: to,
-            l1_token: l1_token,
-            l2_token: l2_token,
+            toAddress: to,
+            l1Token: l1Token,
+            l2Token: l2Token,
             chainId: chainId,
             amount: amount,
-            block_number: uint64(block.number)
+            blockNumber: uint64(block.number)
         });
 
         withdrawalMessageQueue.push(withdrawMessageData);
@@ -183,12 +209,35 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         emit QueueWithdrawalTransaction(
             withdrawalMessageIndex,
             to,
-            l1_token,
-            l2_token,
+            l1Token,
+            l2Token,
             chainId,
             amount,
             uint64(block.number)
         );
+    }
+
+    function _queueExecutionTransaction(
+        uint64 _nonce,
+        string memory _to,
+        string memory _l1Token,
+        string memory _l2Token,
+        uint64 _chainId,
+        string memory _amount,
+        uint64 _blockNumber
+    ) internal { 
+
+        MessageData memory executionMessageData = MessageData({
+            nonce: _nonce,
+            toAddress: _to,
+            l1Token: _l1Token,
+            l2Token: _l2Token,
+            chainId: _chainId,
+            amount: _amount,
+            blockNumber: _blockNumber
+        });
+
+        executionMessageQueue.push(executionMessageData);
     }
 
     function _padAddress(address input) public pure returns (bytes32) {
@@ -234,5 +283,14 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         returns (uint256)
     {
         return withdrawalMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainExecutionMessageIndex()
+        external
+        view
+        returns (uint256)
+    {
+        return executionMessageQueue.length;
     }
 }

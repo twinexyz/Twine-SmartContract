@@ -162,6 +162,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         //     committedBatches[lastFinalizedBatchNumber].stateRoot == committedBatches[batchNumber].previousStateRoot,
         //     "Only next batch can be finalized."
         // );
+ 
 
         // Verify Execution Proof
         StoredBatchInfo memory committedBatch = committedBatches[finalizeInput.batchNumber];
@@ -186,17 +187,70 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         uint64 numberOfWithdrawals = committedTransaction.ethereum.withdraw.withdrawCount;
         string memory statusBit = committedTransaction.ethereum.withdraw.statusBit;
 
-        // remove first (depositCount) elements from depositQueue
-        uint64 numberOfDeposits = committedTransaction.ethereum.deposit.depositCount;
-        IL1MessageQueue(messageQueue).popFirstNDepositElement(numberOfDeposits);
+        bytes memory statusBytes = bytes(statusBit);  
 
-        // remove first (withdrawCount) elements from withdrawQueue
+        // Check if the count matches the length of string
+        require(numberOfWithdrawals == statusBytes.length, "Status bit should be provided for individual withdrawals.");
+
+        for(uint256 i = 0; i < statusBytes.length; i++) {
+            require(statusBytes[i] == "0" || statusBytes[i] == "1", "Invalid status bit");
+            if(statusBytes[i] == "1") {
+                IL1MessageQueue.MessageData memory forced_message = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(i);
+                
+                IL1MessageQueue(messageQueue).appendExecutionMessage(
+                    forced_message.nonce,
+                    forced_message.toAddress,
+                    forced_message.l1Token,
+                    forced_message.l2Token,
+                    forced_message.chainId,
+                    forced_message.amount,
+                    forced_message.blockNumber
+                );
+            }
+        }
+
+        // remove deposits and withdrawals from queue
+        uint64 numberOfDeposits = committedTransaction.ethereum.deposit.depositCount;
+
+        IL1MessageQueue(messageQueue).popFirstNDepositElement(numberOfDeposits);
+    
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(numberOfWithdrawals);
 
         finalizedStateRoots[finalizeInput.batchNumber] = committedBatches[finalizeInput.batchNumber].stateRoot;
 
         lastFinalizedBatchNumber = finalizeInput.batchNumber;
     }
+
+    function finalizeWithdrawal(FinalizeWithdrawalInput memory withdrawalInputs) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+
+        require(isBatchFinalized(withdrawalInputs.publicInput.batchNumber), "Batch needs to be finalized first.");
+
+        TransactionInfo memory committedTransaction = transactionDataStorage[withdrawalInputs.publicInput.batchNumber];
+
+        withdrawalInputs.publicInput.receiptRoot = committedTransaction.receiptRoot;
+
+        bytes memory replacedPublicInput = abi.encodePacked(
+            withdrawalInputs.publicInput.chainId,
+            withdrawalInputs.publicInput.batchNumber,
+            withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.receiptRoot,
+            withdrawalInputs.publicInput.l1ReceiverAddress,
+            withdrawalInputs.publicInput.l1TokenAddress,
+            withdrawalInputs.publicInput.amount
+        );
+
+        SP1Verifier(verifier).verifyProof( ProgramVKey, replacedPublicInput, withdrawalInputs.inclusionProof);
+
+        IL1MessageQueue(messageQueue).appendExecutionMessage(
+            withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.l1ReceiverAddress, 
+            withdrawalInputs.publicInput.l1TokenAddress,
+            "", 
+            withdrawalInputs.publicInput.chainId, 
+            withdrawalInputs.publicInput.amount,
+            0
+        );
+    } 
 
     /**********************
      * Internal Functions *
@@ -236,22 +290,30 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function _calculateRollingHash(bool isDeposit, uint64 count) internal view returns (bytes32) {
         bytes memory calculatedRollingHash;
-        IL1MessageQueue.MessageData[] memory selectedMessages;
+        IL1MessageQueue.MessageData[] memory selectedMessages = new IL1MessageQueue.MessageData[](count);
 
         if(isDeposit) {
-            for(uint64 i = 0; i<= count; i++) {
+            for(uint64 i = 0; i< count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(i);
             }
         } else {
-            for(uint64 i = 0; i <= count; i++) {
+            for(uint64 i = 0; i < count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(i);
             }
         }
 
-        for(uint64 i = 0; i <= selectedMessages.length; i++) {
+        for(uint64 i = 0; i < selectedMessages.length; i++) {
             calculatedRollingHash = abi.encodePacked(
-                calculatedRollingHash
-                // abi.encodePacked()
+                calculatedRollingHash,
+                abi.encodePacked(
+                    selectedMessages[i].nonce,
+                    selectedMessages[i].chainId,
+                    selectedMessages[i].blockNumber,
+                    selectedMessages[i].toAddress,
+                    selectedMessages[i].l1Token,
+                    selectedMessages[i].l2Token,
+                    selectedMessages[i].amount
+                )
             );
         }
         bytes32 hashedRollingHash = keccak256(calculatedRollingHash);
@@ -271,12 +333,4 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     //     return result;
     // }
 
-    // function deleteSpecificPosition(uint _index) public {
-    //     require(lzPayloadQueue.length > 0, "Queue is empty");
-    //     require(_index < lzPayloadQueue.length, "Index out of bounds");
-    //     for (uint i = _index; i < lzPayloadQueue.length - 1; i++) {
-    //         lzPayloadQueue[i] = lzPayloadQueue[i + 1];
-    //     }
-    //     lzPayloadQueue.pop();
-    // }
 }

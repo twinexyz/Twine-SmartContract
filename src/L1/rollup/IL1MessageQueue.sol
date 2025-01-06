@@ -55,12 +55,12 @@ interface IL1MessageQueue {
 
     struct MessageData {
         uint64 nonce;
-        string to_address;
-        string l1_token;
-        string l2_token;
+        string toAddress;
+        string l1Token;
+        string l2Token;
         uint64 chainId;
         string amount;
-        uint64 block_number;
+        uint64 blockNumber;
     }
 
     /// @notice Return the index of next appended message.
@@ -70,6 +70,8 @@ interface IL1MessageQueue {
     /// @notice Return the index of next appended message.
     /// @dev Also the total number of appended messages.
     function nextCrossDomainWithdrawalMessageIndex() external view returns (uint256);
+
+    function nextCrossDomainExecutionMessageIndex() external view returns (uint256);
 
 
     /// @notice Return the message of in `queueIndex`.
@@ -101,5 +103,15 @@ interface IL1MessageQueue {
         string memory l1_token,
         string memory l2_token,
         string memory amount
+    ) external;
+
+    function appendExecutionMessage(
+        uint64 _nonce,
+        string memory _to,
+        string memory _l1_token,
+        string memory _l2_token,
+        uint64 _chainId,
+        string memory _amount,
+        uint64 _block_number
     ) external;
 }
