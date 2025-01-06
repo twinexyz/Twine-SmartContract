@@ -20,13 +20,11 @@ contract UpgradeL2Contracts is Script {
     address l2CustomERC20GatewayAddress;
     address l2ETHGatewayAddress;
     address l2GatewayRouterAddress;
-    address l2XERC20GatewayAddress;
     address l2TwineMessengerAddress;
 
     address proxyEth;
     address proxyRouter;
     address proxyCustomERC20;
-    address proxyXERC20;
     address proxyTwineMessenger;
 
     uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -49,10 +47,7 @@ contract UpgradeL2Contracts is Script {
             deployedJson,
             ".Twine.L2GatewayRouter"
         );
-        l2XERC20GatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.L2XERC20Gateway"
-        );
+
         l2TwineMessengerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2TwineMessenger"
@@ -62,14 +57,7 @@ contract UpgradeL2Contracts is Script {
     function run() external {
         bytes memory data = "";
 
-        vm.startBroadcast(deployerPrivateKey);
-
-        L2ETHGateway newL2ETHGateway = new L2ETHGateway();
-        getProxyAdmin(l2ETHGatewayAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l2ETHGatewayAddress),
-            address(newL2ETHGateway),
-            data
-        );
+        vm.startBroadcast(deployerPrivateKey); 
 
         L2GatewayRouter newL2GatewayRouter = new L2GatewayRouter();
         getProxyAdmin(l2GatewayRouterAddress).upgradeAndCall(
@@ -92,8 +80,7 @@ contract UpgradeL2Contracts is Script {
             data
         );
         vm.stopBroadcast();
-        console.log("new erc20",address(newL2TwineMessenger));
-        console.log("admin",address(getProxyAdmin(l2TwineMessengerAddress)));
+        
     }
 
     function getProxyAdmin(

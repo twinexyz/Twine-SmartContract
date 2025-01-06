@@ -166,9 +166,7 @@ contract L1GatewayRouter is
         address,
         address,
         address,
-        address,
-        uint256,
-        bytes calldata
+        uint256
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
         revert("should never be called");
     }

@@ -190,10 +190,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 (
                     details.l1Token,
                     details.l2Token,
-                    details.from,
                     details.to,
-                    details.amount,
-                    bytes("")
+                    details.amount
                 )
             );
     }

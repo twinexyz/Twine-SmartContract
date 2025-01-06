@@ -71,17 +71,15 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function finalizeTokenWithdrawal(
         address _l1Token,
         address _l2Token,
-        address _from,
         address _to,
-        uint256 _amount,
-        bytes calldata data
+        uint256 _amount
     ) external payable override  {
         // @note can possible trigger reentrant call to messenger,
         // but it seems not a big problem.
         (bool _success, ) = _to.call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_l1Token,_l2Token,_from, _to,_amount,block.number);
+        emit FinalizeWithdrawETH(_l1Token,_l2Token,_to,_amount,block.number);
     }
 
     /// @notice Set the l2TokenAddress

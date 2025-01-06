@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 interface IL1MessageQueue {
-     /**********
+    /**********
      * Events *
      **********/
 
@@ -65,23 +65,35 @@ interface IL1MessageQueue {
 
     /// @notice Return the index of next appended message.
     /// @dev Also the total number of appended messages.
-    function nextCrossDomainDepositMessageIndex() external view returns (uint256);
+    function nextCrossDomainDepositMessageIndex()
+        external
+        view
+        returns (uint256);
 
     /// @notice Return the index of next appended message.
     /// @dev Also the total number of appended messages.
-    function nextCrossDomainWithdrawalMessageIndex() external view returns (uint256);
+    function nextCrossDomainWithdrawalMessageIndex()
+        external
+        view
+        returns (uint256);
 
-    function nextCrossDomainExecutionMessageIndex() external view returns (uint256);
-
+    function nextCrossDomainExecutionMessageIndex()
+        external
+        view
+        returns (uint256);
 
     /// @notice Return the message of in `queueIndex`.
     /// @param queueIndex The index to query.
-    function getCrossDomainDepositMessage(uint256 queueIndex) external view returns (MessageData memory);
+    function getCrossDomainDepositMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory);
 
     /// @notice Return the message of in `queueIndex`.
     /// @param queueIndex The index to query.
-    function getCrossDomainWithdrawalMessage(uint256 queueIndex) external view returns (MessageData memory);
-    
+    function getCrossDomainWithdrawalMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory);
+
     /// @notice Removes the first N message from the Deposit Queue
     function popFirstNDepositElement(uint n) external;
 
@@ -114,4 +126,9 @@ interface IL1MessageQueue {
         string memory _amount,
         uint64 _block_number
     ) external;
+
+    function getExecutionMessage(
+        uint256 index
+    ) external view returns (MessageData memory);
+    function removeExecutionMessage(uint256 index) external;
 }

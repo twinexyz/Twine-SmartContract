@@ -6,11 +6,12 @@ import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {IL1ETHGateway} from "./gateways/interfaces/IL1ETHGateway.sol";
+import {IL1ERC20Gateway} from "./gateways/interfaces/IL1ERC20Gateway.sol";
 import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.sol";
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
-
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
     event RelayedMessage(bytes32 indexed messageHash);
@@ -18,7 +19,6 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @notice Emitted when a cross domain message is failed to relay.
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
-   
 
     /// @notice The address of L1MessageQueue contract.
     address public messageQueue;
@@ -28,6 +28,19 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
     /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL2MessageExecuted;
+
+    //gateway address of eth
+    address public ethGateway;
+
+    //gateway address of erc20 gateway
+    address public ERC20Gateway;
+
+    event WithdrawalSuccessful(
+        address l1Token,
+        address l2Token,
+        address recipient,
+        uint256 amount
+    );
 
     /***************
      * Constructor *
@@ -74,46 +87,46 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         string memory l2Token,
         string memory amount
     ) external payable override {
-        _sendMessage(_type, to, l1Token, l2Token,  amount);
+        _sendMessage(_type, to, l1Token, l2Token, amount);
     }
 
-    // function relayWithdrawal(
-    //     uint256 _batchNumber,
-    //     Types.ReceiptObject memory _receiptObject,
-    //     bytes memory _mptKey,
-    //     bytes memory _rlpProof
-    // ) external {
-    //     bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
-    //     require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
-    //     require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
-    //     require(_receiptObject.success == true, "Failed transaction");
-    //     // MerklePatriciaProofVerification
-    //     bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
-    //     require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
-        
-    //     // Check if there are any logs in the ReceiptObject
-    //     require(_receiptObject.logs.length > 0, "No logs available");
-    //     // Fetch the first log
-    //       for(uint256 i = 0; i < _receiptObject.logs.length; i++) {
-    //         // check if the log was emitted form L2TwineMessenger
-    //         if(_receiptObject.logs[i].logAddress == counterpart) {
-    //             // Decoding the log data
-    //             (, address counterpartGateway, , uint256 _value, , , bytes memory message) = abi.decode(
-    //                 _receiptObject.logs[i].data, 
-    //                 (address, address, address, uint256, uint256, uint256, bytes)
-    //             );
-    //             (bool success, ) = counterpartGateway.call{value: _value}(message);
+    function relayWithdrawal(uint256 msgIndex) external {
+        require(
+            msgIndex <
+                IL1MessageQueue(messageQueue)
+                    .nextCrossDomainExecutionMessageIndex(),
+            "Invalid message index"
+        );
+        IL1MessageQueue.MessageData memory message = IL1MessageQueue(
+            messageQueue
+        ).getExecutionMessage(msgIndex);
+        // Process the message
+        address l1Token = stringToAddress(message.l1Token);
+        address l2Token = stringToAddress(message.l2Token);
+        address recipient = stringToAddress(message.toAddress);
+        uint256 amount = stringToUint(message.amount);
 
-    //             if (success) {
-    //                 isL2MessageExecuted[_receiptObjectHash] = true;
-    //                 emit RelayedMessage(_receiptObjectHash);
-    //             } else {
-    //                 emit FailedRelayedMessage(_receiptObjectHash);
-    //             }
-    //         }
-    //     }   
-       
-    // }  
+        bool success;
+        if (l1Token == address(0)) {
+            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+                l1Token,
+                l2Token,
+                recipient,
+                amount
+            );
+        } else {
+            // ERC20 withdrawal
+            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
+                l1Token,
+                l2Token,
+                recipient,
+                amount
+            );
+        }
+        // Remove the executed message from the queue
+        IL1MessageQueue(messageQueue).removeExecutionMessage(msgIndex);
+        emit WithdrawalSuccessful(l1Token, l2Token, recipient, amount);
+    }
 
     function _sendMessage(
         TransactionType _type,
@@ -133,9 +146,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
                 l2Token,
                 amount
             );
-
         } else {
-
             // append message to L1 withdrawalMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
                 to,
@@ -146,4 +157,52 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         }
     }
 
+    function stringToAddress(
+        string memory _addressString
+    ) public pure returns (address) {
+        bytes memory stringBytes = bytes(_addressString);
+        require(
+            stringBytes.length == 42 &&
+                stringBytes[0] == "0" &&
+                stringBytes[1] == "x",
+            "Invalid address format"
+        );
+
+        uint160 result = 0;
+        for (uint i = 2; i < 42; i++) {
+            result *= 16;
+            uint8 digit = uint8(stringBytes[i]);
+            if (digit >= 48 && digit <= 57) {
+                result += (digit - 48);
+            } else if (digit >= 65 && digit <= 70) {
+                result += (digit - 55);
+            } else if (digit >= 97 && digit <= 102) {
+                result += (digit - 87);
+            } else {
+                revert("Invalid character in address string");
+            }
+        }
+        return address(result);
+    }
+
+    function stringToUint(
+        string memory s
+    ) internal pure returns (uint256 result) {
+        bytes memory b = bytes(s);
+        uint256 oldResult = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            // c = b[i] was not needed
+            if (uint8(b[i]) >= 48 && uint8(b[i]) <= 57) {
+                // store old value so we can check for overflows
+                oldResult = result;
+                result = result * 10 + (uint8(b[i]) - 48);
+                if (oldResult > result) {
+                    // we can only get here if the result overflowed and is smaller than last stored value
+                    revert("Invalid String");
+                }
+            } else {
+                revert("InvalidStringNumber");
+            }
+        }
+    }
 }

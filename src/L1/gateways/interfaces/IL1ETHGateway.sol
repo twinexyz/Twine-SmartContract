@@ -3,13 +3,11 @@ pragma solidity ^0.8.24;
 
 interface IL1ETHGateway {
     /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
-    /// @param from The address of sender in L2.
     /// @param to The address of recipient in L1.
     /// @param amount The amount of ETH withdrawn from L2 to L1.
     event FinalizeWithdrawETH(
         address l1Token,
         address l2Token,
-        address indexed from,
         address indexed to,
         uint256 amount,
         uint256 blockNumber
@@ -59,16 +57,12 @@ interface IL1ETHGateway {
 
     /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.
     /// @dev This function should only be called by L1TwineMessenger.
-    /// @param from The address of account who withdraw ETH in L2.
     /// @param to The address of recipient in L1 to receive ETH.
-    /// @param amount The amount of ETH to withdraw.
     function finalizeTokenWithdrawal(
         address l1Token,
         address l2Token,
-        address from,
         address to,
-        uint256 amount,
-        bytes calldata data
+        uint256 amount
     ) external payable;
 
     /// @notice Withdraw ETH form the user account in L2

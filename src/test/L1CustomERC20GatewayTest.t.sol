@@ -142,9 +142,7 @@ contract L1CustomERC20GatewayTest is Test {
             address(l1Token),
             address(l2Token),
             initialOwner,
-            initialOwner,
-            10,
-            new bytes(0)
+            10
         );
         assertEq(l1Token.balanceOf(initialOwner),100000);
     }
