@@ -9,6 +9,7 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title L1CustomERC20Gateway
 /// @notice The `L1CustomERC20Gateway` is used to deposit ERC20 compatible tokens on layer 1 and
@@ -48,7 +49,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL1GatewayBase._initialize(_router, _messenger,_roleManager);
+        TwineL1GatewayBase._initialize(_router, _messenger, _roleManager);
     }
 
     /*************************
@@ -56,12 +57,9 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
      *************************/
 
     /// @inheritdoc IL1ERC20Gateway
-    function getL2ERC20Address(address _l1Token)
-        public
-        view
-        override
-        returns (address)
-    {
+    function getL2ERC20Address(
+        address _l1Token
+    ) public view override returns (address) {
         return tokenMapping[_l1Token];
     }
 
@@ -72,9 +70,10 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @notice Update layer 1 to layer 2 token mapping.
     /// @param _l1Token The address of ERC20 token on layer 1.
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
-    function updateTokenMapping(address _l1Token, address _l2Token) external
-        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    function updateTokenMapping(
+        address _l1Token,
+        address _l2Token
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_l1Token != address(0), "token address cannot be 0");
         require(_l2Token != address(0), "token address cannot be 0");
 
@@ -82,7 +81,6 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         tokenMapping[_l1Token] = _l2Token;
 
         emit UpdateTokenMapping(_l1Token, _oldL2Token, _l2Token);
-        
     }
 
     /**********************
@@ -120,20 +118,25 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
 
         // 2. Generate message passed to L2CustomERC20Gateway.
-        bytes memory _message = abi.encode(_token, _l2Token, _from, _to, _amount);
+        bytes memory _message = abi.encode(
+            _token,
+            _l2Token,
+            _from,
+            _to,
+            _amount
+        );
 
         // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
-            _from,
-            _to,
-            _gasLimit,
-            _gasLimit,
-            _message
+            addressToString(_to),
+            addressToString(_token),
+            addressToString(_l2Token),
+            Strings.toString(_amount)
         );
     }
 
-     function _forcedWithdrawalERC20(
+    function _forcedWithdrawalERC20(
         address _l1Token,
         address _l2Token,
         address _to,
@@ -141,20 +144,30 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         uint256 _gasLimit
     ) internal virtual override nonReentrant {
         require(_amount > 0, "withdrawing zero amount not allowd");
-         // 1. Extract real sender if this call is from L1GatewayRouter
+        // 1. Extract real sender if this call is from L1GatewayRouter
         address _from = _msgSender();
 
-        // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encode(_l1Token, _l2Token, _from, _to, _amount);
-
-         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
-            _from,
-            _to,
-            _gasLimit,
-            _gasLimit,
-            _message
+            addressToString(_to),
+            addressToString(_l1Token),
+            addressToString(_l2Token),
+            Strings.toString(_amount)
         );
+    }
 
+    function addressToString(
+        address _address
+    ) public pure returns (string memory) {
+        bytes32 _bytes = bytes32(uint256(uint160(_address)));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
     }
 }

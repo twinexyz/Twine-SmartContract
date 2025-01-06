@@ -10,7 +10,6 @@ import {L1ETHGateway} from "../../src/L1/gateways/L1ETHGateway.sol";
 import {L1MessageQueue} from "../../src/L1/rollup/L1MessageQueue.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
 import {L1GatewayRouter} from "../../src/L1/gateways/L1GatewayRouter.sol";
-import {L1XERC20Gateway} from "../../src/L1/gateways/L1XERC20Gateway.sol";
 import {L1CustomERC20Gateway} from "../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract L1SetupScript is Script {
@@ -20,7 +19,6 @@ contract L1SetupScript is Script {
     L1ETHGateway l1ETHGateway;
     L1MessageQueue l1MessageQueue;
     L1GatewayRouter l1GatewayRouter;
-    L1XERC20Gateway l1XERC20Gateway;
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
@@ -125,7 +123,6 @@ contract L1SetupScript is Script {
         roleManager = RoleManager(roleManagerAddress);
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
-        l1XERC20Gateway = L1XERC20Gateway(l1XERC20GatewayAddress);
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
         token = MockERC20(tokenAddress);

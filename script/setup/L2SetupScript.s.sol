@@ -10,7 +10,6 @@ import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
-import {L2XERC20Gateway} from "../../src/L2/gateways/L2XERC20Gateway.sol";
 import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract L2SetupScript is Script {
@@ -18,7 +17,6 @@ contract L2SetupScript is Script {
     RoleManager roleManager;
     L2ETHGateway l2ETHGateway;
     L2GatewayRouter l2GatewayRouter;
-    L2XERC20Gateway l2XERC20Gateway;
     L2TwineMessenger l2TwineMessenger;
     L2CustomERC20Gateway l2CustomERC20Gateway;
 
@@ -109,7 +107,6 @@ contract L2SetupScript is Script {
         roleManager = RoleManager(roleManagerAddress);
         l2ETHGateway = L2ETHGateway(l2ETHGatewayAddress);
         l2GatewayRouter = L2GatewayRouter(l2GatewayRouterAddress);
-        l2XERC20Gateway = L2XERC20Gateway(l2XERC20GatewayAddress);
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
         token = MockERC20(l2ERC20TokenAddress);
         bridgingPrecompileAddress = address(0x15);
@@ -154,12 +151,6 @@ contract L2SetupScript is Script {
         l2GatewayRouter.setERC20Gateway(tokens, gateways);
         l2GatewayRouter.setETHGateway(l2ETHGatewayAddress);
         l2GatewayRouter.setDefaultERC20Gateway(l2CustomERC20GatewayAddress);
-
-
-        //L2XERC20Gateway Setup
-        l2XERC20Gateway.setRoleManagerAddress(roleManagerAddress);
-        l2XERC20Gateway.setRouterAddress(l2GatewayRouterAddress);
-        l2XERC20Gateway.setMessengerAddress(l2TwineMessengerAddress);
 
         //L2TwineMessenger
         l2TwineMessenger.setPrecompileAddress(consensusPrecompileAddress,bridgingPrecompileAddress);
