@@ -23,7 +23,9 @@ contract L1SetupScript is Script {
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
     uint64 chainId;
-    bytes32 programVkey;
+    bytes32 executionVkey;
+    bytes32 inclusionVKey;
+    bytes32 withdrawalVKey;
     address tokenAddress;
     address verifierAddress;
     address twineChainAddress;
@@ -98,7 +100,10 @@ contract L1SetupScript is Script {
 
         verifierAddress = vm.parseJsonAddress(deployedJson, ".Dev1.Verifier");
 
-        programVkey = vm.parseJsonBytes32(deployedJson, ".Dev1.ProgramVkey");
+        executionVkey = vm.parseJsonBytes32(deployedJson, ".Dev1.executionVkey");
+        inclusionVKey = vm.parseJsonBytes32(deployedJson, ".Dev1.inclusionVkey");
+        withdrawalVKey = vm.parseJsonBytes32(deployedJson, ".Dev1.withdrawalVkey");
+
 
         l2ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
@@ -155,7 +160,7 @@ contract L1SetupScript is Script {
         twineChain.setChainId(chainId);
         twineChain.setMessengerQueueAddress(l1MessageQueueAddress);
         twineChain.setVeriferAddress(verifierAddress);
-        twineChain.setProgramVKey(programVkey);
+        twineChain.setProgramVKey(executionVkey, inclusionVKey, withdrawalVKey);
 
         //L1ETHGateway setup
         l1ETHGateway.setRoleManagerAddress(roleManagerAddress);
@@ -193,7 +198,7 @@ contract L1SetupScript is Script {
             l2ERC20TokenAddress
         );
 
-        console.logBytes32(twineChain.ProgramVKey());
+        console.logBytes32(twineChain.executionVKey());
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
