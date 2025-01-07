@@ -63,11 +63,6 @@ contract L2SetupScript is Script {
             ".Twine.L2GatewayRouter"
         );
 
-        l2XERC20GatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.L2XERC20Gateway"
-        );
-
         l2TwineMessengerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2TwineMessenger"
@@ -75,12 +70,12 @@ contract L2SetupScript is Script {
 
         l2ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Twine.L2ERC20Token"
+            ".Twine.JGToken"
         );
 
         l1ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.L1ERC20Token"
+            ".Dev1.JGToken"
         );
 
         l1ETHGatewayAddress = vm.parseJsonAddress(

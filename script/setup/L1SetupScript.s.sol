@@ -58,7 +58,7 @@ contract L1SetupScript is Script {
 
         l1ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.L1ERC20Token"
+            ".Dev1.JGToken"
         );
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(
@@ -102,7 +102,7 @@ contract L1SetupScript is Script {
 
         l2ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Twine.L2ERC20Token"
+            ".Twine.JGToken"
         );
 
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
