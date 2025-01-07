@@ -24,8 +24,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ///@notice The chai ID for the L1 where this contract is deployed
     uint256 public chainId;
 
-    /// @notice The verification key.
-    bytes32 public ProgramVKey;
+    /// @notice The verification key for execution proof.
+    bytes32 public executionVKey;
 
     /// @notice The address of L1MessageQueue contract.
     address public messageQueue;
@@ -41,6 +41,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @notice The Number of Last Batch Finalized
     uint256 public override lastFinalizedBatchNumber;
+
+    /// @notice The verification key for inclusion proof
+    bytes32 public inclusionVKey;
+
+    /// @notice The verification key for withdrawal proof
+    bytes32 public withdrawalVKey;
 
     /*************
      * Mappings  *
@@ -120,8 +126,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         verifier = _verifier;
     }
 
-    function setProgramVKey( bytes32 _programVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        ProgramVKey = _programVKey;
+    function setProgramVKey( bytes32 _executionVKey, bytes32 _inclusionVKey, bytes32 _withdrawalVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        executionVKey = _executionVKey;
+        inclusionVKey = _inclusionVKey;
+        withdrawalVKey = _withdrawalVKey;
     }
 
 
@@ -174,14 +182,16 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             committedBatch.transactionRoot,
             committedBatch.receiptRoot
         );
+        bytes memory executionProofWithSelector = prependBytes(finalizeInput.executionProof);
 
-        SP1Verifier(verifier).verifyProof( ProgramVKey, executionPublicInput, finalizeInput.executionProof);
+        SP1Verifier(verifier).verifyProof( executionVKey, executionPublicInput, executionProofWithSelector);
 
         // Verify Inclusion Proof
         TransactionInfo memory committedTransaction = transactionDataStorage[finalizeInput.batchNumber];
         bytes memory inclusionPublicInput = _calculateInlusionInput(committedTransaction);
+        bytes memory inclusionProofWithSelector = prependBytes(finalizeInput.inclusionProof);
 
-        SP1Verifier(verifier).verifyProof( ProgramVKey, inclusionPublicInput, finalizeInput.inclusionProof);
+        SP1Verifier(verifier).verifyProof( inclusionVKey, inclusionPublicInput, inclusionProofWithSelector);
 
         // Copy transactions with withdrawal status bit '1' into execution queue
         uint64 numberOfWithdrawals = committedTransaction.ethereum.withdraw.withdrawCount;
@@ -238,8 +248,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.l1TokenAddress,
             withdrawalInputs.publicInput.amount
         );
+        bytes memory withdrawalProofWithSelector = prependBytes(withdrawalInputs.inclusionProof);
 
-        SP1Verifier(verifier).verifyProof( ProgramVKey, replacedPublicInput, withdrawalInputs.inclusionProof);
+        SP1Verifier(verifier).verifyProof( withdrawalVKey, replacedPublicInput, withdrawalProofWithSelector);
 
         IL1MessageQueue(messageQueue).appendExecutionMessage(
             withdrawalInputs.publicInput.nonce,
@@ -320,17 +331,19 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return hashedRollingHash;
     }
 
-    // function prependBytes(bytes memory prefix, bytes memory originalData ) public pure returns (bytes memory) {
-    //     require(prefix.length == 4, "Prefix must be exactly 4 bytes");
-    //     bytes memory result = new bytes(prefix.length + originalData.length);
+    function prependBytes(bytes memory originalData ) public view returns (bytes memory) {
+        
+        bytes4 prefix = bytes4(SP1Verifier(verifier).VERIFIER_HASH());
+        
+        bytes memory result = new bytes(prefix.length + originalData.length);
 
-    //     for (uint256 i = 0; i < prefix.length; i++) {
-    //         result[i] = prefix[i];
-    //     }
-    //     for (uint256 i = 0; i < originalData.length; i++) {
-    //         result[i + prefix.length] = originalData[i];
-    //     }
-    //     return result;
-    // }
+        for (uint256 i = 0; i < prefix.length; i++) {
+            result[i] = prefix[i];
+        }
+        for (uint256 i = 0; i < originalData.length; i++) {
+            result[i + prefix.length] = originalData[i];
+        }
+        return result;
+    }
 
 }
