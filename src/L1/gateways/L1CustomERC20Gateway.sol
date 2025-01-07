@@ -90,11 +90,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @inheritdoc L1ERC20Gateway
     function _beforeFinalizeWithdrawERC20(
         address _l1Token,
-        address _l2Token,
-        address,
-        address,
-        uint256,
-        bytes calldata
+        address _l2Token
     ) internal virtual override {
         require(msg.value == 0, "nonzero msg.value");
         require(_l2Token != address(0), "token address cannot be 0");

@@ -10,18 +10,14 @@ interface IL1ERC20Gateway {
     /// @notice Emitted when ERC20 token is withdrawn from L2 to L1 and transfer to recipient.
     /// @param l1Token The address of the token in L1.
     /// @param l2Token The address of the token in L2.
-    /// @param from The address of sender in L2.
     /// @param to The address of recipient in L1.
     /// @param amount The amount of token withdrawn from L2 to L1.
-    /// @param data The optional calldata passed to recipient in L1.
     event FinalizeWithdrawERC20(
         address indexed l1Token,
         address indexed l2Token,
-        address indexed from,
         address to,
         uint256 amount,
-        uint256 blockNumber,
-        bytes data
+        uint256 blockNumber
     );
 
     /// @notice Emitted when someone deposit ERC20 token from L1 to L2.
@@ -103,16 +99,12 @@ interface IL1ERC20Gateway {
     ///      The function should also only be called by L2ERC20Gateway in L2.
     /// @param _l1Token The address of corresponding L1 token.
     /// @param _l2Token The address of corresponding L2 token.
-    /// @param _from The address of account who withdraw the token in L2.
     /// @param _to The address of recipient in L1 to receive the token.
     /// @param _amount The amount of the token to withdraw.
-    /// @param _data Optional data to forward to recipient's account.
     function finalizeTokenWithdrawal(
         address _l1Token,
         address _l2Token,
-        address _from,
         address _to,
-        uint256 _amount,
-        bytes calldata _data
+        uint256 _amount
     ) external payable;
 }

@@ -23,9 +23,14 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @param l2Token The address of corresponding ERC20 token in layer 2.
     /// @param oldL1Token The address of the old corresponding ERC20 token in layer 1.
     /// @param newL1Token The address of the new corresponding ERC20 token in layer 1.
-    event UpdateTokenMapping(uint256 indexed chainId,address indexed l2Token, address indexed oldL1Token, address newL1Token);
+    event UpdateTokenMapping(
+        uint256 indexed chainId,
+        address indexed l2Token,
+        address indexed oldL1Token,
+        address newL1Token
+    );
 
-     /// @notice Evm Chain 
+    /// @notice Evm Chain
     event UpdateEvmChains(uint256 chainId, bool status);
 
     /*************
@@ -34,9 +39,9 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
     /// chainId=>l2Token=>l1Token
-    mapping(uint256=>mapping(address => address)) public tokenMapping;
-     /// @notice Mapping the evm chains
-    mapping(uint256=>bool) evmChains;
+    mapping(uint256 => mapping(address => address)) public tokenMapping;
+    /// @notice Mapping the evm chains
+    mapping(uint256 => bool) evmChains;
 
     /***************
      * Constructor *
@@ -60,7 +65,12 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
+        TwineL2GatewayBase._initialize(
+            _counterpart,
+            _router,
+            _messenger,
+            _roleManager
+        );
     }
 
     /*************************
@@ -68,7 +78,10 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
      *************************/
 
     /// @inheritdoc IL2ERC20Gateway
-    function getL1ERC20Address(uint256 _chainId,address _l2Token) external view override returns (address) {
+    function getL1ERC20Address(
+        uint256 _chainId,
+        address _l2Token
+    ) external view override returns (address) {
         return tokenMapping[_chainId][_l2Token];
     }
 
@@ -83,18 +96,24 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @param _l2Token The address of corresponding ERC20 token on layer 2.
     /// @param _l1Token The address of ERC20 token on layer 1.
     ///@param _chainId The chain Id of l1 Token.
-    function updateTokenMapping(uint256 _chainId,address _l2Token, address _l1Token) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function updateTokenMapping(
+        uint256 _chainId,
+        address _l2Token,
+        address _l1Token
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         address _oldL1Token = tokenMapping[_chainId][_l2Token];
         tokenMapping[_chainId][_l2Token] = _l1Token;
 
-        emit UpdateTokenMapping(_chainId,_l2Token, _oldL1Token, _l1Token);
+        emit UpdateTokenMapping(_chainId, _l2Token, _oldL1Token, _l1Token);
     }
 
-    function updateEvmChains(uint256 _chainId,bool status) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function updateEvmChains(
+        uint256 _chainId,
+        bool status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         evmChains[_chainId] = status;
 
         emit UpdateEvmChains(_chainId, status);
-
     }
     /**********************
      * Internal Functions *
@@ -108,11 +127,11 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         uint256 _chainId,
         uint256 _gasLimit,
         bytes memory _data
-    ) internal virtual override  {
+    ) internal virtual override {
         address _l1Token = tokenMapping[_chainId][_token];
-        
+
         require(_amount > 0, "Amout must be greater than zero");
-    
+
         // 1. Extract real sender if this call is from L2GatewayRouter.
         address _from = _msgSender();
         if (router == _from) {
@@ -121,20 +140,22 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
         // 2. Burn token.
         ITwineERC20(_token).burn(_from, _amount);
-         bytes memory _message;
+        bytes memory _message;
         uint256 value;
 
         // 3. Generate message passed to L1CustomERC20Gateway.
-        if(evmChains[_chainId] == true) {
-        _message = abi.encodeCall(
-            IL1ERC20Gateway.finalizeTokenWithdrawal,(_l1Token,_token, _from,stringToAddress(_to) , _amount, _data));
-            if(_l1Token == address(0)){
+        if (evmChains[_chainId] == true) {
+            _message = abi.encodeCall(
+                IL1ERC20Gateway.finalizeTokenWithdrawal,
+                (_l1Token, _token, stringToAddress(_to), _amount)
+            );
+            if (_l1Token == address(0)) {
                 value = _amount;
             } else {
                 value = 0;
             }
         } else {
-            _message =  new bytes(0);
+            _message = new bytes(0);
             value = _amount;
         }
 
@@ -148,27 +169,33 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             _gasLimit,
             _message
         );
-        
     }
 
-    function stringToAddress(string memory _addressString) public pure returns (address) {
-    bytes memory stringBytes = bytes(_addressString);
-    require(stringBytes.length == 42 && stringBytes[0] == '0' && stringBytes[1] == 'x', "Invalid address format");
-    
-    uint160 result = 0;
-    for (uint i = 2; i < 42; i++) {
-        result *= 16;
-        uint8 digit = uint8(stringBytes[i]);
-        if (digit >= 48 && digit <= 57) {
-            result += (digit - 48);
-        } else if (digit >= 65 && digit <= 70) {
-            result += (digit - 55);
-        } else if (digit >= 97 && digit <= 102) {
-            result += (digit - 87);
-        } else {
-            revert("Invalid character in address string");
+    function stringToAddress(
+        string memory _addressString
+    ) public pure returns (address) {
+        bytes memory stringBytes = bytes(_addressString);
+        require(
+            stringBytes.length == 42 &&
+                stringBytes[0] == "0" &&
+                stringBytes[1] == "x",
+            "Invalid address format"
+        );
+
+        uint160 result = 0;
+        for (uint i = 2; i < 42; i++) {
+            result *= 16;
+            uint8 digit = uint8(stringBytes[i]);
+            if (digit >= 48 && digit <= 57) {
+                result += (digit - 48);
+            } else if (digit >= 65 && digit <= 70) {
+                result += (digit - 55);
+            } else if (digit >= 97 && digit <= 102) {
+                result += (digit - 87);
+            } else {
+                revert("Invalid character in address string");
+            }
         }
+        return address(result);
     }
-    return address(result);
-}
 }

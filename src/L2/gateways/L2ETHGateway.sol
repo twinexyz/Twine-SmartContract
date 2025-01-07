@@ -87,7 +87,7 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
         
         bytes memory _message = abi.encodeCall(
             IL1ETHGateway.finalizeTokenWithdrawal,
-            (_l1Token,_l2Token,_from,stringToAddress(_to), _amount,bytes(""))
+            (_l1Token,_l2Token,stringToAddress(_to), _amount)
         );
         
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(

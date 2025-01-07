@@ -55,16 +55,14 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     function finalizeTokenWithdrawal(
         address _l1Token,
         address _l2Token,
-        address _from,
         address _to,
-        uint256 _amount,
-        bytes calldata _data
+        uint256 _amount
     ) external payable virtual override nonReentrant{
-        _beforeFinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount, _data);
+        _beforeFinalizeWithdrawERC20(_l1Token, _l2Token);
         
         IERC20(_l1Token).safeTransfer(_to, _amount);
 
-        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _from, _to, _amount,block.number, _data);
+        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _to,_amount,block.number);
     }
 
     /**********************
@@ -74,17 +72,9 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     /// @dev Internal function hook to perform checks and actions before finalizing the withdrawal.
     /// @param _l1Token The address of corresponding L1 token in L1.
     /// @param _l2Token The address of corresponding L2 token in L2.
-    /// @param _from The address of account who withdraw the token in L2.
-    /// @param _to The address of recipient in L1 to receive the token.
-    /// @param _amount The amount of the token to withdraw.
-    /// @param _data Optional data to forward to recipient's account.
     function _beforeFinalizeWithdrawERC20(
         address _l1Token,
-        address _l2Token,
-        address _from,
-        address _to,
-        uint256 _amount,
-        bytes calldata _data
+        address _l2Token
     ) internal virtual;   
 
     /// @dev Internal function to transfer ERC20 token to this contract.
