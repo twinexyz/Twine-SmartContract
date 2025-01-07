@@ -53,7 +53,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     function sendMessage(
         address _from,
         string memory _to,
-        address _counterpart,
+        string memory _counterpart,
         uint256 _value,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -107,7 +107,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         emit ForcedWithdrawal(
             details.from,
             details.to,
-            tokenCounterpartGateWay[chainId][details.l1Token],
+            tokenCounterpartGateWay[chainId][addressToString(details.l1Token)],
             counterpartMessenger[chainId],
             details.value,
             chainId,
@@ -143,7 +143,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     function _sendMessage(
         address _from,
         string memory _to,
-        address _counterpart,
+        string memory _counterpart,
         uint256 _value,
         uint256 _chainId,
         uint256 _gasLimit,
@@ -153,7 +153,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             _from,
             _to,
             _counterpart,
-            counterpartMessenger[_chainId],
             _value,
             messageCount++,
             _chainId,
@@ -209,5 +208,20 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             value = 0;
         }
         return WithdrawalDetails(l1Token, l2Token, from, to, amount, value);
+    }
+
+    function addressToString(
+        address _address
+    ) public pure returns (string memory) {
+        bytes32 _bytes = bytes32(uint256(uint160(_address)));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
     }
 }

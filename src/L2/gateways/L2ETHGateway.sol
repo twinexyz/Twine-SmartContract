@@ -23,16 +23,14 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     }
 
     /// @notice Initialize the storage of L2ETHGateway.
-    /// @param _counterpart The address of L1ETHGateway in L1.
     /// @param _router The address of L2GatewayRouter in L2.
     /// @param _messenger The address of L2TwineMessenger in L2.
     function initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(_counterpart, _router, _messenger,_roleManager);
+        TwineL2GatewayBase._initialize(_router, _messenger,_roleManager);
     }
 
     /*****************************
@@ -93,7 +91,7 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
             _from,
             _to,
-            counterpartGateWay[_chainId][address(0)],
+            counterpartGateWay[_chainId][addressToString(address(0))],
             _amount+_gasLimit,
             _chainId,
             _gasLimit,
@@ -121,4 +119,19 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     }
     return address(result);
 }
+
+function addressToString(
+        address _address
+    ) public pure returns (string memory) {
+        bytes32 _bytes = bytes32(uint256(uint160(_address)));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
+    }
 }

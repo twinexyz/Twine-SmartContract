@@ -18,10 +18,9 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event SentMessage(
         address indexed from,
         string to,
-        address counterpartGateway,
-        address counterpartMessenger,
-        uint256 nonce,
+        string counterpartGateway,
         uint256 value,
+        uint256 nonce,
         uint256 indexed chainId,
         uint256 blockNumber,
         uint256 gasLimit,
@@ -45,7 +44,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event ForcedWithdrawal(
         address indexed from,
         address to,
-        address counterpartGateway,
+        string counterpartGateway,
         address counterpartMessenger,
         uint256 value,
         uint256 indexed chainId,
