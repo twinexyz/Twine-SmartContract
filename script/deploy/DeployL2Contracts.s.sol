@@ -20,7 +20,9 @@ contract DeployL2Contracts is Script {
         vm.startBroadcast(deployerPrivateKey);
 
        
-        MockERC20 l2Token = new MockERC20("TwineERC20","TWE");
+        MockERC20 solToken = new MockERC20("TwineSol","TWS");
+        MockERC20 ethToken = new MockERC20("TwineEth","TWE");
+        MockERC20 randomToken = new MockERC20("TwineRandom","TWR");
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -73,7 +75,9 @@ contract DeployL2Contracts is Script {
 
         // Logging the address of the deployed proxies
         console.log("Deployed Contracts :");
-        console.log("L2 ERC20 Token :", address(l2Token));
+        console.log("L2 SolToken:", address(solToken));
+        console.log("L2 EthToken:",address(ethToken));
+        console.log("L2 RandomToken",address(randomToken));
         console.log("L2 Rolemanager :", roleManagerAddress);
         console.log("L2 Eth Gateway :", L2ETHGatewayAddress);
         console.log("L2 Gateway Router :", L2GatewayRouterAddress);

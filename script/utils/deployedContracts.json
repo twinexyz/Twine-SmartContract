@@ -26,11 +26,9 @@
     "ProgramVkey": "0x00b1a6667b6e8d2bb186bfc5d8f8bb43c54049908081aad747c5a3325af6c803"
   },
   "Twine": {
-    "L2TokenOne":"0xf5059a5d33d5853360d16c683c16e67980206f36",
-    "L2TokenOneNative":"0x95401dc811bb5740090279ba06cfa8fcf6113778",
-    "L2TokenTwo":"0x998abeb3e57409262ae5b751f60747921b33613e",
-    "L2TokenTwoNative":"0x70e0ba845a1a0f2da3359c97e0285013525ffc49",
-    "L2ERC20Token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "SolToken": "0x927b167526bAbB9be047421db732C663a0b77B11",
+    "ETHToken": "0x32EEce76C2C2e8758584A83Ee2F522D4788feA0f",
+    "RandomToken": "0x01c1DeF3b91672704716159C9041Aeca392DdFfb",
     "L2RoleManager": "0x99bba657f2bbc93c02d617f8ba121cb8fc104acf",
     "L2ETHGateway": "0x5eb3bc0a489c5a8288765d2336659ebca68fcd00",
     "L2GatewayRouter": "0x8f86403a4de0bb5791fa46b8e795c547942fe4cf",
