@@ -26,8 +26,8 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     event UpdateTokenMapping(
         uint256 indexed chainId,
         address indexed l2Token,
-        address indexed oldL1Token,
-        address newL1Token
+        string indexed oldL1Token,
+        string newL1Token
     );
 
     /// @notice Evm Chain
@@ -39,7 +39,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
     /// chainId=>l2Token=>l1Token
-    mapping(uint256 => mapping(address => address)) public tokenMapping;
+    mapping(uint256 => mapping(address => string)) public tokenMapping;
     /// @notice Mapping the evm chains
     mapping(uint256 => bool) evmChains;
 
@@ -56,17 +56,14 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     ///
     /// @dev The parameters `_counterpart`, `_router` and `_messenger` are no longer used.
     ///
-    /// @param _counterpart The address of `L1CustomERC20Gateway` contract in L1.
     /// @param _router The address of `L2GatewayRouter` contract in L2.
     /// @param _messenger The address of `L2TwineMessenger` contract in L2.
     function initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) external initializer {
         TwineL2GatewayBase._initialize(
-            _counterpart,
             _router,
             _messenger,
             _roleManager
@@ -81,7 +78,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     function getL1ERC20Address(
         uint256 _chainId,
         address _l2Token
-    ) external view override returns (address) {
+    ) external view override returns (string memory) {
         return tokenMapping[_chainId][_l2Token];
     }
 
@@ -99,9 +96,9 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     function updateTokenMapping(
         uint256 _chainId,
         address _l2Token,
-        address _l1Token
+        string memory _l1Token
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        address _oldL1Token = tokenMapping[_chainId][_l2Token];
+        string memory _oldL1Token = tokenMapping[_chainId][_l2Token];
         tokenMapping[_chainId][_l2Token] = _l1Token;
 
         emit UpdateTokenMapping(_chainId, _l2Token, _oldL1Token, _l1Token);
@@ -128,7 +125,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         uint256 _gasLimit,
         bytes memory _data
     ) internal virtual override {
-        address _l1Token = tokenMapping[_chainId][_token];
+        string memory _l1Token = tokenMapping[_chainId][_token];
 
         require(_amount > 0, "Amout must be greater than zero");
 
@@ -144,19 +141,14 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         uint256 value;
 
         // 3. Generate message passed to L1CustomERC20Gateway.
-        if (evmChains[_chainId] == true) {
-            _message = abi.encodeCall(
-                IL1ERC20Gateway.finalizeTokenWithdrawal,
-                (_l1Token, _token, stringToAddress(_to), _amount)
-            );
-            if (_l1Token == address(0)) {
-                value = _amount;
-            } else {
-                value = 0;
-            }
-        } else {
-            _message = new bytes(0);
+        _message = abi.encodeCall(
+            IL1ERC20Gateway.finalizeTokenWithdrawal,
+            (stringToAddress(_l1Token), _token, stringToAddress(_to), _amount)
+        );
+        if (stringToAddress(_l1Token) == address(0)) {
             value = _amount;
+        } else {
+            value = 0;
         }
 
         // 4. Send message to L2TwineMessenger.

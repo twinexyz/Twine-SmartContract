@@ -135,11 +135,11 @@ contract L2SetupScript is Script {
         l2ETHGateway.setRouterAddress(l2GatewayRouterAddress);
         l2ETHGateway.setMessengerAddress(l2TwineMessengerAddress);
         uint256[] memory GatewaychainId = new uint256[](1);
-        address[] memory l1Tokens = new address[](1);
-        address[] memory CounterpartGateWay = new address[](1);
+        string[] memory l1Tokens = new string[](1);
+        string[] memory CounterpartGateWay = new string[](1);
         GatewaychainId[0] = chainId;
-        l1Tokens[0] = l1ERC20TokenAddress;
-        CounterpartGateWay[0] = l1ETHGatewayAddress;
+        l1Tokens[0] =  addressToString(l1ERC20TokenAddress);
+        CounterpartGateWay[0] = addressToString(l1ETHGatewayAddress);
         l2ETHGateway.setCounterpartGateway(GatewaychainId,l1Tokens, CounterpartGateWay);
 
         //L2GatewayRouter Setup
@@ -168,15 +168,15 @@ contract L2SetupScript is Script {
         l2CustomERC20Gateway.updateTokenMapping(
             chainId,
             l2ERC20TokenAddress,
-            l1ERC20TokenAddress
+            addressToString(l1ERC20TokenAddress)
         );
         uint256[] memory chainIdset = new uint256[](1);
-        address[] memory l1Token = new address[](1);
-        address[] memory erc20CounterpartGateWay = new address[](1);
+        string[] memory l1Token = new string[](1);
+        string[] memory erc20CounterpartGateWay = new string[](1);
 
         chainIdset[0] = chainId;
-        l1Token[0] = l1ERC20TokenAddress;
-        erc20CounterpartGateWay[0] = l1CustomERC20GatewayAddress;
+        l1Token[0] = addressToString(l1ERC20TokenAddress);
+        erc20CounterpartGateWay[0] = addressToString(l1CustomERC20GatewayAddress);
         l2CustomERC20Gateway.setCounterpartGateway(
             chainIdset,
             l1Token,
@@ -190,5 +190,20 @@ contract L2SetupScript is Script {
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
+    }
+
+    function addressToString(
+        address _address
+    ) public pure returns (string memory) {
+        bytes32 _bytes = bytes32(uint256(uint160(_address)));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
     }
 }

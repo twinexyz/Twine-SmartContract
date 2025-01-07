@@ -44,7 +44,7 @@ contract DeployL2Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (address(0), L2GatewayRouterAddress, address(0),roleManagerAddress)
+                (L2GatewayRouterAddress, address(0),roleManagerAddress)
             )
         );
 
@@ -54,7 +54,7 @@ contract DeployL2Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L2ETHGateway.initialize,
-                (address(0), L2GatewayRouterAddress, address(0),roleManagerAddress)
+                (L2GatewayRouterAddress, address(0),roleManagerAddress)
             )
         );
 

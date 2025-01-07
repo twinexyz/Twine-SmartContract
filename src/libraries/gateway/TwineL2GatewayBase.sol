@@ -20,10 +20,6 @@ abstract contract TwineL2GatewayBase is
      * Constants *
      *************/
 
-    /// need to remove this variable as it is not used anymore
-    /// @inheritdoc ITwineL2Gateway
-    address public override counterpart;
-
     /// @inheritdoc ITwineL2Gateway
     address public override router;
 
@@ -33,7 +29,7 @@ abstract contract TwineL2GatewayBase is
     address public roleManager;
     
     //chainId=> L1Gateway
-    mapping(uint256=>mapping(address => address)) public override counterpartGateWay;
+    mapping(uint256=>mapping(string => string)) public override counterpartGateWay;
 
     /**********************
      * Function Modifiers *
@@ -45,13 +41,11 @@ abstract contract TwineL2GatewayBase is
     }
 
     function _initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        counterpart = _counterpart;
         router = _router;
         messenger = _messenger;
         roleManager = _roleManager;
@@ -78,11 +72,10 @@ abstract contract TwineL2GatewayBase is
         messenger = _messenger;
     }
 
-    function setCounterpartGateway(uint256[] memory _chainId,address[]memory _l1TokenAddress,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setCounterpartGateway(uint256[] memory _chainId,string[]memory _l1TokenAddress,string[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_chainId.length == _counterpartGateWay.length && _chainId.length == _l1TokenAddress.length, "length mismatch");
         for (uint256 i = 0; i < _chainId.length; i++) {
-            require(_counterpartGateWay[i] != address(0)," Value cann't be zero");
-            address _oldCounterPart = counterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
+            string memory _oldCounterPart = counterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
             counterpartGateWay[_chainId[i]][_l1TokenAddress[i]] = _counterpartGateWay[i];
             emit SetCounterpartGateway(_chainId[i], _oldCounterPart, _counterpartGateWay[i]);
         }

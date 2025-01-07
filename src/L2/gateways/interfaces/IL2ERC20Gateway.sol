@@ -11,7 +11,7 @@ interface IL2ERC20Gateway {
     /// @notice Return the corresponding l1 token address given l2 token address.
     ///@param chainId id of the blockchain
     /// @param l2Token The address of l2 token.
-    function getL1ERC20Address(uint256 chainId,address l2Token) external view returns (address);
+    function getL1ERC20Address(uint256 chainId,address l2Token) external view returns (string memory);
 
     /*****************************
      * Public Mutating Functions *

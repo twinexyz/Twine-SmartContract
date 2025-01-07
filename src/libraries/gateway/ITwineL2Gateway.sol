@@ -20,7 +20,7 @@ interface ITwineL2Gateway {
     /// @param chainId The id of a chain.
     /// @param oldCounterpartGateway The corresponding address of the old gateway.
     /// @param newCounterpartGateway The corresponding address of the new gateway.
-    event SetCounterpartGateway(uint256 indexed chainId, address indexed oldCounterpartGateway, address indexed newCounterpartGateway);
+    event SetCounterpartGateway(uint256 indexed chainId, string indexed oldCounterpartGateway, string indexed newCounterpartGateway);
 
 
     /*************************
@@ -28,10 +28,7 @@ interface ITwineL2Gateway {
      *************************/
     
     /// @notice The counterpart gateway
-    function counterpartGateWay(uint256 chainId,address l1Token)external view returns (address);
-
-    /// @notice The address of corresponding L1/L2 Gateway contract.
-    function counterpart() external view returns (address);
+    function counterpartGateWay(uint256 chainId,string memory l1Token)external view returns (string memory);
 
     /// @notice The address of L1GatewayRouter/L2GatewayRouter contract.
     function router() external view returns (address);

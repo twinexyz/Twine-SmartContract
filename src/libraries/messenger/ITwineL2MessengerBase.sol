@@ -19,7 +19,7 @@ interface ITwineL2MessengerBase {
     /// @param chainId The id of a chain.
     /// @param oldCounterpartGateway The corresponding address of the old gateway.
     /// @param newCounterpartGateway The corresponding address of the new gateway.
-    event SetCounterpartGateway(uint256 indexed chainId, address indexed oldCounterpartGateway, address indexed newCounterpartGateway);
+    event SetCounterpartGateway(uint256 indexed chainId, string indexed oldCounterpartGateway, string indexed newCounterpartGateway);
 
     /*****************************
      * Public Mutating Functions *
@@ -37,7 +37,7 @@ interface ITwineL2MessengerBase {
     function sendMessage(
         address from,
         string memory to,
-        address counterpart,
+        string memory counterpart,
         uint256 value,
         uint256 chainId,
         uint256 gasLimit,

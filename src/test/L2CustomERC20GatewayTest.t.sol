@@ -71,7 +71,7 @@ contract L2CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (address(0), address(router), address(l2Messenger),address(roleManager))
+                (address(router), address(l2Messenger),address(roleManager))
             )
         );
         gateway = L2CustomERC20Gateway(L2CustomERC20GatewayAddress);
@@ -93,7 +93,7 @@ contract L2CustomERC20GatewayTest is Test {
     }
         function testwithdrawERC20() public {
             vm.startPrank(initialOwner);
-            gateway.updateTokenMapping(1,address(l2Token), address(l1Token));
+            gateway.updateTokenMapping(1,address(l2Token), addressToString(address(l1Token)));
             assertEq(l2Token.balanceOf(initialOwner),100000);
             l2Token.approve(address(gateway), 100000);
             l2Token.approve(address(router), 100000);
