@@ -53,16 +53,16 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
 
     /// @inheritdoc IL1ERC20Gateway
     function finalizeTokenWithdrawal(
-        address _l1Token,
+        string memory _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount
     ) external payable virtual override nonReentrant{
-        _beforeFinalizeWithdrawERC20(_l1Token, _l2Token);
+        _beforeFinalizeWithdrawERC20(stringToAddress(_l1Token), _l2Token);
         
-        IERC20(_l1Token).safeTransfer(_to, _amount);
+        IERC20(stringToAddress(_l1Token)).safeTransfer(stringToAddress(_to), _amount);
 
-        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _to,_amount,block.number);
+        emit FinalizeWithdrawERC20(stringToAddress(_l1Token), _l2Token, stringToAddress(_to),_amount,block.number);
     }
 
     /**********************
@@ -111,6 +111,34 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         require(_amount > 0, "deposit zero amount");
 
         return (_from, _amount, _data);
+    }
+
+    function stringToAddress(
+        string memory _addressString
+    ) public pure returns (address) {
+        bytes memory stringBytes = bytes(_addressString);
+        require(
+            stringBytes.length == 42 &&
+                stringBytes[0] == "0" &&
+                stringBytes[1] == "x",
+            "Invalid address format"
+        );
+
+        uint160 result = 0;
+        for (uint i = 2; i < 42; i++) {
+            result *= 16;
+            uint8 digit = uint8(stringBytes[i]);
+            if (digit >= 48 && digit <= 57) {
+                result += (digit - 48);
+            } else if (digit >= 65 && digit <= 70) {
+                result += (digit - 55);
+            } else if (digit >= 97 && digit <= 102) {
+                result += (digit - 87);
+            } else {
+                revert("Invalid character in address string");
+            }
+        }
+        return address(result);
     }
 
     /// @dev Internal function to do all the deposit operations.

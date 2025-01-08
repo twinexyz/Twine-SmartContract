@@ -187,9 +187,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             abi.encodeCall(
                 IL1ERC20Gateway.finalizeTokenWithdrawal,
                 (
-                    details.l1Token,
+                    addressToString(details.l1Token),
                     details.l2Token,
-                    details.to,
+                    addressToString(details.to),
                     details.amount
                 )
             );
@@ -227,5 +227,32 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
         }
         return string(_string);
+    }
+     function stringToAddress(
+        string memory _addressString
+    ) public pure returns (address) {
+        bytes memory stringBytes = bytes(_addressString);
+        require(
+            stringBytes.length == 42 &&
+                stringBytes[0] == "0" &&
+                stringBytes[1] == "x",
+            "Invalid address format"
+        );
+
+        uint160 result = 0;
+        for (uint i = 2; i < 42; i++) {
+            result *= 16;
+            uint8 digit = uint8(stringBytes[i]);
+            if (digit >= 48 && digit <= 57) {
+                result += (digit - 48);
+            } else if (digit >= 65 && digit <= 70) {
+                result += (digit - 55);
+            } else if (digit >= 97 && digit <= 102) {
+                result += (digit - 87);
+            } else {
+                revert("Invalid character in address string");
+            }
+        }
+        return address(result);
     }
 }

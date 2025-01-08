@@ -102,9 +102,9 @@ interface IL1ERC20Gateway {
     /// @param _to The address of recipient in L1 to receive the token.
     /// @param _amount The amount of the token to withdraw.
     function finalizeTokenWithdrawal(
-        address _l1Token,
+        string memory _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount
     ) external payable;
 }

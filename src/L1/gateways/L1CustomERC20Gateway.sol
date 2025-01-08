@@ -166,4 +166,5 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         }
         return string(_string);
     }
+    
 }

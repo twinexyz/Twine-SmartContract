@@ -106,20 +106,19 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address recipient = stringToAddress(message.toAddress);
         uint256 amount = stringToUint(message.amount);
 
-        bool success;
         if (l1Token == address(0)) {
             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
-                l1Token,
+                message.l1Token,
                 l2Token,
-                recipient,
+                message.toAddress,
                 amount
             );
         } else {
             // ERC20 withdrawal
             IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
-                l1Token,
+                message.l1Token,
                 l2Token,
-                recipient,
+                message.toAddress,
                 amount
             );
         }

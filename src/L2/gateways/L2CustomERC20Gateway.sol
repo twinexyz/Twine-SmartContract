@@ -143,7 +143,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         // 3. Generate message passed to L1CustomERC20Gateway.
         _message = abi.encodeCall(
             IL1ERC20Gateway.finalizeTokenWithdrawal,
-            (stringToAddress(_l1Token), _token, stringToAddress(_to), _amount)
+            (_l1Token, _token, _to, _amount)
         );
         if (stringToAddress(_l1Token) == address(0)) {
             value = _amount;

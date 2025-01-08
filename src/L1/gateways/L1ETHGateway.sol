@@ -69,17 +69,17 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
     /// @inheritdoc IL1ETHGateway
     function finalizeTokenWithdrawal(
-        address _l1Token,
+        string memory _l1Token,
         address _l2Token,
-        address _to,
+        string memory _to,
         uint256 _amount
     ) external payable override  {
         // @note can possible trigger reentrant call to messenger,
         // but it seems not a big problem.
-        (bool _success, ) = _to.call{value: _amount}("");
+        (bool _success, ) = stringToAddress(_to).call{value: _amount}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_l1Token,_l2Token,_to,_amount,block.number);
+        emit FinalizeWithdrawETH(stringToAddress(_l1Token),_l2Token,stringToAddress(_to),_amount,block.number);
     }
 
     /// @notice Set the l2TokenAddress
@@ -165,6 +165,34 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
         }
         return string(_string);
+    }
+
+     function stringToAddress(
+        string memory _addressString
+    ) public pure returns (address) {
+        bytes memory stringBytes = bytes(_addressString);
+        require(
+            stringBytes.length == 42 &&
+                stringBytes[0] == "0" &&
+                stringBytes[1] == "x",
+            "Invalid address format"
+        );
+
+        uint160 result = 0;
+        for (uint i = 2; i < 42; i++) {
+            result *= 16;
+            uint8 digit = uint8(stringBytes[i]);
+            if (digit >= 48 && digit <= 57) {
+                result += (digit - 48);
+            } else if (digit >= 65 && digit <= 70) {
+                result += (digit - 55);
+            } else if (digit >= 97 && digit <= 102) {
+                result += (digit - 87);
+            } else {
+                revert("Invalid character in address string");
+            }
+        }
+        return address(result);
     }
 
 }
