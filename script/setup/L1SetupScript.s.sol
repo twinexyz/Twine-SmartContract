@@ -178,12 +178,11 @@ contract L1SetupScript is Script {
         l1GatewayRouter.setETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter.setDefaultERC20Gateway(l1CustomERC20GatewayAddress);
         
-        // TODO
-        // address[] memory tokens = new address[](1);
-        // address[] memory gateways = new address[](1);
-        // tokens[0] = l1ERC20TokenAddress;
-        // gateways[0] = l1CustomERC20GatewayAddress;
-        // l1GatewayRouter.setERC20Gateway(tokens, gateways);
+        address[] memory tokens = new address[](1);
+        address[] memory gateways = new address[](1);
+        tokens[0] = l1ERC20TokenAddress;
+        gateways[0] = l1CustomERC20GatewayAddress;
+        l1GatewayRouter.setERC20Gateway(tokens, gateways);
 
         //L1TwineMessenger setup
         l1TwineMessenger.setRoleManager(roleManagerAddress);
