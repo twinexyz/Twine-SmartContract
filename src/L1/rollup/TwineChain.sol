@@ -184,16 +184,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         );
         bytes memory executionProofWithSelector = prependBytes(finalizeInput.executionProof);
 
-        (, bool success) = SP1Verifier(verifier).verifyProof( executionVKey, executionPublicInput, executionProofWithSelector);
-        require(success, "Execution Failed");
+        SP1Verifier(verifier).verifyProof( executionVKey, executionPublicInput, executionProofWithSelector);
 
         // Verify Inclusion Proof
         TransactionInfo memory committedTransaction = transactionDataStorage[finalizeInput.batchNumber];
         bytes memory inclusionPublicInput = _calculateInlusionInput(committedTransaction);
         bytes memory inclusionProofWithSelector = prependBytes(finalizeInput.inclusionProof);
 
-        (,success) = SP1Verifier(verifier).verifyProof( inclusionVKey, inclusionPublicInput, inclusionProofWithSelector);
-        require(success, "Transaction Inclusion Failed");
+        SP1Verifier(verifier).verifyProof( inclusionVKey, inclusionPublicInput, inclusionProofWithSelector);
 
 
         // Copy transactions with withdrawal status bit '1' into execution queue
