@@ -163,9 +163,9 @@ contract L1GatewayRouter is
     }
 
     function finalizeTokenWithdrawal(
+        string memory,
         address,
-        address,
-        address,
+        string memory,
         uint256
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
         revert("should never be called");

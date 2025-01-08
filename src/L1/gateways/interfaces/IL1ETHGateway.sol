@@ -59,9 +59,9 @@ interface IL1ETHGateway {
     /// @dev This function should only be called by L1TwineMessenger.
     /// @param to The address of recipient in L1 to receive ETH.
     function finalizeTokenWithdrawal(
-        address l1Token,
+        string memory l1Token,
         address l2Token,
-        address to,
+        string memory to,
         uint256 amount
     ) external payable;
 
