@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import "forge-std/console.sol";
 
 import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
@@ -78,6 +77,14 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         rollup = _rollup;
     }
+    
+    function setGatewayAddress(
+        address _ethGateway,
+        address _ERC20Gateway
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        ethGateway = _ethGateway;
+        ERC20Gateway = _ERC20Gateway;
+    }
 
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
@@ -97,6 +104,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
                     .nextCrossDomainExecutionMessageIndex(),
             "Invalid message index"
         );
+        
         IL1MessageQueue.MessageData memory message = IL1MessageQueue(
             messageQueue
         ).getExecutionMessage(msgIndex);
@@ -106,8 +114,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address recipient = stringToAddress(message.toAddress);
         uint256 amount = stringToUint(message.amount);
 
-        if (l1Token == address(0)) {
-            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+       if (l1Token == address(0)) {
+             IL1ERC20Gateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
                 message.l1Token,
                 l2Token,
                 message.toAddress,
