@@ -12,16 +12,24 @@ import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {IL1MessageQueue} from "../L1/rollup/IL1MessageQueue.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {SP1Verifier} from "@sp1-contracts/v3.0.0/SP1VerifierGroth16.sol";
+
+import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
+
 import {IL1ETHGateway, L1ETHGateway} from "../L1/gateways/L1ETHGateway.sol";
+import {IL2ETHGateway, L2ETHGateway} from "../L2/gateways/L2ETHGateway.sol";
+import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 
 contract TwineChainTest is Test {
     RoleManager roleManager;
     TwineChain public twineChain;
     L1MessageQueue public messageQueue;
     L1TwineMessenger public l1TwineMessenger;
+    L2TwineMessenger private l2Messenger;
+    L2ETHGateway private counterpartGateway;
     L1ETHGateway private gateway;
-    
+    L1GatewayRouter private router;
+
     address public verifier;
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
@@ -42,6 +50,14 @@ contract TwineChainTest is Test {
         roleManager = RoleManager(roleManagerAddress);
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.grantRole(TWINE_OPERATIONS_HANDLER, initialOwner);
+        
+        // setup GatewayRouter
+        address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
+            "L1GatewayRouter.sol",
+            msg.sender,
+            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0),address(roleManager)))
+        );
+        router = L1GatewayRouter(L1GatewayRouterAddress);
 
         // setup L1MessageQueue
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
@@ -55,6 +71,18 @@ contract TwineChainTest is Test {
 
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 
+        // setup L2TwineMessenger
+        address L2TwineMessengerAddress = Upgrades.deployTransparentProxy(
+            "L2TwineMessenger.sol",
+            msg.sender,
+            abi.encodeCall(
+                L2TwineMessenger.initialize,
+                (0,address(0), address(0))
+            )
+        );
+
+        l2Messenger = L2TwineMessenger(L2TwineMessengerAddress);
+
         // setup TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
@@ -66,6 +94,8 @@ contract TwineChainTest is Test {
         );
 
         twineChain = TwineChain(TwineChainAddress);
+
+        // Deploying an upgradeable proxy for L1TwineMessenger
          address L1TwineMessengerAddress = Upgrades.deployTransparentProxy(
             "L1TwineMessenger.sol",
             initialOwner,
@@ -82,9 +112,68 @@ contract TwineChainTest is Test {
 
         l1TwineMessenger = L1TwineMessenger(L1TwineMessengerAddress);
 
+        //setup ETH Gateway
+        address L1ETHGatewayAddress = Upgrades.deployTransparentProxy(
+            "L1ETHGateway.sol",
+            msg.sender,
+            abi.encodeCall(
+                L1ETHGateway.initialize,
+                (address(router), address(l1TwineMessenger),address(roleManager))
+            )
+        );
+        gateway = L1ETHGateway(L1ETHGatewayAddress);
+
+        
+        //setup gateway in router;
+        vm.startPrank(initialOwner);
+        router.setETHGateway(address(gateway));
+        router.setDefaultERC20Gateway(address(gateway));
+        roleManager.grantRole(CHAIN_ADMIN, initialOwner);
+        roleManager.checkRole(CHAIN_ADMIN, initialOwner);
+        gateway.setRoleManagerAddress(address(roleManager));
+        messageQueue.setMessengerAddress(address(l1TwineMessenger));
+        l1TwineMessenger.setGatewayAddress(address(gateway), address(0));
+        vm.stopPrank();
+
     }
 
-    // function testFinalizationWithCommitment() public {
+    // function testTheWholeFlow() public {
+        
+    //     /******************
+    //      * Depositing ETH *
+    //      ******************/
+    //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
+
+    //     vm.startPrank(initialOwner);
+    //     console.log("Initial balance Before ", address(gateway).balance);
+    //     uint256 depositAmount = 5 ether;
+    //     gateway.depositETH{value: depositAmount}(
+    //         initialOwner,
+    //         depositAmount,
+    //         0
+    //     );
+    //     assertEq(address(l1TwineMessenger).balance,5 ether);
+    //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
+
+    //     /**************************
+    //      * Force Withdrawaing ETH *
+    //      *************************/
+    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
+
+    //     vm.startPrank(initialOwner);
+    //     uint256 withdrawAmount = 1 ether;
+    //     gateway.forcedWithdrawalETH(
+    //         initialOwner, 
+    //         withdrawAmount, 
+    //         0
+    //     );
+    //     gateway.forcedWithdrawalETH(
+    //         initialOwner, 
+    //         withdrawAmount, 
+    //         0
+    //     );
+        
+    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 2);
 
     //     /********************
     //      * Preparing Input * 
@@ -124,37 +213,24 @@ contract TwineChainTest is Test {
     //         solana: chain_commitment
     //     });
 
-    //     IL1MessageQueue.MessageData memory message = IL1MessageQueue.MessageData({
-    //         nonce: 1,
-    //         toAddress: "to_address",
-    //         l1Token: "l1_token",
-    //         l2Token: "l2_token",
-    //         chainId: 1,
-    //         amount: "amount",
-    //         blockNumber: 1
-    //     });
-
     //     ITwineChain.FinalizeInput memory finalize_input = ITwineChain.FinalizeInput({
     //         batchNumber: 1,
     //         executionProof: hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448",
     //         inclusionProof: hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448"
     //     });
 
-    //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
-    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
 
-    //     vm.startPrank(initialOwner);
-    //     L1MessageQueue(messageQueue).testAppendDeposit(message);
-
-    //     L1MessageQueue(messageQueue).testAppendWithdraw(message);
-    //     L1MessageQueue(messageQueue).testAppendWithdraw(message);
-
-    //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
-    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 2);
+    //     /**********************
+    //      * Committing a Batch * 
+    //      **********************/
 
     //     vm.startPrank(initialOwner);
     //     twineChain.commitBatch(commit_info, transaction_info);
     //     assertEq(twineChain.lastCommittedBatchNumber(), 1);
+
+    //     /**********************
+    //      * Finalizing a Batch * 
+    //      **********************/
 
     //     vm.startPrank(initialOwner);
     //     twineChain.finalizeBatch(finalize_input);
@@ -164,6 +240,41 @@ contract TwineChainTest is Test {
     //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);      
 
     //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
-        
+
+    //     /**************************************
+    //      * Finalizing L2 initiated withdrawal *
+    //      **************************************/
+    //     string memory withdrawAmountInString = "2000000000000000000";
+    //     ITwineChain.WithdrawalPublicInput memory withdrawalPublicInput = ITwineChain.WithdrawalPublicInput({
+    //         chainId: 1,
+    //         batchNumber: 1,
+    //         nonce: 1,
+    //         receiptRoot: 0xec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b23,
+    //         l1ReceiverAddress: "0x19B78FF82C94b5E517f2279f3fBF10498B039179",
+    //         l1TokenAddress: "0x0000000000000000000000000000000000000000",
+    //         amount: withdrawAmountInString
+    //     });
+
+    //     ITwineChain.FinalizeWithdrawalInput memory finalizeWithdrawalInput = ITwineChain.FinalizeWithdrawalInput({
+    //         publicInput: withdrawalPublicInput,
+    //         inclusionProof: hex'09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448'
+    //     });
+
+    //     vm.startPrank(initialOwner);
+    //     twineChain.finalizeWithdrawal(finalizeWithdrawalInput);
+
+    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 2);
+
+    //     console.log("Owner Balance Before relay withdrawal:");
+    //     console.log(initialOwner.balance);
+
+    //     vm.startPrank(initialOwner);
+    //     l1TwineMessenger.relayWithdrawal(0);
+    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
+
+    //     console.log("Owner Balance After relay withdrawal:");
+    //     console.log(initialOwner.balance);
+
+
     // }   
 }
