@@ -192,8 +192,8 @@ contract L2SetupScript is Script {
 
         l2CustomERC20Gateway.updateTokenMapping(
             chainIdEth,
-            ethToken,
-            "0x0000000000000000000000000000000000000000,
+            address(ethToken),
+            "0x0000000000000000000000000000000000000000"
         );
 
         l2CustomERC20Gateway.updateTokenMapping(

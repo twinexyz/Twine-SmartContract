@@ -41,6 +41,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         uint256 amount
     );
 
+    event WithdrawType(address contract);
+
     /***************
      * Constructor *
      ***************/
@@ -114,25 +116,10 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address recipient = stringToAddress(message.toAddress);
         uint256 amount = stringToUint(message.amount);
 
-       if (l1Token == address(0)) {
-            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
-                message.l1Token,
-                l2Token,
-                message.toAddress,
-                amount
-            );
-        } else {
-            // ERC20 withdrawal
-            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
-                message.l1Token,
-                l2Token,
-                message.toAddress,
-                amount
-            );
-        }
-        // Remove the executed message from the queue
-        IL1MessageQueue(messageQueue).removeExecutionMessage(msgIndex);
-        emit WithdrawalSuccessful(l1Token, l2Token, recipient, amount);
+        emit WithdrawType(l1Token);
+        // // Remove the executed message from the queue
+        // IL1MessageQueue(messageQueue).removeExecutionMessage(msgIndex);
+        // emit WithdrawalSuccessful(l1Token, l2Token, recipient, amount);
     }
 
     function _sendMessage(
