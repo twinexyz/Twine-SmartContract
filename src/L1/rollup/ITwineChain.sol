@@ -81,6 +81,7 @@ interface ITwineChain {
         bytes32 receiptRoot;
         string l1ReceiverAddress;
         string l1TokenAddress;
+        string l2TokenAddress;
         string amount;
     }
 
