@@ -98,12 +98,12 @@ contract UpgradeL1Contracts is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        TwineChain newTwineChain = new TwineChain();
-        getProxyAdmin(twineChainAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(twineChainAddress),
-            address(newTwineChain),
-            data
-        );
+        // TwineChain newTwineChain = new TwineChain();
+        // getProxyAdmin(twineChainAddress).upgradeAndCall(
+        //     ITransparentUpgradeableProxy(twineChainAddress),
+        //     address(newTwineChain),
+        //     data
+        // );
 
         // L1ETHGateway newL2ETHGateway = new L1ETHGateway();
         // getProxyAdmin(l1ETHGatewayAddress).upgradeAndCall(
@@ -126,12 +126,12 @@ contract UpgradeL1Contracts is Script {
         //     data
         // );
 
-        // L1TwineMessenger newL1TwineMessenger = new L1TwineMessenger();
-        // getProxyAdmin(l1TwineMessengerAddress).upgradeAndCall(
-        //     ITransparentUpgradeableProxy(l1TwineMessengerAddress),
-        //     address(newL1TwineMessenger),
-        //     data
-        // );
+        L1TwineMessenger newL1TwineMessenger = new L1TwineMessenger();
+        getProxyAdmin(l1TwineMessengerAddress).upgradeAndCall(
+            ITransparentUpgradeableProxy(l1TwineMessengerAddress),
+            address(newL1TwineMessenger),
+            data
+        );
 
         // L1CustomERC20Gateway newL1CustomERC20Gateway = new L1CustomERC20Gateway();
         // getProxyAdmin(l1CustomERC20GatewayAddress).upgradeAndCall(
