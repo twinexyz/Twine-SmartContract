@@ -290,7 +290,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         require(index < executionMessageQueue.length, "Invalid index");
 
         // Shift elements to left
-        for(uint256 i = index; i < executionMessageQueue.length; i++) {
+        for(uint256 i = index; i < executionMessageQueue.length - 1; i++) {
             executionMessageQueue[i] = executionMessageQueue[i + 1];
         }
         executionMessageQueue.pop();
