@@ -112,12 +112,12 @@ contract UpgradeL1Contracts is Script {
         //     data
         // );
 
-        // L1MessageQueue newMessageQueue = new L1MessageQueue();
-        // getProxyAdmin(l1MessageQueueAddress).upgradeAndCall(
-        //     ITransparentUpgradeableProxy(l1MessageQueueAddress),
-        //     address(newMessageQueue),
-        //     data
-        // );
+        L1MessageQueue newMessageQueue = new L1MessageQueue();
+        getProxyAdmin(l1MessageQueueAddress).upgradeAndCall(
+            ITransparentUpgradeableProxy(l1MessageQueueAddress),
+            address(newMessageQueue),
+            data
+        );
 
         // L1GatewayRouter newL1GatewayRouter = new L1GatewayRouter();
         // getProxyAdmin(l1GatewayRouterAddress).upgradeAndCall(
