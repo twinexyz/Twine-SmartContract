@@ -116,8 +116,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address recipient = stringToAddress(message.toAddress);
         uint256 amount = stringToUint(message.amount);
 
-        if (l1Token == address(0)) {
-            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
+       if (l1Token == address(0)) {
+             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
                 message.l1Token,
                 l2Token,
                 message.toAddress,
@@ -132,7 +132,6 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
                 amount
             );
         }
-
         // Remove the executed message from the queue
         IL1MessageQueue(messageQueue).removeExecutionMessage(msgIndex);
         emit WithdrawalSuccessful(l1Token, l2Token, recipient, amount);

@@ -288,9 +288,11 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     function removeExecutionMessage(uint256 index) external {
         require(index < executionMessageQueue.length, "Invalid index");
-        executionMessageQueue[index] = executionMessageQueue[
-            executionMessageQueue.length - 1
-        ];
+
+        // Shift elements to left
+        for(uint256 i = index; i < executionMessageQueue.length; i++) {
+            executionMessageQueue[i] = executionMessageQueue[i + 1];
+        }
         executionMessageQueue.pop();
     }
 }
