@@ -115,7 +115,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         uint256 amount = stringToUint(message.amount);
 
        if (l1Token == address(0)) {
-             IL1ERC20Gateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
+             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
                 message.l1Token,
                 l2Token,
                 message.toAddress,
