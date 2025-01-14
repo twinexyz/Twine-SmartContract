@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "../../src/test/mocks/MockERC20.sol";
+import {MockERC20_9Decimals} from "../../src/test/mocks/MockERC20_9Decimals.sol";
 import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
@@ -19,10 +20,12 @@ contract DeployL2Contracts is Script {
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-       
-        MockERC20 solToken = new MockERC20("TwineSol","TWS");
-        MockERC20 ethToken = new MockERC20("TwineEth","TWE");
-        MockERC20 randomToken = new MockERC20("TwineRandom","TWR");
+        MockERC20_9Decimals solToken = new MockERC20_9Decimals(
+            "TwineSol",
+            "TWS"
+        );
+        MockERC20 ethToken = new MockERC20("TwineEth", "TWE");
+        MockERC20 randomToken = new MockERC20("JholaGang", "JG");
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -46,7 +49,7 @@ contract DeployL2Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (L2GatewayRouterAddress, address(0),roleManagerAddress)
+                (L2GatewayRouterAddress, address(0), roleManagerAddress)
             )
         );
 
@@ -56,7 +59,7 @@ contract DeployL2Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L2ETHGateway.initialize,
-                (L2GatewayRouterAddress, address(0),roleManagerAddress)
+                (L2GatewayRouterAddress, address(0), roleManagerAddress)
             )
         );
 
@@ -70,14 +73,31 @@ contract DeployL2Contracts is Script {
             )
         );
 
+
+        string memory twineObject = "TwineContracts";
+        vm.serializeAddress(twineObject, "SolToken", address(solToken));
+        vm.serializeAddress(twineObject, "ETHToken", address(ethToken));
+        vm.serializeAddress(twineObject, "JGToken", address(randomToken));
+        vm.serializeAddress(twineObject, "L2RoleManager", roleManagerAddress);
+        vm.serializeAddress(twineObject, "L2ETHGateway", L2ETHGatewayAddress);
+        vm.serializeAddress(twineObject, "L2GatewayRouter", L2GatewayRouterAddress);
+        vm.serializeAddress(twineObject, "L2XERC20Gateway", address(0));
+        vm.serializeAddress(twineObject, "L2TwineMessenger", L2TwineMessengerAddress);
+        string memory finalJson = vm.serializeAddress(twineObject, "L2CustomERC20Gateway", L2CustomERC20GatewayAddress);
+
+        vm.writeJson(
+            finalJson,
+            "./script/utils/twine.json"
+        );
+
         // Stop broadcasting transactions
         vm.stopBroadcast();
 
         // Logging the address of the deployed proxies
         console.log("Deployed Contracts :");
         console.log("L2 SolToken:", address(solToken));
-        console.log("L2 EthToken:",address(ethToken));
-        console.log("L2 RandomToken",address(randomToken));
+        console.log("L2 EthToken:", address(ethToken));
+        console.log("L2 RandomToken", address(randomToken));
         console.log("L2 Rolemanager :", roleManagerAddress);
         console.log("L2 Eth Gateway :", L2ETHGatewayAddress);
         console.log("L2 Gateway Router :", L2GatewayRouterAddress);
@@ -85,5 +105,3 @@ contract DeployL2Contracts is Script {
         console.log("L2 Custom ERC20 Gateway :", L2CustomERC20GatewayAddress);
     }
 }
-
-

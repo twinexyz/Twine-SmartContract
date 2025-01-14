@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "../../src/test/mocks/MockERC20.sol";
+import {MockERC20_9Decimals} from "../../src/test/mocks/MockERC20_9Decimals.sol";
 import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
@@ -13,23 +14,23 @@ import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract L2SetupScript is Script {
-    MockERC20 solToken;
-    MockERC20 ethToken;
-    MockERC20 randomToken;
     RoleManager roleManager;
     L2ETHGateway l2ETHGateway;
     L2GatewayRouter l2GatewayRouter;
     L2TwineMessenger l2TwineMessenger;
     L2CustomERC20Gateway l2CustomERC20Gateway;
+    MockERC20_9Decimals solToken;
+    MockERC20 ethToken ;
+    MockERC20 jgToken ;
 
     uint256 chainIdEth;
     uint256 chainIdSolana;
     address solTokenAddress;
     address ethTokenAddress;
-    address randomTokenAddress;
+    address jgTokenAddress;
     address roleManagerAddress;
     address l2ETHGatewayAddress;
-    address l1ERC20TokenAddress;
+    address l1JgTokenAddress;
     address l1ETHGatewayAddress;
     address l2ERC20TokenAddress;
     address l2MessageQueueAddress;
@@ -68,11 +69,6 @@ contract L2SetupScript is Script {
             ".Twine.L2GatewayRouter"
         );
 
-        l2XERC20GatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.L2XERC20Gateway"
-        );
-
         l2TwineMessengerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2TwineMessenger"
@@ -88,14 +84,14 @@ contract L2SetupScript is Script {
             ".Twine.ETHToken" 
         );
 
-         randomTokenAddress = vm.parseJsonAddress(
+        jgTokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Twine.RandomToken" 
+            ".Twine.JGToken" 
         );
 
-        l1ERC20TokenAddress = vm.parseJsonAddress(
+        l1JgTokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.L1ERC20Token"
+            ".Dev1.JGToken"
         );
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
@@ -114,7 +110,7 @@ contract L2SetupScript is Script {
         );
 
         chainIdEth = 17000; //holesky chain Id
-        chainIdSolana = 9;
+        chainIdSolana = 900;
 
         l2CustomERC20Gateway = L2CustomERC20Gateway(
             l2CustomERC20GatewayAddress
@@ -124,9 +120,9 @@ contract L2SetupScript is Script {
         l2ETHGateway = L2ETHGateway(l2ETHGatewayAddress);
         l2GatewayRouter = L2GatewayRouter(l2GatewayRouterAddress);
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
-        solToken = MockERC20(solTokenAddress);
+        solToken = MockERC20_9Decimals(solTokenAddress);
         ethToken = MockERC20(ethTokenAddress);
-        randomToken = MockERC20(randomTokenAddress);
+        jgToken = MockERC20(jgTokenAddress);
         bridgingPrecompileAddress = address(0x15);
         consensusPrecompileAddress = address(0x16);
     }
@@ -156,7 +152,7 @@ contract L2SetupScript is Script {
         string[] memory l1Tokens = new string[](1);
         string[] memory CounterpartGateWay = new string[](1);
         GatewaychainId[0] = chainIdEth;
-        l1Tokens[0] =  addressToString(l1ERC20TokenAddress);
+        l1Tokens[0] =  addressToString(l1JgTokenAddress);
         CounterpartGateWay[0] = addressToString(l1ETHGatewayAddress);
         l2ETHGateway.setCounterpartGateway(GatewaychainId,l1Tokens, CounterpartGateWay);
 
@@ -167,7 +163,7 @@ contract L2SetupScript is Script {
         gateways[0] = l2CustomERC20GatewayAddress;
         tokens[0] = ethTokenAddress;
         gateways[0] = l2CustomERC20GatewayAddress;
-        tokens[0] = randomTokenAddress;
+        tokens[0] = jgTokenAddress;
         gateways[0] = l2CustomERC20GatewayAddress;
         l2GatewayRouter.setRoleManagerAddress(address(roleManager));
         l2GatewayRouter.setERC20Gateway(tokens, gateways);
@@ -187,29 +183,41 @@ contract L2SetupScript is Script {
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
         l2CustomERC20Gateway.setRouterAddress(l2GatewayRouterAddress);
         l2CustomERC20Gateway.setMessengerAddress(l2TwineMessengerAddress);
+
         l2CustomERC20Gateway.updateTokenMapping(
             chainIdEth,
-            randomTokenAddress,
-            addressToString(l1ERC20TokenAddress)
+            jgTokenAddress,
+            addressToString(l1JgTokenAddress)
         );
-         l2CustomERC20Gateway.updateTokenMapping(
+
+        l2CustomERC20Gateway.updateTokenMapping(
+            chainIdEth,
+            address(ethToken),
+            "0x0000000000000000000000000000000000000000"
+        );
+
+        l2CustomERC20Gateway.updateTokenMapping(
             chainIdSolana,
-            randomTokenAddress,
+            solTokenAddress,
             "11111111111111111111111111111111"
         );
+
+        // TODO: Map JG Token on Twine to JG Token on solana
+
+
         uint256[] memory chainIdset = new uint256[](1);
         string[] memory l1Token = new string[](1);
         string[] memory erc20CounterpartGateWay = new string[](1);
 
         chainIdset[0] = chainIdEth;
-        l1Token[0] = addressToString(l1ERC20TokenAddress);
+        l1Token[0] = addressToString(l1JgTokenAddress);
         erc20CounterpartGateWay[0] = addressToString(l1CustomERC20GatewayAddress);
         l2CustomERC20Gateway.setCounterpartGateway(
             chainIdset,
             l1Token,
             erc20CounterpartGateWay
         );
-         l2TwineMessenger.setCounterpartGateway(
+        l2TwineMessenger.setCounterpartGateway(
             chainIdset,
             l1Token,
             erc20CounterpartGateWay

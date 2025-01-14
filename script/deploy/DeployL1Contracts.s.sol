@@ -15,10 +15,14 @@ import {L1CustomERC20Gateway} from "../../src/L1/gateways/L1CustomERC20Gateway.s
 contract DeployL1Contracts is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        string memory exportPath = vm.envString("ADDRESSES_EXPORT_PATH");
         address initialOwner = vm.addr(deployerPrivateKey);
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
+
+        string memory twine_sol_token = vm.envString("CHAIN_NAME");
+        console.log("chain name is: ", twine_sol_token);
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -89,6 +93,28 @@ contract DeployL1Contracts is Script {
                     roleManagerAddress
                 )
             )
+        );
+
+        string memory twineObject = "l1-contracts";
+        vm.serializeAddress(twineObject, "TwineChain", TwineChainAddress);
+        vm.serializeAddress(twineObject, "L1ETHGateway", L1ETHGatewayAddress);
+        vm.serializeAddress(twineObject, "L1RoleManager",roleManagerAddress );
+        vm.serializeAddress(twineObject, "L1MessageQueue", L1MessageQueueAddress);
+        vm.serializeAddress(twineObject, "L1GatewayRouter", L1GatewayRouterAddress);
+        vm.serializeAddress(twineObject, "L1TwineMessenger", L1TwineMessengerAddress);
+        vm.serializeAddress(twineObject, "L1CustomERC20Gateway", L1CustomERC20GatewayAddress);
+        vm.serializeAddress(twineObject, "L1XERC20Gateway", address(0));
+        vm.serializeAddress(twineObject, "Verifier", address(0));
+        vm.serializeAddress(twineObject, "JGToken", address(0));
+
+        // Fill them manually
+        vm.serializeString(twineObject, "executionVkey", "");
+        vm.serializeString(twineObject, "inclusionVkey", "");
+        string memory finalJson = vm.serializeString(twineObject, "withdrawalVkey", "");
+
+        vm.writeJson(
+            finalJson,
+            exportPath
         );
 
         // Stop broadcasting transactions
