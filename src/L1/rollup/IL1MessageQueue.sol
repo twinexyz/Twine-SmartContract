@@ -76,21 +76,23 @@ interface IL1MessageQueue {
         external
         view
         returns (uint256);
+    
 
-    function nextCrossDomainExecutionMessageIndex()
-        external
-        view
-        returns (uint256);
-
-    /// @notice Return the message of in `queueIndex`.
+    /// @notice Return the deposit message of in `queueIndex`.
     /// @param queueIndex The index to query.
     function getCrossDomainDepositMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory);
 
-    /// @notice Return the message of in `queueIndex`.
+    /// @notice Return the withdraw message of in `queueIndex`.
     /// @param queueIndex The index to query.
     function getCrossDomainWithdrawalMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory);
+
+    /// @notice Return the layer zero message in `queueIndex`.
+    /// @param queueIndex The index to query.
+    function getCrossDomainLayerZeroMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory);
 
@@ -99,6 +101,9 @@ interface IL1MessageQueue {
 
     /// @notice Removes the first N message from the Withdrawal Queue
     function popFirstNWithdrawalElement(uint n) external;
+
+    /// @notice Removes the first N message from the Layer Zero Queue
+    function popFirstNLayerZeroElement(uint n) external;
 
     ///@notice set the proxy Address of MessageQueue
     function setMessageQueueProxy(address proxyAddress) external;
@@ -117,18 +122,4 @@ interface IL1MessageQueue {
         string memory amount
     ) external;
 
-    function appendExecutionMessage(
-        uint64 _nonce,
-        string memory _to,
-        string memory _l1_token,
-        string memory _l2_token,
-        uint64 _chainId,
-        string memory _amount,
-        uint64 _block_number
-    ) external;
-
-    function getExecutionMessage(
-        uint256 index
-    ) external view returns (MessageData memory);
-    function removeExecutionMessage(uint256 index) external;
 }

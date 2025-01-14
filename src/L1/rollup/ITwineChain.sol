@@ -25,6 +25,15 @@ interface ITwineChain {
     /// @param withdrawRoot The merkle root on layer2 after this batch
     event FinalizeBatch(uint256 indexed batchNumber, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot);
 
+    /**********
+     * Enums  *
+     **********/
+    enum TransactionType {
+        deposit,
+        withdraw,
+        layerZero
+    }
+
     /************
      * Structs  *
      ************/
@@ -41,33 +50,17 @@ interface ITwineChain {
     struct TransactionInfo {
         uint64 batchNumber;
         bytes32 transactionRoot;
-        bytes32 receiptRoot;
-        ChainCommitment ethereum;
-        ChainCommitment solana;
     }
 
     struct ChainCommitment {
-        DepositReturn deposit;
-        WithdrawReturn withdraw;
-        bytes otherTransactions;
-    }
-
-    struct DepositReturn {
         uint64 depositCount;
         bytes32 depositRollingHash;
-    }
-
-    struct WithdrawReturn {
         uint64 withdrawCount;
         bytes32 withdrawRollingHash;
-        string statusBit;
+        uint64 lzTransactionCount;
+        bytes32 lzTransactionRollingHash;
     }
 
-    struct FinalizeInput {
-        uint64 batchNumber;
-        bytes executionProof;
-        bytes inclusionProof;
-    }
 
     struct FinalizeWithdrawalInput {
         WithdrawalPublicInput publicInput;
@@ -111,15 +104,15 @@ interface ITwineChain {
      * Public Mutating Functions *
      *****************************/
 
-    /// @notice Commit a batch of transactions on Layer 1.
-    ///
-    /// @param commit_info The struct containing the batch's information
-    /// @param transaction_info The sturct containing the transactions info for a batch
-    function commitBatch(StoredBatchInfo calldata commit_info, TransactionInfo calldata transaction_info) external;
+    // /// @notice Commit a batch of transactions on Layer 1.
+    // ///
+    // /// @param commit_info The struct containing the batch's information
+    // /// @param transaction_info The sturct containing the transactions info for a batch
+    // function commitBatch(StoredBatchInfo calldata commit_info, TransactionInfo calldata transaction_info) external;
 
-    /// @notice Finalize a bath on Layer 1.
-    ///
-    /// @param finalizeInput The inputs required for batch finalization
-    function finalizeBatch(FinalizeInput calldata finalizeInput) external;
+    // /// @notice Finalize a bath on Layer 1.
+    // ///
+    // /// @param finalizeInput The inputs required for batch finalization
+    // function finalizeBatch(FinalizeInput calldata finalizeInput) external;
     
 }

@@ -11,9 +11,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     uint64 chainId;
     uint64 depositMessageIndex;
     uint64 withdrawalMessageIndex;
+    uint64 layerZeroMessageIndex;
     address public messenger;
     address public messageQueueProxy;
-    address public roleManager;
+    address public roleManager; 
 
     /// @notice The list of queued cross domain messages.
     MessageData[] public depositMessageQueue;
@@ -21,8 +22,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The list of queued cross domain Withdrawal messages.
     MessageData[] public withdrawalMessageQueue;
 
-    /// @notice The list of queued transactions that are ready for execution.
-    MessageData[] public executionMessageQueue;
+    /// @notice The list of queued layer zero messages.
+    MessageData[] public layerZeroMessageQueue; 
 
     modifier onlyMessenger() {
         require(
@@ -86,6 +87,18 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         }
     }
 
+    function popFirstNLayerZeroElement(uint n) external {
+
+        for (uint i = 0; i < layerZeroMessageQueue.length - n; i++) {
+            layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
+        }
+
+        // Remove the last n elements by reducing the array length
+        for (uint i = 0; i < n; i++) {
+            layerZeroMessageQueue.pop();
+        }
+    }
+
     function getCrossDomainDepositMessage(
         uint256 _queueIndex
     ) external view returns (MessageData memory) {
@@ -98,6 +111,12 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return withdrawalMessageQueue[_queueIndex];
     }
 
+    function getCrossDomainLayerZeroMessage(
+        uint256 _queueIndex
+    ) external view returns (MessageData memory) {
+        return layerZeroMessageQueue[_queueIndex];
+    }
+
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
         string memory to,
@@ -108,26 +127,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         _queueDepositTransaction(to, l1Token, l2Token, amount);
     }
 
-    /// @inheritdoc IL1MessageQueue
-    function appendExecutionMessage(
-        uint64 _nonce,
-        string memory _to,
-        string memory _l1Token,
-        string memory _l2Token,
-        uint64 _chainId,
-        string memory _amount,
-        uint64 _blockNumber
-    ) external override {
-        _queueExecutionTransaction(
-            _nonce,
-            _to,
-            _l1Token,
-            _l2Token,
-            _chainId,
-            _amount,
-            _blockNumber
-        );
-    }
 
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainWithdrawalMessage(
@@ -203,28 +202,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         );
     }
 
-    function _queueExecutionTransaction(
-        uint64 _nonce,
-        string memory _to,
-        string memory _l1Token,
-        string memory _l2Token,
-        uint64 _chainId,
-        string memory _amount,
-        uint64 _blockNumber
-    ) internal {
-        MessageData memory executionMessageData = MessageData({
-            nonce: _nonce,
-            toAddress: _to,
-            l1Token: _l1Token,
-            l2Token: _l2Token,
-            chainId: _chainId,
-            amount: _amount,
-            blockNumber: _blockNumber
-        });
-
-        executionMessageQueue.push(executionMessageData);
-    }
-
     function _padAddress(address input) public pure returns (bytes32) {
         return bytes32(uint256(uint160(input)));
     }
@@ -270,29 +247,4 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return withdrawalMessageQueue.length;
     }
 
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainExecutionMessageIndex()
-        external
-        view
-        returns (uint256)
-    {
-        return executionMessageQueue.length;
-    }
-
-    function getExecutionMessage(
-        uint256 index
-    ) external view returns (MessageData memory) {
-        require(index < executionMessageQueue.length, "Invalid index");
-        return executionMessageQueue[index];
-    }
-
-    function removeExecutionMessage(uint256 index) external {
-        require(index < executionMessageQueue.length, "Invalid index");
-
-        // Shift elements to left
-        for(uint256 i = index; i < executionMessageQueue.length - 1; i++) {
-            executionMessageQueue[i] = executionMessageQueue[i + 1];
-        }
-        executionMessageQueue.pop();
-    }
 }
