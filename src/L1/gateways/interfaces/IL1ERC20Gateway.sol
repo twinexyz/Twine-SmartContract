@@ -13,10 +13,10 @@ interface IL1ERC20Gateway {
     /// @param to The address of recipient in L1.
     /// @param amount The amount of token withdrawn from L2 to L1.
     event FinalizeWithdrawERC20(
-        address indexed l1Token,
-        address indexed l2Token,
-        address to,
-        uint256 amount,
+        string indexed l1Token,
+        string indexed l2Token,
+        string to,
+        string amount,
         uint256 blockNumber
     );
 
@@ -103,8 +103,8 @@ interface IL1ERC20Gateway {
     /// @param _amount The amount of the token to withdraw.
     function finalizeTokenWithdrawal(
         string memory _l1Token,
-        address _l2Token,
+        string memory _l2Token,
         string memory _to,
-        uint256 _amount
+        string memory _amount
     ) external payable;
 }

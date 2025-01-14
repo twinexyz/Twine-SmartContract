@@ -6,10 +6,10 @@ interface IL1ETHGateway {
     /// @param to The address of recipient in L1.
     /// @param amount The amount of ETH withdrawn from L2 to L1.
     event FinalizeWithdrawETH(
-        address l1Token,
-        address l2Token,
-        address indexed to,
-        uint256 amount,
+        string l1Token,
+        string l2Token,
+        string indexed to,
+        string amount,
         uint256 blockNumber
     );
 
@@ -60,9 +60,9 @@ interface IL1ETHGateway {
     /// @param to The address of recipient in L1 to receive ETH.
     function finalizeTokenWithdrawal(
         string memory l1Token,
-        address l2Token,
+        string memory l2Token,
         string memory to,
-        uint256 amount
+        string memory amount
     ) external payable;
 
     /// @notice Withdraw ETH form the user account in L2

@@ -9,6 +9,8 @@ import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
+import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
@@ -47,6 +49,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @notice The verification key for withdrawal proof
     bytes32 public withdrawalVKey;
+
+     //gateway address of eth
+    address public ethGateway;
+
+    //gateway address of erc20 gateway
+    address public ERC20Gateway;
 
     /*************
      * Mappings  *
@@ -131,6 +139,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         inclusionVKey = _inclusionVKey;
         withdrawalVKey = _withdrawalVKey;
     }
+    function setGatewayAddress(
+        address _ethGateway,
+        address _ERC20Gateway
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        ethGateway = _ethGateway;
+        ERC20Gateway = _ERC20Gateway;
+    }
+    
 
 
     /// @inheritdoc ITwineChain
@@ -261,6 +277,23 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.amount,
             0
         );
+
+        if (stringToAddress(withdrawalInputs.publicInput.l1TokenAddress) == address(0)) {
+             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+                withdrawalInputs.publicInput.l1TokenAddress,
+                withdrawalInputs.publicInput.l2TokenAddress,
+                withdrawalInputs.publicInput.l1ReceiverAddress,
+                withdrawalInputs.publicInput.amount
+            );
+        } else {
+            // ERC20 withdrawal
+            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
+                withdrawalInputs.publicInput.l1TokenAddress,
+                withdrawalInputs.publicInput.l2TokenAddress,
+                withdrawalInputs.publicInput.l1ReceiverAddress,
+                withdrawalInputs.publicInput.amount
+            );
+        }
     } 
 
     /**********************
@@ -344,6 +377,33 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             result[i + prefix.length] = originalData[i];
         }
         return result;
+    } 
+    function stringToAddress(
+        string memory _addressString
+    ) public pure returns (address) {
+        bytes memory stringBytes = bytes(_addressString);
+        require(
+            stringBytes.length == 42 &&
+                stringBytes[0] == "0" &&
+                stringBytes[1] == "x",
+            "Invalid address format"
+        );
+
+        uint160 result = 0;
+        for (uint i = 2; i < 42; i++) {
+            result *= 16;
+            uint8 digit = uint8(stringBytes[i]);
+            if (digit >= 48 && digit <= 57) {
+                result += (digit - 48);
+            } else if (digit >= 65 && digit <= 70) {
+                result += (digit - 55);
+            } else if (digit >= 97 && digit <= 102) {
+                result += (digit - 87);
+            } else {
+                revert("Invalid character in address string");
+            }
+        }
+        return address(result);
     }
 
 }
