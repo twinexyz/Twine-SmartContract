@@ -141,18 +141,19 @@ contract TwineChainTest is Test {
         
     //     /******************
     //      * Depositing ETH *
-    //      ******************/
+    //      *****************/
     //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
+    //     assertEq(address(l1TwineMessenger).balance, 0 ether);
 
     //     vm.startPrank(initialOwner);
-    //     console.log("Initial balance Before ", address(gateway).balance);
     //     uint256 depositAmount = 5 ether;
     //     gateway.depositETH{value: depositAmount}(
     //         initialOwner,
     //         depositAmount,
     //         0
     //     );
-    //     assertEq(address(l1TwineMessenger).balance,5 ether);
+
+    //     assertEq(address(l1TwineMessenger).balance, 5 ether);
     //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
 
     //     /**************************
@@ -167,17 +168,12 @@ contract TwineChainTest is Test {
     //         withdrawAmount, 
     //         0
     //     );
-    //     gateway.forcedWithdrawalETH(
-    //         initialOwner, 
-    //         withdrawAmount, 
-    //         0
-    //     );
         
-    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 2);
+    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
 
-    //     /********************
+    //     /*******************
     //      * Preparing Input * 
-    //      ********************/
+    //      ******************/
 
     //     ITwineChain.StoredBatchInfo memory commit_info = ITwineChain.StoredBatchInfo({
     //         batchNumber: 1,
@@ -188,92 +184,37 @@ contract TwineChainTest is Test {
     //         receiptRoot: 0x621905d05da3a0b316acb658e7d6db3ef44e59bf597a4ac0c4436211174b94d5
     //     }); 
 
-    //     ITwineChain.DepositReturn memory deposit_return = ITwineChain.DepositReturn({
-    //         depositCount: 1,
-    //         depositRollingHash: 0x4ddfbf79e61b76a2b5f3aba12804745074ab12674bef9e141388a86cedd809d1
-    //     });
-
-    //     ITwineChain.WithdrawReturn memory withdraw_return = ITwineChain.WithdrawReturn({
-    //         withdrawCount: 2,
-    //         withdrawRollingHash: 0x4ddfbf79e61b76a2b5f3aba12804745074ab12674bef9e141388a86cedd809d1,
-    //         statusBit: "10"
-    //     });
-
-    //     ITwineChain.ChainCommitment memory chain_commitment = ITwineChain.ChainCommitment({
-    //         deposit: deposit_return,
-    //         withdraw: withdraw_return,
-    //         otherTransactions: hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448"
-    //     });
-
-    //     ITwineChain.TransactionInfo memory transaction_info = ITwineChain.TransactionInfo({
-    //         batchNumber: 1,
-    //         transactionRoot: 0xec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b23,
-    //         receiptRoot: 0xec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b23,
-    //         ethereum: chain_commitment,
-    //         solana: chain_commitment
-    //     });
-
-    //     ITwineChain.FinalizeInput memory finalize_input = ITwineChain.FinalizeInput({
-    //         batchNumber: 1,
-    //         executionProof: hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448",
-    //         inclusionProof: hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448"
-    //     });
-
-
-    //     /**********************
-    //      * Committing a Batch * 
-    //      **********************/
+    //     bytes memory executionProof = hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448";
+    
+    //     /*************************************
+    //      * Committing and Finalizing a Batch * 
+    //      ************************************/
 
     //     vm.startPrank(initialOwner);
-    //     twineChain.commitBatch(commit_info, transaction_info);
+    //     assertEq(twineChain.lastCommittedBatchNumber(), 0);
+    //     assertEq(twineChain.lastFinalizedBatchNumber(), 0);
+
+    //     twineChain.commitAndFinalizeBatch(commit_info, executionProof);
+
     //     assertEq(twineChain.lastCommittedBatchNumber(), 1);
-
-    //     /**********************
-    //      * Finalizing a Batch * 
-    //      **********************/
-
-    //     vm.startPrank(initialOwner);
-    //     twineChain.finalizeBatch(finalize_input);
     //     assertEq(twineChain.lastFinalizedBatchNumber(), 1);
+
+    //     /****************************************
+    //      * Finalizing Transaction for the batch * 
+    //      ***************************************/
+    //     bytes memory transaction_info = hex"0000000000000001ec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b2300000000000000019bc1bcaf54846af7e64c3e383b15ac99c04659a1f8af68310b558ac5a685461700000000000000019bc1bcaf54846af7e64c3e383b15ac99c04659a1f8af68310b558ac5a685461700000000000000009bc1bcaf54846af7e64c3e383b15ac99c04659a1f8af68310b558ac5a6854617";
+    //     bytes memory inclusion_proof = hex"09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448";
+
+    //     vm.startPrank(initialOwner);
+    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 0);
+    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+    //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
         
+    //     twineChain.commitAndFinalizeTransactions(transaction_info, inclusion_proof);
+        
+    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
+    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
     //     assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
-    //     assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);      
-
-    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
-
-    //     /**************************************
-    //      * Finalizing L2 initiated withdrawal *
-    //      **************************************/
-    //     string memory withdrawAmountInString = "2000000000000000000";
-    //     ITwineChain.WithdrawalPublicInput memory withdrawalPublicInput = ITwineChain.WithdrawalPublicInput({
-    //         chainId: 1,
-    //         batchNumber: 1,
-    //         nonce: 1,
-    //         receiptRoot: 0xec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b23,
-    //         l1ReceiverAddress: "0x19B78FF82C94b5E517f2279f3fBF10498B039179",
-    //         l1TokenAddress: "0x0000000000000000000000000000000000000000",
-    //         amount: withdrawAmountInString
-    //     });
-
-    //     ITwineChain.FinalizeWithdrawalInput memory finalizeWithdrawalInput = ITwineChain.FinalizeWithdrawalInput({
-    //         publicInput: withdrawalPublicInput,
-    //         inclusionProof: hex'09069090114430e527b5fbfb5f7cc7e6aff5b4ee1d7b14ef2b976f624a37e8719f4c0c262b935e8eeb3aa193d6c41cd0afa60998abe800744c05e0dcc2de676db6c7209f099aba1664892cd6a2021ccfd73d1bae7219d6e63dc9d146251e381db98edf4b1de52a6f4801ced46a470f0806006eaa58638876195f38b548ecc78dd1a1b5612b8fc84cde99bf9c215cc02a1dc30106b7563f1bfe4d02421fbea09d3c34307b189deb99ac9e3fce07cf0dbd1f382b8212376b991a94850a7c1f3a0851e1f09b1d7480851196d509f9474347e1dbbc84f34403ab542ee2374ba74f7f390f43622e59f2beb351d9f990ddc674751e062a6ee464313387f904ca395d812ac90448'
-    //     });
-
-    //     vm.startPrank(initialOwner);
-    //     twineChain.finalizeWithdrawal(finalizeWithdrawalInput);
-
-    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 2);
-
-    //     console.log("Owner Balance Before relay withdrawal:");
-    //     console.log(initialOwner.balance);
-
-    //     vm.startPrank(initialOwner);
-    //     l1TwineMessenger.relayWithdrawal(0);
-    //     assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
-
-    //     console.log("Owner Balance After relay withdrawal:");
-    //     console.log(initialOwner.balance);
 
 
     // }   

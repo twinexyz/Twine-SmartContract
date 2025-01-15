@@ -167,7 +167,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         for(uint256 i = 0; i < 40; i++) {
             transactionDataBytes[i] = transaction_info[i];
         }
-        TransactionInfo memory transaction_data = abi.decode(transactionDataBytes, (TransactionInfo));
+        TransactionInfo memory transaction_data = _decodeTransactionInfo(transactionDataBytes);
 
         require(
             isBatchFinalized(transaction_data.batchNumber), 
@@ -184,9 +184,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             chainDataBytes[i] = transaction_info[40 + i];
         }
 
-        ChainCommitment memory chain_data = abi.decode(chainDataBytes, (ChainCommitment));
+        ChainCommitment memory chain_data = _decodeChainCommitment(chainDataBytes);
 
-        // Calculating deposit and withdraw rolling hash from the data in queue
+       //  Calculating deposit and withdraw rolling hash from the data in queue
         uint64 depositCount = chain_data.depositCount;
         bytes32 depositRollingHash = _calculateRollingHash(TransactionType.deposit, depositCount);
 
@@ -223,17 +223,57 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             );
         }
 
-
         // remove deposits, withdrawals and layerZero messages from queue
         IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
         IL1MessageQueue(messageQueue).popFirstNLayerZeroElement(lzTransactionCount);
-
     } 
 
     /**********************
      * Internal Functions *
      **********************/
+
+    function _decodeTransactionInfo(bytes memory transactionDataBytes) internal view returns (TransactionInfo memory) {
+        uint64 batchNumber;
+        bytes32 transactionRoot;
+
+        assembly {
+            batchNumber := mload(add(transactionDataBytes, 8))
+            transactionRoot := mload(add(transactionDataBytes, 40))
+        }
+
+        return TransactionInfo ({
+            batchNumber: batchNumber,
+            transactionRoot: transactionRoot
+        });
+    }
+
+    function _decodeChainCommitment(bytes memory chainCommitment) internal view returns (ChainCommitment memory) {
+        uint64 depositCount;
+        bytes32 depositRollingHash;
+        uint64 withdrawCount;
+        bytes32 withdrawRollingHash;
+        uint64 lzTransactionCount;
+        bytes32 lzTransactionRollingHash;
+
+        assembly {
+            depositCount := mload(add(chainCommitment, 8))
+            depositRollingHash := mload(add(chainCommitment, 40))
+            withdrawCount := mload(add(chainCommitment, 48))
+            withdrawRollingHash := mload(add(chainCommitment, 80))
+            lzTransactionCount := mload(add(chainCommitment, 88))
+            lzTransactionRollingHash := mload(add(chainCommitment, 120))
+        }
+
+        return ChainCommitment ({
+            depositCount: depositCount,
+            depositRollingHash: depositRollingHash,
+            withdrawCount: withdrawCount,
+            withdrawRollingHash: withdrawRollingHash,
+            lzTransactionCount: lzTransactionCount,
+            lzTransactionRollingHash: lzTransactionRollingHash
+        });
+    }
 
     function _calculateRollingHash(TransactionType transaction_type, uint64 count) internal view returns (bytes32) {
 
