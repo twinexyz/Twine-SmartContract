@@ -140,9 +140,9 @@ contract L1CustomERC20GatewayTest is Test {
         assertEq(l1Token.balanceOf(initialOwner),99990);
         gateway.finalizeTokenWithdrawal(
             addressToString(address(l1Token)),
-            address(l2Token),
+            addressToString(address(l2Token)),
             addressToString(initialOwner),
-            10
+            "10"
         );
         assertEq(l1Token.balanceOf(initialOwner),100000);
     }

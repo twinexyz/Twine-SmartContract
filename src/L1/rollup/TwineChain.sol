@@ -209,6 +209,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         SP1Verifier(verifier).verifyProof( inclusionVKey, inclusionPublicInput, inclusionProofWithSelector);
 
+
         // Copy transactions with withdrawal status bit '1' into execution queue
         uint64 numberOfWithdrawals = committedTransaction.ethereum.withdraw.withdrawCount;
         string memory statusBit = committedTransaction.ethereum.withdraw.statusBit;
@@ -262,6 +263,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.receiptRoot,
             withdrawalInputs.publicInput.l1ReceiverAddress,
             withdrawalInputs.publicInput.l1TokenAddress,
+            withdrawalInputs.publicInput.l2TokenAddress,
             withdrawalInputs.publicInput.amount
         );
         bytes memory withdrawalProofWithSelector = prependBytes(withdrawalInputs.inclusionProof);

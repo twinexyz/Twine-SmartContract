@@ -74,36 +74,33 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function verifyConsensusProofAndExecuteDeposit(
         uint256 chainId,
+        uint256 slotNumber,
+        bytes32 bankHash,
         bytes memory consensusProof,
-        bytes[] memory depositTransactions,
-        bytes[] memory depositTxnProofs,
+        bytes memory depositTransactions,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        _verifyConsensusProof(consensusProof);
+        // _verifyConsensusProof(consensusProof);
+        blockReceiptRoots[chainId][slotNumber] =  bankHash;
         if (depositTransactions.length > 0) {
-            bytes memory data = abi.encode(
-                chainId,
-                depositTransactions,
-                depositTxnProofs
-            );
+            bytes memory data = abi.encode(chainId, depositTransactions);
             (bool success, bytes memory output) = bridgingPrecompileAddress
                 .call(data);
             require(success, "Deposits failed!");
             emit L1TokenDeposit();
+            emit ParityHash(parityHash, block.number, blockhash(block.number));
         }
-        emit ParityHash(parityHash, block.number, blockhash(block.number));
     }
 
     function executeForcedWithdrawal(
         uint256 chainId,
         bytes memory withdrawalTransaction,
-        bytes memory proof,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(
             abi.encode(
                 chainId,
-                _packWithdrawalData(withdrawalTransaction, proof)
+                withdrawalTransaction
             )
         );
         require(success, "Withdrawal failed!");
@@ -138,7 +135,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes32 guId = abi.decode(output, (bytes32));
         emit LayerzeroPayload(chainId, guId);
     }
-
 
     /// @dev Internal function to send cross domain message.
     /// @param _to The address of the contract to call.

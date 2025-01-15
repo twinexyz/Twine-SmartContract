@@ -60,7 +60,7 @@ contract L1SetupScript is Script {
 
         l1ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.L1ERC20Token"
+            ".Dev1.JGToken"
         );
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(
@@ -107,7 +107,7 @@ contract L1SetupScript is Script {
 
         l2ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Twine.L2ERC20Token"
+            ".Twine.JGToken"
         );
 
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
@@ -177,6 +177,7 @@ contract L1SetupScript is Script {
         l1GatewayRouter.setRoleManagerAddress(roleManagerAddress);
         l1GatewayRouter.setETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter.setDefaultERC20Gateway(l1CustomERC20GatewayAddress);
+        
         address[] memory tokens = new address[](1);
         address[] memory gateways = new address[](1);
         tokens[0] = l1ERC20TokenAddress;

@@ -41,6 +41,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         uint256 amount
     );
 
+    event WithdrawType(address l1Token);
+
     /***************
      * Constructor *
      ***************/

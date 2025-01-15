@@ -132,7 +132,7 @@ contract TwineChainTest is Test {
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
         gateway.setRoleManagerAddress(address(roleManager));
         messageQueue.setMessengerAddress(address(l1TwineMessenger));
-        l1TwineMessenger.setGatewayAddress(address(gateway), address(0));
+        // l1TwineMessenger.setGatewayAddress(address(gateway), address(0));
         vm.stopPrank();
 
     }

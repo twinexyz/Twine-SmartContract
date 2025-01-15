@@ -59,7 +59,7 @@ contract UpgradeL1Contracts is Script {
 
         l1ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.L1ERC20Token"
+            ".Dev1.JGToken"
         );
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(
@@ -98,19 +98,19 @@ contract UpgradeL1Contracts is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        TwineChain newTwineChain = new TwineChain();
-        getProxyAdmin(twineChainAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(twineChainAddress),
-            address(newTwineChain),
-            data
-        );
+        // TwineChain newTwineChain = new TwineChain();
+        // getProxyAdmin(twineChainAddress).upgradeAndCall(
+        //     ITransparentUpgradeableProxy(twineChainAddress),
+        //     address(newTwineChain),
+        //     data
+        // );
 
-        L1ETHGateway newL2ETHGateway = new L1ETHGateway();
-        getProxyAdmin(l1ETHGatewayAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l1ETHGatewayAddress),
-            address(newL2ETHGateway),
-            data
-        );
+        // L1ETHGateway newL2ETHGateway = new L1ETHGateway();
+        // getProxyAdmin(l1ETHGatewayAddress).upgradeAndCall(
+        //     ITransparentUpgradeableProxy(l1ETHGatewayAddress),
+        //     address(newL2ETHGateway),
+        //     data
+        // );
 
         L1MessageQueue newMessageQueue = new L1MessageQueue();
         getProxyAdmin(l1MessageQueueAddress).upgradeAndCall(
@@ -119,26 +119,26 @@ contract UpgradeL1Contracts is Script {
             data
         );
 
-        L1GatewayRouter newL1GatewayRouter = new L1GatewayRouter();
-        getProxyAdmin(l1GatewayRouterAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l1GatewayRouterAddress),
-            address(newL1GatewayRouter),
-            data
-        );
+        // L1GatewayRouter newL1GatewayRouter = new L1GatewayRouter();
+        // getProxyAdmin(l1GatewayRouterAddress).upgradeAndCall(
+        //     ITransparentUpgradeableProxy(l1GatewayRouterAddress),
+        //     address(newL1GatewayRouter),
+        //     data
+        // );
 
-        L1TwineMessenger newL1TwineMessenger = new L1TwineMessenger();
-        getProxyAdmin(l1TwineMessengerAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l1TwineMessengerAddress),
-            address(newL1TwineMessenger),
-            data
-        );
+        // L1TwineMessenger newL1TwineMessenger = new L1TwineMessenger();
+        // getProxyAdmin(l1TwineMessengerAddress).upgradeAndCall(
+        //     ITransparentUpgradeableProxy(l1TwineMessengerAddress),
+        //     address(newL1TwineMessenger),
+        //     data
+        // );
 
-        L1CustomERC20Gateway newL1CustomERC20Gateway = new L1CustomERC20Gateway();
-        getProxyAdmin(l1CustomERC20GatewayAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l1CustomERC20GatewayAddress),
-            address(newL1CustomERC20Gateway),
-            data
-        );
+        // L1CustomERC20Gateway newL1CustomERC20Gateway = new L1CustomERC20Gateway();
+        // getProxyAdmin(l1CustomERC20GatewayAddress).upgradeAndCall(
+        //     ITransparentUpgradeableProxy(l1CustomERC20GatewayAddress),
+        //     address(newL1CustomERC20Gateway),
+        //     data
+        // );
         vm.stopBroadcast();
     }
 
