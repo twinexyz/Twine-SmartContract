@@ -25,6 +25,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The list of queued layer zero messages.
     MessageData[] public layerZeroMessageQueue; 
 
+    /// @notice The list of queued transactions that are ready for execution.
+    MessageData[] public executionMessageQueue;
+
     modifier onlyMessenger() {
         require(
             _msgSender() == messenger,
@@ -138,6 +141,28 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         _queueWithdrawalTransaction(to, l1Token, l2Token, amount);
     }
 
+    /// @inheritdoc IL1MessageQueue
+    function appendExecutionMessage(
+        uint64 _nonce,
+        string memory _to,
+        string memory _l1Token,
+        string memory _l2Token,
+        uint64 _chainId,
+        string memory _amount,
+        uint64 _blockNumber
+    ) external override {
+        _queueExecutionTransaction(
+            _nonce,
+            _to,
+            _l1Token,
+            _l2Token,
+            _chainId,
+            _amount,
+            _blockNumber
+        );
+    }
+
+
     function _queueDepositTransaction(
         string memory to,
         string memory l1Token,
@@ -202,6 +227,28 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         );
     }
 
+    function _queueExecutionTransaction(
+        uint64 _nonce,
+        string memory _to,
+        string memory _l1Token,
+        string memory _l2Token,
+        uint64 _chainId,
+        string memory _amount,
+        uint64 _blockNumber
+    ) internal {
+        MessageData memory executionMessageData = MessageData({
+            nonce: _nonce,
+            toAddress: _to,
+            l1Token: _l1Token,
+            l2Token: _l2Token,
+            chainId: _chainId,
+            amount: _amount,
+            blockNumber: _blockNumber
+        });
+
+        executionMessageQueue.push(executionMessageData);
+    }
+
     function _padAddress(address input) public pure returns (bytes32) {
         return bytes32(uint256(uint160(input)));
     }
@@ -246,5 +293,32 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     {
         return withdrawalMessageQueue.length;
     }
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainExecutionMessageIndex()
+        external
+        view
+        returns (uint256)
+    {
+        return executionMessageQueue.length;
+    }
+
+    function getExecutionMessage(
+        uint256 index
+    ) external view returns (MessageData memory) {
+        require(index < executionMessageQueue.length, "Invalid index");
+        return executionMessageQueue[index];
+    }
+
+    function removeExecutionMessage(uint256 index) external {
+        require(index < executionMessageQueue.length, "Invalid index");
+
+        // Shift elements to left
+        for(uint256 i = index; i < executionMessageQueue.length - 1; i++) {
+            executionMessageQueue[i] = executionMessageQueue[i + 1];
+        }
+        executionMessageQueue.pop();
+    }
+
 
 }

@@ -54,9 +54,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @notice The mapping of batchNumber => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
-    
-    /// @notice The mapping of batchNumber => TransactionInfo
-    mapping(uint256 => bytes) public transactionDataStorage;
 
     /// @inheritdoc ITwineChain
     mapping(uint256 => bytes32) public override finalizedStateRoots;
@@ -210,47 +207,29 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         SP1Verifier(verifier).verifyProof(inclusionVKey, publicInputForInclusion, inclusionProofWithSelector);
 
-        transactionDataStorage[transaction_data.batchNumber] = transaction_info;
+        // Move the withdrawal that are ready for execution to execution queue
+        for(uint256 i = 0; i < depositCount; i++) {
+
+            IL1MessageQueue.MessageData memory forced_message = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(i);
+
+            IL1MessageQueue(messageQueue).appendExecutionMessage(
+                forced_message.nonce,
+                forced_message.toAddress,
+                forced_message.l1Token,
+                forced_message.l2Token,
+                forced_message.chainId,
+                forced_message.amount,
+                forced_message.blockNumber
+            );
+        }
+
 
         // remove deposits, withdrawals and layerZero messages from queue
         IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
-
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
+        IL1MessageQueue(messageQueue).popFirstNLayerZeroElement(lzTransactionCount);
 
-    }
-
-    // function finalizeWithdrawal(FinalizeWithdrawalInput memory withdrawalInputs) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-
-    //     require(isBatchFinalized(withdrawalInputs.publicInput.batchNumber), "Batch needs to be finalized first.");
-
-    //     TransactionInfo memory committedTransaction = transactionDataStorage[withdrawalInputs.publicInput.batchNumber];
-
-    //     withdrawalInputs.publicInput.receiptRoot = committedTransaction.receiptRoot;
-
-    //     bytes memory replacedPublicInput = abi.encodePacked(
-    //         withdrawalInputs.publicInput.chainId,
-    //         withdrawalInputs.publicInput.batchNumber,
-    //         withdrawalInputs.publicInput.nonce,
-    //         withdrawalInputs.publicInput.receiptRoot,
-    //         withdrawalInputs.publicInput.l1ReceiverAddress,
-    //         withdrawalInputs.publicInput.l1TokenAddress,
-    //         withdrawalInputs.publicInput.l2TokenAddress,
-    //         withdrawalInputs.publicInput.amount
-    //     );
-    //     bytes memory withdrawalProofWithSelector = prependBytes(withdrawalInputs.inclusionProof);
-
-    //     SP1Verifier(verifier).verifyProof( withdrawalVKey, replacedPublicInput, withdrawalProofWithSelector);
-
-    //     IL1MessageQueue(messageQueue).appendExecutionMessage(
-    //         withdrawalInputs.publicInput.nonce,
-    //         withdrawalInputs.publicInput.l1ReceiverAddress, 
-    //         withdrawalInputs.publicInput.l1TokenAddress,
-    //         withdrawalInputs.publicInput.l2TokenAddress,
-    //         withdrawalInputs.publicInput.chainId, 
-    //         withdrawalInputs.publicInput.amount,
-    //         0
-    //     );
-    // } 
+    } 
 
     /**********************
      * Internal Functions *

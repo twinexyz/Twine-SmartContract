@@ -76,7 +76,13 @@ interface IL1MessageQueue {
         external
         view
         returns (uint256);
-    
+
+    /// @notice Return the index of next appended message.
+    /// @dev Also the total number of appended messages. 
+    function nextCrossDomainExecutionMessageIndex()
+        external
+        view
+        returns (uint256);
 
     /// @notice Return the deposit message of in `queueIndex`.
     /// @param queueIndex The index to query.
@@ -121,5 +127,20 @@ interface IL1MessageQueue {
         string memory l2_token,
         string memory amount
     ) external;
+
+    function appendExecutionMessage(
+        uint64 _nonce,
+        string memory _to,
+        string memory _l1_token,
+        string memory _l2_token,
+        uint64 _chainId,
+        string memory _amount,
+        uint64 _block_number
+    ) external;
+
+    function getExecutionMessage(
+        uint256 index
+    ) external view returns (MessageData memory);
+    function removeExecutionMessage(uint256 index) external;
 
 }
