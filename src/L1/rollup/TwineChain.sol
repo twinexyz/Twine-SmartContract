@@ -96,7 +96,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function isBatchCommitted(uint256 _batchNumber) public view returns (bool) {
         return _batchNumber <= lastCommittedBatchNumber;
-    }
+    }  
 
     function getReceiptRoot(uint256 _batchNumber) public view returns (bytes32) {
         require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
@@ -129,6 +129,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         withdrawalVKey = _withdrawalVKey;
     }
 
+    /// @inheritdoc ITwineChain
     function commitAndFinalizeBatch(
         StoredBatchInfo memory commit_info,
         bytes memory execution_proof
@@ -157,6 +158,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         lastFinalizedBatchNumber = commit_info.batchNumber;
     }
 
+    /// @inheritdoc ITwineChain
     function commitAndFinalizeTransactions(
         bytes memory transaction_info,
         bytes memory inclusion_proof
@@ -233,7 +235,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      * Internal Functions *
      **********************/
 
-    function _decodeTransactionInfo(bytes memory transactionDataBytes) internal view returns (TransactionInfo memory) {
+    function _decodeTransactionInfo(bytes memory transactionDataBytes) internal pure returns (TransactionInfo memory) {
         uint64 batchNumber;
         bytes32 transactionRoot;
 
@@ -248,7 +250,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         });
     }
 
-    function _decodeChainCommitment(bytes memory chainCommitment) internal view returns (ChainCommitment memory) {
+    function _decodeChainCommitment(bytes memory chainCommitment) internal pure returns (ChainCommitment memory) {
         uint64 depositCount;
         bytes32 depositRollingHash;
         uint64 withdrawCount;

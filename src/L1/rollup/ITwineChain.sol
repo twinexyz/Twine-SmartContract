@@ -38,7 +38,14 @@ interface ITwineChain {
      * Structs  *
      ************/
 
-     struct StoredBatchInfo {
+    /// @notice Twine batch stored data
+    /// @param batchNumber Twine batch number
+    /// @param batchHash Hash of Twine batch
+    /// @param previousStateRoot State root of the previous Twine batch
+    /// @param stateRoot State root of the current Twine batch
+    /// @param transactionRoot Transaction root of the batch
+    /// @param receiptRoot Receipt root of the batch
+    struct StoredBatchInfo {
         uint64 batchNumber;
         bytes32 batchHash;
         bytes32 previousStateRoot;
@@ -47,11 +54,21 @@ interface ITwineChain {
         bytes32 receiptRoot;
     }
 
+    /// @notice First 40 bytes of the transaction data commitment
+    /// @param batchNumber Twine batch number
+    /// @param transactionRoot Transaction root of the batch
     struct TransactionInfo {
         uint64 batchNumber;
         bytes32 transactionRoot;
     }
 
+    /// @notice Chain Specific data from the corresponding 120 bytes of transaction data commitment
+    /// @param depositCount Number of deposit executed on the batch
+    /// @param depositRollingHash Rolling hash of executed deposit
+    /// @param withdrawCount Number of forced withdraws executed on the batch
+    /// @param withdrawRollingHash Rolling hash of executed withdrawals
+    /// @param lzTransactionCount Number of layer zero transactions on the batch
+    /// @param lzTransactionRollingHash Rolling hash of executed layerZero transactions
     struct ChainCommitment {
         uint64 depositCount;
         bytes32 depositRollingHash;
@@ -60,7 +77,6 @@ interface ITwineChain {
         uint64 lzTransactionCount;
         bytes32 lzTransactionRollingHash;
     }
-
 
     struct FinalizeWithdrawalInput {
         WithdrawalPublicInput publicInput;
@@ -104,15 +120,13 @@ interface ITwineChain {
      * Public Mutating Functions *
      *****************************/
 
-    // /// @notice Commit a batch of transactions on Layer 1.
-    // ///
-    // /// @param commit_info The struct containing the batch's information
-    // /// @param transaction_info The sturct containing the transactions info for a batch
-    // function commitBatch(StoredBatchInfo calldata commit_info, TransactionInfo calldata transaction_info) external;
+    /// @notice Commit and finalize a batch on Layer 1.
+    /// @param commit_info The struct containing the batch's information
+    /// @param execution_proof The execution proof for that batch
+    function commitAndFinalizeBatch(StoredBatchInfo memory commit_info, bytes memory execution_proof) external;
 
-    // /// @notice Finalize a bath on Layer 1.
-    // ///
-    // /// @param finalizeInput The inputs required for batch finalization
-    // function finalizeBatch(FinalizeInput calldata finalizeInput) external;
-    
+    /// @notice Finalize transaction data for a batch
+    /// @param transaction_info The sturct containing batch's transaction information
+    /// @param inclusion_proof The inclusion proof for that batch of transaction
+    function commitAndFinalizeTransactions(bytes memory transaction_info, bytes memory inclusion_proof) external;
 }
