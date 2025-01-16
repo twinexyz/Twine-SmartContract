@@ -28,10 +28,10 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL2MessageExecuted;
 
-    //gateway address of eth
+    //gateway address of eth, can be removed
     address public ethGateway;
 
-    //gateway address of erc20 gateway
+    //gateway address of erc20 gateway,can be removed
     address public ERC20Gateway;
 
     event WithdrawalSuccessful(
@@ -80,14 +80,6 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         rollup = _rollup;
     }
     
-    function setGatewayAddress(
-        address _ethGateway,
-        address _ERC20Gateway
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        ethGateway = _ethGateway;
-        ERC20Gateway = _ERC20Gateway;
-    }
-
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,
@@ -97,44 +89,6 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         string memory amount
     ) external payable override {
         _sendMessage(_type, to, l1Token, l2Token, amount);
-    }
-
-    function relayWithdrawal(uint256 msgIndex) external {
-        require(
-            msgIndex <
-                IL1MessageQueue(messageQueue)
-                    .nextCrossDomainExecutionMessageIndex(),
-            "Invalid message index"
-        );
-        
-        IL1MessageQueue.MessageData memory message = IL1MessageQueue(
-            messageQueue
-        ).getExecutionMessage(msgIndex);
-        // Process the message
-        address l1Token = stringToAddress(message.l1Token);
-        address l2Token = stringToAddress(message.l2Token);
-        address recipient = stringToAddress(message.toAddress);
-        uint256 amount = stringToUint(message.amount);
-
-       if (l1Token == address(0)) {
-             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal{value: amount}(
-                message.l1Token,
-                l2Token,
-                message.toAddress,
-                amount
-            );
-        } else {
-            // ERC20 withdrawal
-            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
-                message.l1Token,
-                l2Token,
-                message.toAddress,
-                amount
-            );
-        }
-        // Remove the executed message from the queue
-        IL1MessageQueue(messageQueue).removeExecutionMessage(msgIndex);
-        emit WithdrawalSuccessful(l1Token, l2Token, recipient, amount);
     }
 
     function _sendMessage(

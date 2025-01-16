@@ -154,7 +154,6 @@ contract L2SetupScript is Script {
         GatewaychainId[0] = chainIdEth;
         l1Tokens[0] =  addressToString(l1JgTokenAddress);
         CounterpartGateWay[0] = addressToString(l1ETHGatewayAddress);
-        l2ETHGateway.setCounterpartGateway(GatewaychainId,l1Tokens, CounterpartGateWay);
 
         //L2GatewayRouter Setup
         address[] memory tokens = new address[](3);
@@ -212,16 +211,6 @@ contract L2SetupScript is Script {
         chainIdset[0] = chainIdEth;
         l1Token[0] = addressToString(l1JgTokenAddress);
         erc20CounterpartGateWay[0] = addressToString(l1CustomERC20GatewayAddress);
-        l2CustomERC20Gateway.setCounterpartGateway(
-            chainIdset,
-            l1Token,
-            erc20CounterpartGateWay
-        );
-        l2TwineMessenger.setCounterpartGateway(
-            chainIdset,
-            l1Token,
-            erc20CounterpartGateWay
-        );
 
         // Stop broadcasting transactions
         vm.stopBroadcast();

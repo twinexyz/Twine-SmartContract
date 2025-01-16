@@ -70,16 +70,16 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     /// @inheritdoc IL1ETHGateway
     function finalizeTokenWithdrawal(
         string memory _l1Token,
-        address _l2Token,
+        string memory _l2Token,
         string memory _to,
-        uint256 _amount
+        string memory _amount
     ) external payable override  {
         // @note can possible trigger reentrant call to messenger,
         // but it seems not a big problem.
-        (bool _success, ) = stringToAddress(_to).call{value: _amount}("");
+        (bool _success, ) = stringToAddress(_to).call{value: stringToUint(_amount)}("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(stringToAddress(_l1Token),_l2Token,stringToAddress(_to),_amount,block.number);
+        emit FinalizeWithdrawETH(_l1Token,_l2Token,_to,_amount,block.number);
     }
 
     /// @notice Set the l2TokenAddress
@@ -101,6 +101,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         bytes memory _data
     ) internal virtual {
         require(_amount > 0, "Amount can not be zero");
+        require(_amount+_gasLimit <= msg.value,"Amount and gas limit should not be greater than msg.value");
 
         // 1. Extract real sender if this call is from L1GatewayRouter.
         address _from = _msgSender();
@@ -108,13 +109,10 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             (_from, _data) = abi.decode(_data, (address, bytes));
         }
 
-        // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encode(address(0), l2TokenAddress, _from, _to, _amount);
-
         // 3. Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.deposit;
 
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+        IL1TwineMessenger(messenger).sendMessage{value: _gasLimit}(
             _type,
             addressToString(_to),
             addressToString(address(0)),
@@ -135,9 +133,6 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         require(_amount > 0, "withdrawing zero amount not allowd");
         // 1. Extract real sender if this call is from L1GatewayRouter
         address _from = _msgSender();
-
-        // 2. Generate message passed to L1TwineMessenger.
-        bytes memory _message = abi.encode(address(0), l2TokenAddress, _from, _to, _amount);
 
         // 3. Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase.TransactionType.withdrawal;
@@ -193,6 +188,27 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             }
         }
         return address(result);
+    }
+
+     function stringToUint(
+        string memory s
+    ) internal pure returns (uint256 result) {
+        bytes memory b = bytes(s);
+        uint256 oldResult = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            // c = b[i] was not needed
+            if (uint8(b[i]) >= 48 && uint8(b[i]) <= 57) {
+                // store old value so we can check for overflows
+                oldResult = result;
+                result = result * 10 + (uint8(b[i]) - 48);
+                if (oldResult > result) {
+                    // we can only get here if the result overflowed and is smaller than last stored value
+                    revert("Invalid String");
+                }
+            } else {
+                revert("InvalidStringNumber");
+            }
+        }
     }
 
 }

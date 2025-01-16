@@ -63,11 +63,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(
-            _router,
-            _messenger,
-            _roleManager
-        );
+        TwineL2GatewayBase._initialize(_router, _messenger, _roleManager);
     }
 
     /*************************
@@ -118,14 +114,16 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
     /// @inheritdoc L2ERC20Gateway
     function _withdraw(
-        address _token,
+        address _l2Token,
         string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
         bytes memory _data
     ) internal virtual override {
-        string memory _l1Token = tokenMapping[_chainId][_token];
+        string memory _l1Token = tokenMapping[_chainId][_l2Token];
+
+        require(bytes(_l1Token).length != 0, "l1 token is not mapped");
 
         require(_amount > 0, "Amout must be greater than zero");
 
@@ -136,30 +134,18 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         }
 
         // 2. Burn token.
-        ITwineERC20(_token).burn(_from, _amount);
-        bytes memory _message;
+        ITwineERC20(_l2Token).burn(_from, _amount);
         uint256 value;
 
-        // 3. Generate message passed to L1CustomERC20Gateway.
-        _message = abi.encodeCall(
-            IL1ERC20Gateway.finalizeTokenWithdrawal,
-            (_l1Token, _token, _to, _amount)
-        );
-        if (keccak256(abi.encodePacked(_l1Token)) == keccak256(abi.encodePacked(addressToString(address(0))))) {
-            value = _amount;
-        } else {
-            value = 0;
-        }
-
-        // 4. Send message to L2TwineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
             _from,
+            _l2Token,
             _to,
-            counterpartGateWay[_chainId][_l1Token],
+            _l1Token,
+            _amount,
             value,
             _chainId,
-            _gasLimit,
-            _message
+            _gasLimit
         );
     }
 

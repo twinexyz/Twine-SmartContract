@@ -52,21 +52,23 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @inheritdoc ITwineL2MessengerBase
     function sendMessage(
         address _from,
+        address _l2Token,
         string memory _to,
-        string memory _counterpart,
+        string memory _l1Token,
+        uint256 _amount,
         uint256 _value,
         uint256 _chainId,
-        uint256 _gasLimit,
-        bytes memory _message
+        uint256 _gasLimit
     ) external payable override {
         _sendMessage(
             _from,
+            _l2Token,
             _to,
-            _counterpart,
+            _l1Token,
+            _amount,
             _value,
             _chainId,
-            _gasLimit,
-            _message
+            _gasLimit
         );
     }
 
@@ -106,14 +108,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
         emit ForcedWithdrawal(
             details.from,
-            details.to,
-            tokenCounterpartGateWay[chainId][addressToString(details.l1Token)],
-            counterpartMessenger[chainId],
+            details.l2Token,
+            addressToString(details.to),
+            addressToString(details.l1Token),
+            details.amount,
             details.value,
             chainId,
             block.number,
-            0,
-            _encodeFinalizeTokenWithdrawal(details)
+            0
         );
         emit ParityHash(parityHash, block.number, blockhash(block.number));
     }
@@ -137,28 +139,28 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @dev Internal function to send cross domain message.
     /// @param _to The address of the contract to call.
     /// @param _value The amount of native token
-    /// @param _counterpart The L1 token gateway
-    /// @param _message The content of the message.
     /// @param _gasLimit Optional gas limit to complete the message relay on corresponding chain.
     function _sendMessage(
         address _from,
+        address _l2Token,
         string memory _to,
-        string memory _counterpart,
+        string memory _l1Token,
+        uint256 _amount,
         uint256 _value,
         uint256 _chainId,
-        uint256 _gasLimit,
-        bytes memory _message
+        uint256 _gasLimit
     ) internal {
         emit SentMessage(
             _from,
+            _l2Token,
             _to,
-            _counterpart,
+            _l1Token,
+            _amount,
             _value,
             messageCount++,
             _chainId,
             block.number,
-            _gasLimit,
-            _message
+            _gasLimit
         );
     }
 
@@ -174,21 +176,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory proof
     ) internal pure returns (bytes memory) {
         return abi.encode(withdrawalTransaction, proof);
-    }
-
-    function _encodeFinalizeTokenWithdrawal(
-        WithdrawalDetails memory details
-    ) private pure returns (bytes memory) {
-        return
-            abi.encodeCall(
-                IL1ERC20Gateway.finalizeTokenWithdrawal,
-                (
-                    addressToString(details.l1Token),
-                    details.l2Token,
-                    addressToString(details.to),
-                    details.amount
-                )
-            );
     }
 
     function _decodeWithdrawalDetails(
