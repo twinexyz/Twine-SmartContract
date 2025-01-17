@@ -29,8 +29,10 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     mapping(bytes32 => bool) public isL2MessageExecuted;
 
     //gateway address of eth, can be removed
+    //gateway address of eth, can be removed
     address public ethGateway;
 
+    //gateway address of erc20 gateway,can be removed
     //gateway address of erc20 gateway,can be removed
     address public ERC20Gateway;
 
@@ -79,7 +81,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         rollup = _rollup;
     }
-    
+
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,

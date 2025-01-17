@@ -5,16 +5,19 @@ pragma solidity ^0.8.24;
 import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title L1CustomERC20Gateway
 /// @notice The `L1CustomERC20Gateway` is used to deposit ERC20 compatible tokens on layer 1 and
 /// finalize withdraw the tokens from layer 2
 contract L1CustomERC20Gateway is L1ERC20Gateway {
+    using TypeConversionLib for string;
+    using TypeConversionLib for address;
     /**********
      * Events *
      **********/
@@ -110,24 +113,15 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         require(_l2Token != address(0), "no corresponding l2 token");
 
         // 1. Transfer token into this contract.
-        address _from;
+        address _from = _msgSender();
         (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
-
-        // 2. Generate message passed to L2CustomERC20Gateway.
-        bytes memory _message = abi.encode(
-            _token,
-            _l2Token,
-            _from,
-            _to,
-            _amount
-        );
 
         // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
-            addressToString(_to),
-            addressToString(_token),
-            addressToString(_l2Token),
+            _to.addressToString(),
+            _token.addressToString(),
+            _l2Token.addressToString(),
             Strings.toString(_amount)
         );
     }
@@ -145,26 +139,10 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
-            addressToString(_to),
-            addressToString(_l1Token),
-            addressToString(_l2Token),
+            _to.addressToString(),
+            _l1Token.addressToString(),
+            _l2Token.addressToString(),
             Strings.toString(_amount)
         );
     }
-
-    function addressToString(
-        address _address
-    ) public pure returns (string memory) {
-        bytes32 _bytes = bytes32(uint256(uint160(_address)));
-        bytes memory HEX = "0123456789abcdef";
-        bytes memory _string = new bytes(42);
-        _string[0] = "0";
-        _string[1] = "x";
-        for (uint i = 0; i < 20; i++) {
-            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
-            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
-        }
-        return string(_string);
-    }
-    
 }

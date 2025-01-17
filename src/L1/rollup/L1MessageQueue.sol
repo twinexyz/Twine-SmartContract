@@ -279,20 +279,4 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return executionMessageQueue.length;
     }
 
-    function getExecutionMessage(
-        uint256 index
-    ) external view returns (MessageData memory) {
-        require(index < executionMessageQueue.length, "Invalid index");
-        return executionMessageQueue[index];
-    }
-
-    function removeExecutionMessage(uint256 index) external {
-        require(index < executionMessageQueue.length, "Invalid index");
-
-        // Shift elements to left
-        for(uint256 i = index; i < executionMessageQueue.length - 1; i++) {
-            executionMessageQueue[i] = executionMessageQueue[i + 1];
-        }
-        executionMessageQueue.pop();
-    }
 }
