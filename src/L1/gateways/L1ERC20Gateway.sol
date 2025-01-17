@@ -54,15 +54,15 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     /// @inheritdoc IL1ERC20Gateway
     function finalizeTokenWithdrawal(
         string memory _l1Token,
-        address _l2Token,
+        string memory _l2Token,
         string memory _to,
-        uint256 _amount
+        string memory _amount
     ) external payable virtual override nonReentrant{
-        _beforeFinalizeWithdrawERC20(stringToAddress(_l1Token), _l2Token);
+        _beforeFinalizeWithdrawERC20(stringToAddress(_l1Token), stringToAddress(_l2Token));
         
-        IERC20(stringToAddress(_l1Token)).safeTransfer(stringToAddress(_to), _amount);
+        IERC20(stringToAddress(_l1Token)).safeTransfer(stringToAddress(_to), stringToUint(_amount));
 
-        emit FinalizeWithdrawERC20(stringToAddress(_l1Token), _l2Token, stringToAddress(_to),_amount,block.number);
+        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _to,_amount,block.number);
     }
 
     /**********************
@@ -139,6 +139,27 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             }
         }
         return address(result);
+    }
+
+     function stringToUint(
+        string memory s
+    ) internal pure returns (uint256 result) {
+        bytes memory b = bytes(s);
+        uint256 oldResult = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            // c = b[i] was not needed
+            if (uint8(b[i]) >= 48 && uint8(b[i]) <= 57) {
+                // store old value so we can check for overflows
+                oldResult = result;
+                result = result * 10 + (uint8(b[i]) - 48);
+                if (oldResult > result) {
+                    // we can only get here if the result overflowed and is smaller than last stored value
+                    revert("Invalid String");
+                }
+            } else {
+                revert("InvalidStringNumber");
+            }
+        }
     }
 
     /// @dev Internal function to do all the deposit operations.

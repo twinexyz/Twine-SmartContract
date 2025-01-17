@@ -319,6 +319,4 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         }
         executionMessageQueue.pop();
     }
-
-
 }

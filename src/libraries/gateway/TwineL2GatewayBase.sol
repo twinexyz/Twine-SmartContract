@@ -72,16 +72,6 @@ abstract contract TwineL2GatewayBase is
         messenger = _messenger;
     }
 
-    function setCounterpartGateway(uint256[] memory _chainId,string[]memory _l1TokenAddress,string[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_chainId.length == _counterpartGateWay.length && _chainId.length == _l1TokenAddress.length, "length mismatch");
-        for (uint256 i = 0; i < _chainId.length; i++) {
-            string memory _oldCounterPart = counterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
-            counterpartGateWay[_chainId[i]][_l1TokenAddress[i]] = _counterpartGateWay[i];
-            emit SetCounterpartGateway(_chainId[i], _oldCounterPart, _counterpartGateWay[i]);
-        }
-    }
-
-
     /// @dev The storage slots for future usage.
     uint256[46] private __gap;
 }

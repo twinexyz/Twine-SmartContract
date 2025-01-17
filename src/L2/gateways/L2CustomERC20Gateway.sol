@@ -2,12 +2,14 @@
 
 pragma solidity ^0.8.24;
 
-import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
-import {IL1ERC20Gateway} from "../../L1/gateways/interfaces/IL1ERC20Gateway.sol";
-import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
+import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
+
 import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IL1ERC20Gateway} from "../../L1/gateways/interfaces/IL1ERC20Gateway.sol";
+import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
+
 
 /// @title L2CustomERC20Gateway
 /// @notice The `L2CustomERC20Gateway` is used to withdraw custom ERC20 compatible tokens on layer 2 and
@@ -15,6 +17,7 @@ import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
 /// @dev The withdrawn tokens will be burned directly. On finalizing deposit, the corresponding
 /// tokens will be minted and transferred to the recipient.
 contract L2CustomERC20Gateway is L2ERC20Gateway {
+ 
     /**********
      * Events *
      **********/
@@ -63,11 +66,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(
-            _router,
-            _messenger,
-            _roleManager
-        );
+        TwineL2GatewayBase._initialize(_router, _messenger, _roleManager);
     }
 
     /*************************
@@ -118,14 +117,16 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
 
     /// @inheritdoc L2ERC20Gateway
     function _withdraw(
-        address _token,
+        address _l2Token,
         string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit,
         bytes memory _data
     ) internal virtual override {
-        string memory _l1Token = tokenMapping[_chainId][_token];
+        string memory _l1Token = tokenMapping[_chainId][_l2Token];
+
+        require(bytes(_l1Token).length != 0, "l1 token is not mapped");
 
         require(_amount > 0, "Amout must be greater than zero");
 
@@ -136,73 +137,19 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         }
 
         // 2. Burn token.
-        ITwineERC20(_token).burn(_from, _amount);
-        bytes memory _message;
+        ITwineERC20(_l2Token).burn(_from, _amount);
         uint256 value;
 
-        // 3. Generate message passed to L1CustomERC20Gateway.
-        _message = abi.encodeCall(
-            IL1ERC20Gateway.finalizeTokenWithdrawal,
-            (_l1Token, _token, _to, _amount)
-        );
-        if (keccak256(abi.encodePacked(_l1Token)) == keccak256(abi.encodePacked(addressToString(address(0))))) {
-            value = _amount;
-        } else {
-            value = 0;
-        }
-
-        // 4. Send message to L2TwineMessenger.
         IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
             _from,
+            _l2Token,
             _to,
-            counterpartGateWay[_chainId][_l1Token],
+            _l1Token,
+            _amount,
             value,
             _chainId,
-            _gasLimit,
-            _message
+            _gasLimit
         );
     }
 
-    function stringToAddress(
-        string memory _addressString
-    ) public pure returns (address) {
-        bytes memory stringBytes = bytes(_addressString);
-        require(
-            stringBytes.length == 42 &&
-                stringBytes[0] == "0" &&
-                stringBytes[1] == "x",
-            "Invalid address format"
-        );
-
-        uint160 result = 0;
-        for (uint i = 2; i < 42; i++) {
-            result *= 16;
-            uint8 digit = uint8(stringBytes[i]);
-            if (digit >= 48 && digit <= 57) {
-                result += (digit - 48);
-            } else if (digit >= 65 && digit <= 70) {
-                result += (digit - 55);
-            } else if (digit >= 97 && digit <= 102) {
-                result += (digit - 87);
-            } else {
-                revert("Invalid character in address string");
-            }
-        }
-        return address(result);
-    }
-
-    function addressToString(
-        address _address
-    ) public pure returns (string memory) {
-        bytes32 _bytes = bytes32(uint256(uint160(_address)));
-        bytes memory HEX = "0123456789abcdef";
-        bytes memory _string = new bytes(42);
-        _string[0] = "0";
-        _string[1] = "x";
-        for (uint i = 0; i < 20; i++) {
-            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
-            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
-        }
-        return string(_string);
-    }
 }

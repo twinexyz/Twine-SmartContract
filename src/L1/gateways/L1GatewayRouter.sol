@@ -164,22 +164,31 @@ contract L1GatewayRouter is
 
     function finalizeTokenWithdrawal(
         string memory,
-        address,
         string memory,
-        uint256
+        string memory,
+        string memory
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
         revert("should never be called");
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function forcedWithdrawalERC20(
-        address,
-        address,
-        address,
-        uint256,
-        uint256
+        address _l1Token,
+        address _l2Token,
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
     ) external payable virtual override {
-        revert("should never be called");
+        address _gateway = getERC20Gateway(_l1Token);
+        require(_gateway != address(0), "no gateway available");
+
+        IL1ERC20Gateway(_gateway).forcedWithdrawalERC20(
+            _l1Token,
+            _l2Token,
+            _to,
+            _amount,
+            _gasLimit
+        );
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -214,11 +223,13 @@ contract L1GatewayRouter is
 
     /// @inheritdoc IL1ETHGateway
     function forcedWithdrawalETH(
-        address,
-        uint256,
-        uint256
+        address _to,
+        uint256 _amount,
+        uint256 _gasLimit
     ) external payable virtual override {
-        revert("should never be called");
+        address _gateway = ethGateway;
+        require(_gateway != address(0), "eth gateway available");
+        IL1ETHGateway(_gateway).forcedWithdrawalETH(_to, _amount, _gasLimit);
     }
 
     function setRoleManagerAddress(address _roleManagerAddress) external {

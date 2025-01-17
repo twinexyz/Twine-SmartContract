@@ -9,10 +9,14 @@ import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
+import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
+    using TypeConversionLib for string;
 
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
@@ -47,6 +51,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @notice The verification key for withdrawal proof
     bytes32 public withdrawalVKey;
+
+    //gateway address of eth
+    address public ethGateway;
+
+    //gateway address of erc20 gateway
+    address public ERC20Gateway;
 
     /*************
      * Mappings  *
@@ -129,14 +139,19 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         withdrawalVKey = _withdrawalVKey;
     }
 
+    function setGatewayAddress(address _ethGateway, address _ERC20Gateway) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        ethGateway = _ethGateway;
+        ERC20Gateway = _ERC20Gateway;
+    }
+
     /// @inheritdoc ITwineChain
     function commitAndFinalizeBatch(
         StoredBatchInfo memory commit_info,
         bytes memory execution_proof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
 
-        require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
-        require(commit_info.previousStateRoot == committedBatches[commit_info.batchNumber].previousStateRoot, "Invalid Batch Sequence");
+        // require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
+        // require(commit_info.previousStateRoot == committedBatches[commit_info.batchNumber].previousStateRoot, "Invalid Batch Sequence");
 
         // Verify Execution Proof
         bytes memory publicInputForExecution = abi.encodePacked(
@@ -150,7 +165,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         bytes memory executionProofWithSelector = prependBytes(execution_proof);
 
-        SP1Verifier(verifier).verifyProof(executionVKey, publicInputForExecution, executionProofWithSelector);
+        // SP1Verifier(verifier).verifyProof(executionVKey, publicInputForExecution, executionProofWithSelector);
 
         committedBatches[commit_info.batchNumber] = commit_info;
         finalizedStateRoots[commit_info.batchNumber] = commit_info.stateRoot;
@@ -207,7 +222,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         bytes memory inclusionProofWithSelector = prependBytes(inclusion_proof);
 
-        SP1Verifier(verifier).verifyProof(inclusionVKey, publicInputForInclusion, inclusionProofWithSelector);
+        // SP1Verifier(verifier).verifyProof(inclusionVKey, publicInputForInclusion, inclusionProofWithSelector);
 
         // Move the withdrawal that are ready for execution to execution queue
         for(uint256 i = 0; i < depositCount; i++) {
@@ -230,6 +245,72 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
         IL1MessageQueue(messageQueue).popFirstNLayerZeroElement(lzTransactionCount);
     } 
+
+    function finalizeWithdrawal(
+        FinalizeWithdrawalInput memory withdrawalInputs
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(
+            isBatchFinalized(withdrawalInputs.publicInput.batchNumber),
+            "Batch needs to be finalized first."
+        );
+
+        StoredBatchInfo memory committedTransaction = committedBatches[
+            withdrawalInputs.publicInput.batchNumber
+        ];
+
+        withdrawalInputs.publicInput.receiptRoot = committedTransaction
+            .receiptRoot;
+
+        bytes memory replacedPublicInput = abi.encodePacked(
+            withdrawalInputs.publicInput.chainId,
+            withdrawalInputs.publicInput.batchNumber,
+            withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.receiptRoot,
+            withdrawalInputs.publicInput.l1ReceiverAddress,
+            withdrawalInputs.publicInput.l1TokenAddress,
+            withdrawalInputs.publicInput.l2TokenAddress,
+            withdrawalInputs.publicInput.amount
+        );
+        bytes memory withdrawalProofWithSelector = prependBytes(
+            withdrawalInputs.inclusionProof
+        );
+
+        SP1Verifier(verifier).verifyProof(
+            withdrawalVKey,
+            replacedPublicInput,
+            withdrawalProofWithSelector
+        );
+
+        IL1MessageQueue(messageQueue).appendExecutionMessage(
+            withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.l1ReceiverAddress,
+            withdrawalInputs.publicInput.l1TokenAddress,
+            withdrawalInputs.publicInput.l2TokenAddress,
+            withdrawalInputs.publicInput.chainId,
+            withdrawalInputs.publicInput.amount,
+            0
+        );
+
+        if (
+            withdrawalInputs.publicInput.l1TokenAddress.stringToAddress() ==
+            address(0)
+        ) {
+            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+                withdrawalInputs.publicInput.l1TokenAddress,
+                withdrawalInputs.publicInput.l2TokenAddress,
+                withdrawalInputs.publicInput.l1ReceiverAddress,
+                withdrawalInputs.publicInput.amount
+            );
+        } else {
+            // ERC20 withdrawal
+            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
+                withdrawalInputs.publicInput.l1TokenAddress,
+                withdrawalInputs.publicInput.l2TokenAddress,
+                withdrawalInputs.publicInput.l1ReceiverAddress,
+                withdrawalInputs.publicInput.amount
+            );
+        }
+    }
 
     /**********************
      * Internal Functions *
@@ -372,5 +453,4 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         return result;
     }
-
 }

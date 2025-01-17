@@ -123,20 +123,20 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     
     /// @inheritdoc IL2ETHGateway
     function withdrawETH(
-        address _l1Token,
         address _l2Token,
+        string memory _l1Token,
         string memory _to,
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
     ) external payable override {
-        withdrawETHAndCall(_l1Token,_l2Token,_to, _amount,_chainId, _gasLimit,new bytes(0));
+        withdrawETHAndCall(_l2Token,_l1Token,_to, _amount,_chainId, _gasLimit,new bytes(0));
     }
 
     /// @inheritdoc IL2ETHGateway
     function withdrawETHAndCall(
-        address _l1Token,
         address _l2Token,
+        string memory _l1Token,
         string memory _to,
         uint256 _amount,
         uint256 _chainId,
@@ -149,7 +149,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(_l1Token,_l2Token,_to, _amount,_chainId,_gasLimit, _routerData);
+        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(_l2Token,_l1Token,_to, _amount,_chainId,_gasLimit, _routerData);
     }
 
     /************************
