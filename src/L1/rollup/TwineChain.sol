@@ -11,10 +11,12 @@ import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
+    using TypeConversionLib for string;
 
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
@@ -50,7 +52,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The verification key for withdrawal proof
     bytes32 public withdrawalVKey;
 
-     //gateway address of eth
+    //gateway address of eth
     address public ethGateway;
 
     //gateway address of erc20 gateway
@@ -62,7 +64,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @notice The mapping of batchNumber => CommittedBatches
     mapping(uint256 => StoredBatchInfo) public committedBatches;
-    
+
     /// @notice The mapping of batchNumber => TransactionInfo
     mapping(uint256 => TransactionInfo) public transactionDataStorage;
 
@@ -90,7 +92,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice Initialize the storage of TwineChain.
     /// @param _messageQueue The address of `L1MessageQueue` contract.
     /// @param _verifier The address of zkevm verifier contract.
-    function initialize(address _messageQueue, address _verifier,  address _roleManager) external initializer {
+    function initialize(
+        address _messageQueue,
+        address _verifier,
+        address _roleManager
+    ) external initializer {
         messageQueue = _messageQueue;
         verifier = _verifier;
         roleManager = _roleManager;
@@ -101,7 +107,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      *************************/
 
     /// @inheritdoc ITwineChain
-    function isBatchFinalized( uint256 _batchNumber) public view override returns (bool) {
+    function isBatchFinalized(
+        uint256 _batchNumber
+    ) public view override returns (bool) {
         return _batchNumber <= lastFinalizedBatchNumber;
     }
 
@@ -109,7 +117,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return _batchNumber <= lastCommittedBatchNumber;
     }
 
-    function getReceiptRoot(uint256 _batchNumber) public view returns (bytes32) {
+    function getReceiptRoot(
+        uint256 _batchNumber
+    ) public view returns (bytes32) {
         require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
         return committedBatches[_batchNumber].receiptRoot;
     }
@@ -118,23 +128,35 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      * Public Mutating Functions *
      *****************************/
 
-    function setChainId(uint256 _chainId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setChainId(
+        uint256 _chainId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         chainId = _chainId;
     }
 
-    function setRoleManagerAddress(address _roleManagerAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setRoleManagerAddress(
+        address _roleManagerAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         roleManager = _roleManagerAddress;
     }
 
-    function setMessengerQueueAddress( address _messageQueue) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setMessengerQueueAddress(
+        address _messageQueue
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messageQueue = _messageQueue;
     }
 
-    function setVeriferAddress( address _verifier ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setVeriferAddress(
+        address _verifier
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         verifier = _verifier;
     }
 
-    function setProgramVKey( bytes32 _executionVKey, bytes32 _inclusionVKey, bytes32 _withdrawalVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setProgramVKey(
+        bytes32 _executionVKey,
+        bytes32 _inclusionVKey,
+        bytes32 _withdrawalVKey
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         executionVKey = _executionVKey;
         inclusionVKey = _inclusionVKey;
         withdrawalVKey = _withdrawalVKey;
@@ -146,28 +168,37 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         ethGateway = _ethGateway;
         ERC20Gateway = _ERC20Gateway;
     }
-    
-
 
     /// @inheritdoc ITwineChain
     function commitBatch(
-        StoredBatchInfo memory commit_info, 
+        StoredBatchInfo memory commit_info,
         TransactionInfo memory transaction_info
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-
         //require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
-        require(commit_info.batchNumber == transaction_info.batchNumber, "Same batch data required.");
+        require(
+            commit_info.batchNumber == transaction_info.batchNumber,
+            "Same batch data required."
+        );
 
         // Calculating deposit and withdraw's rolling hash from the queue.
         uint64 depositCount = transaction_info.ethereum.deposit.depositCount;
         bytes32 depositRollingHash = _calculateRollingHash(true, depositCount);
 
         uint64 withdrawCount = transaction_info.ethereum.withdraw.withdrawCount;
-        bytes32 withdrawRollingHash = _calculateRollingHash(false, withdrawCount);
+        bytes32 withdrawRollingHash = _calculateRollingHash(
+            false,
+            withdrawCount
+        );
 
         // Making Transaction info with replaced hashes
-        transaction_info.ethereum.deposit.depositRollingHash = depositRollingHash;
-        transaction_info.ethereum.withdraw.withdrawRollingHash = withdrawRollingHash;
+        transaction_info
+            .ethereum
+            .deposit
+            .depositRollingHash = depositRollingHash;
+        transaction_info
+            .ethereum
+            .withdraw
+            .withdrawRollingHash = withdrawRollingHash;
 
         transactionDataStorage[transaction_info.batchNumber] = transaction_info;
         committedBatches[commit_info.batchNumber] = commit_info;
@@ -175,21 +206,23 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @inheritdoc ITwineChain
-    function finalizeBatch(FinalizeInput calldata finalizeInput) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        
+    function finalizeBatch(
+        FinalizeInput calldata finalizeInput
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(
             isBatchCommitted(finalizeInput.batchNumber),
             "Batch needs to be committed before finalization"
         );
-    
+
         // require(
         //     committedBatches[lastFinalizedBatchNumber].stateRoot == committedBatches[batchNumber].previousStateRoot,
         //     "Only next batch can be finalized."
         // );
- 
 
         // Verify Execution Proof
-        StoredBatchInfo memory committedBatch = committedBatches[finalizeInput.batchNumber];
+        StoredBatchInfo memory committedBatch = committedBatches[
+            finalizeInput.batchNumber
+        ];
         bytes memory executionPublicInput = abi.encodePacked(
             committedBatch.batchNumber,
             committedBatch.batchHash,
@@ -198,32 +231,61 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             committedBatch.transactionRoot,
             committedBatch.receiptRoot
         );
-        bytes memory executionProofWithSelector = prependBytes(finalizeInput.executionProof);
+        bytes memory executionProofWithSelector = prependBytes(
+            finalizeInput.executionProof
+        );
 
-        SP1Verifier(verifier).verifyProof( executionVKey, executionPublicInput, executionProofWithSelector);
+        SP1Verifier(verifier).verifyProof(
+            executionVKey,
+            executionPublicInput,
+            executionProofWithSelector
+        );
 
         // Verify Inclusion Proof
-        TransactionInfo memory committedTransaction = transactionDataStorage[finalizeInput.batchNumber];
-        bytes memory inclusionPublicInput = _calculateInlusionInput(committedTransaction);
-        bytes memory inclusionProofWithSelector = prependBytes(finalizeInput.inclusionProof);
+        TransactionInfo memory committedTransaction = transactionDataStorage[
+            finalizeInput.batchNumber
+        ];
+        bytes memory inclusionPublicInput = _calculateInlusionInput(
+            committedTransaction
+        );
+        bytes memory inclusionProofWithSelector = prependBytes(
+            finalizeInput.inclusionProof
+        );
 
-        SP1Verifier(verifier).verifyProof( inclusionVKey, inclusionPublicInput, inclusionProofWithSelector);
-
+        SP1Verifier(verifier).verifyProof(
+            inclusionVKey,
+            inclusionPublicInput,
+            inclusionProofWithSelector
+        );
 
         // Copy transactions with withdrawal status bit '1' into execution queue
-        uint64 numberOfWithdrawals = committedTransaction.ethereum.withdraw.withdrawCount;
-        string memory statusBit = committedTransaction.ethereum.withdraw.statusBit;
+        uint64 numberOfWithdrawals = committedTransaction
+            .ethereum
+            .withdraw
+            .withdrawCount;
+        string memory statusBit = committedTransaction
+            .ethereum
+            .withdraw
+            .statusBit;
 
-        bytes memory statusBytes = bytes(statusBit);  
+        bytes memory statusBytes = bytes(statusBit);
 
         // Check if the count matches the length of string
-        require(numberOfWithdrawals == statusBytes.length, "Status bit should be provided for individual withdrawals.");
+        require(
+            numberOfWithdrawals == statusBytes.length,
+            "Status bit should be provided for individual withdrawals."
+        );
 
-        for(uint256 i = 0; i < statusBytes.length; i++) {
-            require(statusBytes[i] == "0" || statusBytes[i] == "1", "Invalid status bit");
-            if(statusBytes[i] == "1") {
-                IL1MessageQueue.MessageData memory forced_message = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(i);
-                
+        for (uint256 i = 0; i < statusBytes.length; i++) {
+            require(
+                statusBytes[i] == "0" || statusBytes[i] == "1",
+                "Invalid status bit"
+            );
+            if (statusBytes[i] == "1") {
+                IL1MessageQueue.MessageData
+                    memory forced_message = IL1MessageQueue(messageQueue)
+                        .getCrossDomainWithdrawalMessage(i);
+
                 IL1MessageQueue(messageQueue).appendExecutionMessage(
                     forced_message.nonce,
                     forced_message.toAddress,
@@ -237,24 +299,38 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
 
         // remove deposits and withdrawals from queue
-        uint64 numberOfDeposits = committedTransaction.ethereum.deposit.depositCount;
+        uint64 numberOfDeposits = committedTransaction
+            .ethereum
+            .deposit
+            .depositCount;
 
         IL1MessageQueue(messageQueue).popFirstNDepositElement(numberOfDeposits);
-    
-        IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(numberOfWithdrawals);
 
-        finalizedStateRoots[finalizeInput.batchNumber] = committedBatches[finalizeInput.batchNumber].stateRoot;
+        IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(
+            numberOfWithdrawals
+        );
+
+        finalizedStateRoots[finalizeInput.batchNumber] = committedBatches[
+            finalizeInput.batchNumber
+        ].stateRoot;
 
         lastFinalizedBatchNumber = finalizeInput.batchNumber;
     }
 
-    function finalizeWithdrawal(FinalizeWithdrawalInput memory withdrawalInputs) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    function finalizeWithdrawal(
+        FinalizeWithdrawalInput memory withdrawalInputs
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(
+            isBatchFinalized(withdrawalInputs.publicInput.batchNumber),
+            "Batch needs to be finalized first."
+        );
 
-        require(isBatchFinalized(withdrawalInputs.publicInput.batchNumber), "Batch needs to be finalized first.");
+        TransactionInfo memory committedTransaction = transactionDataStorage[
+            withdrawalInputs.publicInput.batchNumber
+        ];
 
-        TransactionInfo memory committedTransaction = transactionDataStorage[withdrawalInputs.publicInput.batchNumber];
-
-        withdrawalInputs.publicInput.receiptRoot = committedTransaction.receiptRoot;
+        withdrawalInputs.publicInput.receiptRoot = committedTransaction
+            .receiptRoot;
 
         bytes memory replacedPublicInput = abi.encodePacked(
             withdrawalInputs.publicInput.chainId,
@@ -266,22 +342,31 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.l2TokenAddress,
             withdrawalInputs.publicInput.amount
         );
-        bytes memory withdrawalProofWithSelector = prependBytes(withdrawalInputs.inclusionProof);
+        bytes memory withdrawalProofWithSelector = prependBytes(
+            withdrawalInputs.inclusionProof
+        );
 
-        SP1Verifier(verifier).verifyProof( withdrawalVKey, replacedPublicInput, withdrawalProofWithSelector);
+        SP1Verifier(verifier).verifyProof(
+            withdrawalVKey,
+            replacedPublicInput,
+            withdrawalProofWithSelector
+        );
 
         IL1MessageQueue(messageQueue).appendExecutionMessage(
             withdrawalInputs.publicInput.nonce,
-            withdrawalInputs.publicInput.l1ReceiverAddress, 
+            withdrawalInputs.publicInput.l1ReceiverAddress,
             withdrawalInputs.publicInput.l1TokenAddress,
             withdrawalInputs.publicInput.l2TokenAddress,
-            withdrawalInputs.publicInput.chainId, 
+            withdrawalInputs.publicInput.chainId,
             withdrawalInputs.publicInput.amount,
             0
         );
 
-        if (stringToAddress(withdrawalInputs.publicInput.l1TokenAddress) == address(0)) {
-             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+        if (
+            withdrawalInputs.publicInput.l1TokenAddress.stringToAddress() ==
+            address(0)
+        ) {
+            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
                 withdrawalInputs.publicInput.l1TokenAddress,
                 withdrawalInputs.publicInput.l2TokenAddress,
                 withdrawalInputs.publicInput.l1ReceiverAddress,
@@ -296,59 +381,74 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 withdrawalInputs.publicInput.amount
             );
         }
-    } 
+    }
 
     /**********************
      * Internal Functions *
      **********************/
 
-    function _calculateInlusionInput(TransactionInfo memory transaction) internal pure returns (bytes memory) {
-        return abi.encodePacked(
-            transaction.batchNumber,
-            transaction.transactionRoot,
-            transaction.receiptRoot,
-            encodeChainCommitment(transaction.ethereum),
-            encodeChainCommitment(transaction.solana)
-        );
-    }   
-
-      function encodeChainCommitment(ChainCommitment memory chain) internal pure returns (bytes memory) {
-        return abi.encodePacked(
-            encodeDepositReturn(chain.deposit),
-            encodeWithdrawReturn(chain.withdraw)
-        );
+    function _calculateInlusionInput(
+        TransactionInfo memory transaction
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                transaction.batchNumber,
+                transaction.transactionRoot,
+                transaction.receiptRoot,
+                encodeChainCommitment(transaction.ethereum),
+                encodeChainCommitment(transaction.solana)
+            );
     }
 
-    function encodeDepositReturn(DepositReturn memory deposit) internal pure returns (bytes memory) {
-        return abi.encodePacked(
-            deposit.depositCount,
-            deposit.depositRollingHash
-        );
+    function encodeChainCommitment(
+        ChainCommitment memory chain
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                encodeDepositReturn(chain.deposit),
+                encodeWithdrawReturn(chain.withdraw)
+            );
     }
 
-    function encodeWithdrawReturn(WithdrawReturn memory withdraw) internal pure returns (bytes memory) {
-        return abi.encodePacked(
-            withdraw.withdrawCount,
-            withdraw.withdrawRollingHash,
-            withdraw.statusBit
-        );
+    function encodeDepositReturn(
+        DepositReturn memory deposit
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(deposit.depositCount, deposit.depositRollingHash);
     }
 
-    function _calculateRollingHash(bool isDeposit, uint64 count) internal view returns (bytes32) {
+    function encodeWithdrawReturn(
+        WithdrawReturn memory withdraw
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                withdraw.withdrawCount,
+                withdraw.withdrawRollingHash,
+                withdraw.statusBit
+            );
+    }
+
+    function _calculateRollingHash(
+        bool isDeposit,
+        uint64 count
+    ) internal view returns (bytes32) {
         bytes memory calculatedRollingHash;
-        IL1MessageQueue.MessageData[] memory selectedMessages = new IL1MessageQueue.MessageData[](count);
+        IL1MessageQueue.MessageData[]
+            memory selectedMessages = new IL1MessageQueue.MessageData[](count);
 
-        if(isDeposit) {
-            for(uint64 i = 0; i< count; i++) {
-                selectedMessages[i] = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(i);
+        if (isDeposit) {
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainDepositMessage(i);
             }
         } else {
-            for(uint64 i = 0; i < count; i++) {
-                selectedMessages[i] = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(i);
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainWithdrawalMessage(i);
             }
         }
 
-        for(uint64 i = 0; i < selectedMessages.length; i++) {
+        for (uint64 i = 0; i < selectedMessages.length; i++) {
             calculatedRollingHash = abi.encodePacked(
                 calculatedRollingHash,
                 abi.encodePacked(
@@ -366,10 +466,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return hashedRollingHash;
     }
 
-    function prependBytes(bytes memory originalData ) public view returns (bytes memory) {
-        
+    function prependBytes(
+        bytes memory originalData
+    ) public view returns (bytes memory) {
         bytes4 prefix = bytes4(SP1Verifier(verifier).VERIFIER_HASH());
-        
+
         bytes memory result = new bytes(prefix.length + originalData.length);
 
         for (uint256 i = 0; i < prefix.length; i++) {
@@ -379,33 +480,5 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             result[i + prefix.length] = originalData[i];
         }
         return result;
-    } 
-    function stringToAddress(
-        string memory _addressString
-    ) public pure returns (address) {
-        bytes memory stringBytes = bytes(_addressString);
-        require(
-            stringBytes.length == 42 &&
-                stringBytes[0] == "0" &&
-                stringBytes[1] == "x",
-            "Invalid address format"
-        );
-
-        uint160 result = 0;
-        for (uint i = 2; i < 42; i++) {
-            result *= 16;
-            uint8 digit = uint8(stringBytes[i]);
-            if (digit >= 48 && digit <= 57) {
-                result += (digit - 48);
-            } else if (digit >= 65 && digit <= 70) {
-                result += (digit - 55);
-            } else if (digit >= 97 && digit <= 102) {
-                result += (digit - 87);
-            } else {
-                revert("Invalid character in address string");
-            }
-        }
-        return address(result);
     }
-
 }

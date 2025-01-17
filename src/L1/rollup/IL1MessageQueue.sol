@@ -126,9 +126,4 @@ interface IL1MessageQueue {
         string memory _amount,
         uint64 _block_number
     ) external;
-
-    function getExecutionMessage(
-        uint256 index
-    ) external view returns (MessageData memory);
-    function removeExecutionMessage(uint256 index) external;
 }

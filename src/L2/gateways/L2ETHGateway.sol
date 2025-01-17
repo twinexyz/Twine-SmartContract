@@ -108,46 +108,4 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
         );
     }
 
-    function stringToAddress(
-        string memory _addressString
-    ) public pure returns (address) {
-        bytes memory stringBytes = bytes(_addressString);
-        require(
-            stringBytes.length == 42 &&
-                stringBytes[0] == "0" &&
-                stringBytes[1] == "x",
-            "Invalid address format"
-        );
-
-        uint160 result = 0;
-        for (uint i = 2; i < 42; i++) {
-            result *= 16;
-            uint8 digit = uint8(stringBytes[i]);
-            if (digit >= 48 && digit <= 57) {
-                result += (digit - 48);
-            } else if (digit >= 65 && digit <= 70) {
-                result += (digit - 55);
-            } else if (digit >= 97 && digit <= 102) {
-                result += (digit - 87);
-            } else {
-                revert("Invalid character in address string");
-            }
-        }
-        return address(result);
-    }
-
-    function addressToString(
-        address _address
-    ) public pure returns (string memory) {
-        bytes32 _bytes = bytes32(uint256(uint160(_address)));
-        bytes memory HEX = "0123456789abcdef";
-        bytes memory _string = new bytes(42);
-        _string[0] = "0";
-        _string[1] = "x";
-        for (uint i = 0; i < 20; i++) {
-            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
-            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
-        }
-        return string(_string);
-    }
 }
