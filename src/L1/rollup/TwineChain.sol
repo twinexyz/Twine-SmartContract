@@ -176,7 +176,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
         require(commit_info.previousStateRoot == committedBatches[commit_info.batchNumber].previousStateRoot, "Invalid Batch Sequence");
 
-
         // Verify Execution Proof
         bytes memory publicInputForExecution = abi.encodePacked(
             commit_info.batchNumber,
@@ -395,6 +394,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         } else if (transaction_type == TransactionType.withdraw) {
             for(uint64 i = 0; i < count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(i);
+            }
         } else {
             for(uint64 i = 0; i < count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue).getCrossDomainLayerZeroMessage(i);

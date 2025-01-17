@@ -128,7 +128,7 @@ contract L1ETHGatewayTest is Test {
             depositAmount,
             0
         );
-        assertEq(address(l1TwineMessenger).balance,2 ether);
+        assertEq(address(gateway).balance,2 ether);
     }
  
 
