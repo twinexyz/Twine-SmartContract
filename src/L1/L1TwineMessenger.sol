@@ -81,7 +81,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         rollup = _rollup;
     }
-    
+
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,
