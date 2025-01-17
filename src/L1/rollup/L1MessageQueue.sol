@@ -11,15 +11,19 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     uint64 chainId;
     uint64 depositMessageIndex;
     uint64 withdrawalMessageIndex;
+    uint64 layerZeroMessageIndex;
     address public messenger;
     address public messageQueueProxy;
-    address public roleManager;
+    address public roleManager; 
 
     /// @notice The list of queued cross domain messages.
     MessageData[] public depositMessageQueue;
 
     /// @notice The list of queued cross domain Withdrawal messages.
     MessageData[] public withdrawalMessageQueue;
+
+    /// @notice The list of queued layer zero messages.
+    MessageData[] public layerZeroMessageQueue; 
 
     /// @notice The list of queued transactions that are ready for execution.
     MessageData[] public executionMessageQueue;
@@ -86,6 +90,18 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         }
     }
 
+    function popFirstNLayerZeroElement(uint n) external {
+
+        for (uint i = 0; i < layerZeroMessageQueue.length - n; i++) {
+            layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
+        }
+
+        // Remove the last n elements by reducing the array length
+        for (uint i = 0; i < n; i++) {
+            layerZeroMessageQueue.pop();
+        }
+    }
+
     function getCrossDomainDepositMessage(
         uint256 _queueIndex
     ) external view returns (MessageData memory) {
@@ -98,6 +114,12 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return withdrawalMessageQueue[_queueIndex];
     }
 
+    function getCrossDomainLayerZeroMessage(
+        uint256 _queueIndex
+    ) external view returns (MessageData memory) {
+        return layerZeroMessageQueue[_queueIndex];
+    }
+
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
         string memory to,
@@ -106,6 +128,17 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         string memory amount
     ) external override onlyMessenger {
         _queueDepositTransaction(to, l1Token, l2Token, amount);
+    }
+
+
+    /// @inheritdoc IL1MessageQueue
+    function appendCrossDomainWithdrawalMessage(
+        string memory to,
+        string memory l1Token,
+        string memory l2Token,
+        string memory amount
+    ) external override onlyMessenger {
+        _queueWithdrawalTransaction(to, l1Token, l2Token, amount);
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -129,15 +162,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         );
     }
 
-    /// @inheritdoc IL1MessageQueue
-    function appendCrossDomainWithdrawalMessage(
-        string memory to,
-        string memory l1Token,
-        string memory l2Token,
-        string memory amount
-    ) external override onlyMessenger {
-        _queueWithdrawalTransaction(to, l1Token, l2Token, amount);
-    }
 
     function _queueDepositTransaction(
         string memory to,

@@ -53,6 +53,14 @@ interface IL1MessageQueue {
      * Struct *
      **********/
 
+    /// @notice Deposit message stored data 
+    /// @param nonce the nonce of the message
+    /// @param toAddress the Twine address to deposit into 
+    /// @param l1Token the address of token to deposit on l1
+    /// @param l2Token the address of token to receive on l2
+    /// @param chainId chain id of the l1 where deposit is initiated
+    /// @param amount amount of token to deposit
+    /// @param blockNumber block number on which deposit occured
     struct MessageData {
         uint64 nonce;
         string toAddress;
@@ -62,6 +70,10 @@ interface IL1MessageQueue {
         string amount;
         uint64 blockNumber;
     }
+
+    /*************************
+     * Public View Functions *
+     *************************/
 
     /// @notice Return the index of next appended message.
     /// @dev Also the total number of appended messages.
@@ -77,22 +89,40 @@ interface IL1MessageQueue {
         view
         returns (uint256);
 
+    /// @notice Return the index of next appended message.
+    /// @dev Also the total number of appended messages. 
     function nextCrossDomainExecutionMessageIndex()
         external
         view
         returns (uint256);
 
-    /// @notice Return the message of in `queueIndex`.
+    /// @notice Return the deposit message of in `queueIndex`.
     /// @param queueIndex The index to query.
     function getCrossDomainDepositMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory);
 
-    /// @notice Return the message of in `queueIndex`.
+    /// @notice Return the withdraw message of in `queueIndex`.
     /// @param queueIndex The index to query.
     function getCrossDomainWithdrawalMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory);
+
+    /// @notice Return the layer zero message in `queueIndex`.
+    /// @param queueIndex The index to query.
+    function getCrossDomainLayerZeroMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory);
+
+    /// @notice Return the execution message in `queueIndex`.
+    /// @param queueIndex The index to query.
+    function getExecutionMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory);
+
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
 
     /// @notice Removes the first N message from the Deposit Queue
     function popFirstNDepositElement(uint n) external;
@@ -100,9 +130,13 @@ interface IL1MessageQueue {
     /// @notice Removes the first N message from the Withdrawal Queue
     function popFirstNWithdrawalElement(uint n) external;
 
-    ///@notice set the proxy Address of MessageQueue
+    /// @notice Removes the first N message from the Layer Zero Queue
+    function popFirstNLayerZeroElement(uint n) external;
+
+    /// @notice set the proxy Address of MessageQueue
     function setMessageQueueProxy(address proxyAddress) external;
 
+    /// @notice Append new message to the deposit queue
     function appendCrossDomainDepositMessage(
         string memory to,
         string memory l1_token,
@@ -110,6 +144,7 @@ interface IL1MessageQueue {
         string memory amount
     ) external;
 
+    /// @notice Append new message to the deposit queue
     function appendCrossDomainWithdrawalMessage(
         string memory to,
         string memory l1_token,
@@ -117,6 +152,7 @@ interface IL1MessageQueue {
         string memory amount
     ) external;
 
+    /// @notice Append new message to the deposit queue
     function appendExecutionMessage(
         uint64 _nonce,
         string memory _to,
@@ -126,4 +162,9 @@ interface IL1MessageQueue {
         string memory _amount,
         uint64 _block_number
     ) external;
+
+    /// @notice Remove message on index form execution message queue 
+    function removeExecutionMessage(uint256 index) external;
+
+
 }
