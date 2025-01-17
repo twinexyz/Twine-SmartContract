@@ -10,32 +10,13 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL1ERC20Gateway} from "../../L1/gateways/interfaces/IL1ERC20Gateway.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
-
 /// @title L2CustomERC20Gateway
 /// @notice The `L2CustomERC20Gateway` is used to withdraw custom ERC20 compatible tokens on layer 2 and
 /// finalize deposit the tokens from layer 1.
 /// @dev The withdrawn tokens will be burned directly. On finalizing deposit, the corresponding
 /// tokens will be minted and transferred to the recipient.
 contract L2CustomERC20Gateway is L2ERC20Gateway {
- 
-    /**********
-     * Events *
-     **********/
-
-    /// @notice Emitted when token mapping for ERC20 token is updated.
-    /// @param l2Token The address of corresponding ERC20 token in layer 2.
-    /// @param oldL1Token The address of the old corresponding ERC20 token in layer 1.
-    /// @param newL1Token The address of the new corresponding ERC20 token in layer 1.
-    event UpdateTokenMapping(
-        uint256 indexed chainId,
-        address indexed l2Token,
-        string indexed oldL1Token,
-        string newL1Token
-    );
-
-    /// @notice Evm Chain
-    event UpdateEvmChains(uint256 chainId, bool status);
-
+    
     /*************
      * Variables *
      *************/
@@ -43,8 +24,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
     /// chainId=>l2Token=>l1Token
     mapping(uint256 => mapping(address => string)) public tokenMapping;
-    /// @notice Mapping the evm chains
-    mapping(uint256 => bool) evmChains;
 
     /***************
      * Constructor *
@@ -103,14 +82,6 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         emit UpdateTokenMapping(_chainId, _l2Token, _oldL1Token, _l1Token);
     }
 
-    function updateEvmChains(
-        uint256 _chainId,
-        bool status
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        evmChains[_chainId] = status;
-
-        emit UpdateEvmChains(_chainId, status);
-    }
     /**********************
      * Internal Functions *
      **********************/
@@ -151,5 +122,4 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             _gasLimit
         );
     }
-
 }

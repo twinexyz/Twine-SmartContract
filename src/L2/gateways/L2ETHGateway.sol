@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IL1ETHGateway} from "../../L1/gateways/interfaces/IL1ETHGateway.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
+import {IL1ETHGateway} from "../../L1/gateways/interfaces/IL1ETHGateway.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
 /// @title L2ETHGateway
@@ -107,5 +107,4 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
             _gasLimit
         );
     }
-
 }

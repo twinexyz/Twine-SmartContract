@@ -72,6 +72,7 @@ interface IL1ETHGateway {
     function forcedWithdrawalETH(
         address to,
         uint256 amount,
-        uint256 gasLimit
+        uint256 gasLimit,
+        bytes memory data
     ) external payable;
 }

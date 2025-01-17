@@ -166,7 +166,8 @@ contract TwineChainTest is Test {
         gateway.forcedWithdrawalETH(
             initialOwner, 
             withdrawAmount, 
-            0
+            0,
+            new bytes(0)
         );
         
         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);

@@ -22,7 +22,6 @@ contract L2CustomERC20GatewayTest is Test {
     L2TwineMessenger internal l2Messenger;
     L1CustomERC20Gateway private counterpartGateway;
 
-    
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
     address L2CustomERC20GatewayAddress;
@@ -33,7 +32,7 @@ contract L2CustomERC20GatewayTest is Test {
         l1Token = new MockERC20("Mock L2", "ML2");
         l2Token = new MockERC20("Mock L2", "ML2");
 
-          address roleManagerAddress = Upgrades.deployTransparentProxy(
+        address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
             msg.sender,
             abi.encodeCall(RoleManager.initialize, (initialOwner))
@@ -43,10 +42,13 @@ contract L2CustomERC20GatewayTest is Test {
         roleManager.grantRole(CHAIN_ADMIN, initialOwner);
         roleManager.checkRole(CHAIN_ADMIN, initialOwner);
 
-         address L2GatewayRouterAddress = Upgrades.deployTransparentProxy(
+        address L2GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L2GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L2GatewayRouter.initialize, (address(0), address(0),address(roleManager)))
+            abi.encodeCall(
+                L2GatewayRouter.initialize,
+                (address(0), address(0), address(roleManager))
+            )
         );
         router = L2GatewayRouter(L2GatewayRouterAddress);
 
@@ -56,7 +58,7 @@ contract L2CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0,address(0), address(0))
+                (0, address(0), address(0))
             )
         );
 
@@ -71,7 +73,7 @@ contract L2CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2CustomERC20Gateway.initialize,
-                (address(router), address(l2Messenger),address(roleManager))
+                (address(router), address(l2Messenger), address(roleManager))
             )
         );
         gateway = L2CustomERC20Gateway(L2CustomERC20GatewayAddress);
@@ -91,31 +93,35 @@ contract L2CustomERC20GatewayTest is Test {
         gateway.setRoleManagerAddress(address(roleManager));
         vm.stopPrank();
     }
-        function testwithdrawERC20() public {
-            vm.startPrank(initialOwner);
-            gateway.updateTokenMapping(1,address(l2Token), addressToString(address(l1Token)));
-            assertEq(l2Token.balanceOf(initialOwner),100000);
-            l2Token.approve(address(gateway), 100000);
-            l2Token.approve(address(router), 100000);
-            assertEq(l1Token.balanceOf(initialOwner),0);
-            router.withdrawERC20(
-                address(l2Token),
-                addressToString(initialOwner),
-                10,
-                1,
-                0
-            );
-            gateway.withdrawERC20(
-                address(l2Token),
-                addressToString(initialOwner),
-                10,
-                1,
-                0
-            );
-            assertEq(l2Token.balanceOf(initialOwner),99980);
-        }
+    function testwithdrawERC20() public {
+        vm.startPrank(initialOwner);
+        gateway.updateTokenMapping(
+            1,
+            address(l2Token),
+            addressToString(address(l1Token))
+        );
+        assertEq(l2Token.balanceOf(initialOwner), 100000);
+        l2Token.approve(address(gateway), 100000);
+        l2Token.approve(address(router), 100000);
+        assertEq(l1Token.balanceOf(initialOwner), 0);
+        router.withdrawERC20(
+            address(l2Token),
+            addressToString(initialOwner),
+            10,
+            1,
+            0
+        );
+        gateway.withdrawERC20(
+            address(l2Token),
+            addressToString(initialOwner),
+            10,
+            1,
+            0
+        );
+        assertEq(l2Token.balanceOf(initialOwner), 99980);
+    }
 
-         function addressToString(
+    function addressToString(
         address _address
     ) public pure returns (string memory) {
         bytes32 _bytes = bytes32(uint256(uint160(_address)));
