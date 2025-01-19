@@ -7,7 +7,6 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 
 import {ITwineL1Gateway} from "./ITwineL1Gateway.sol";
 import {IRoleManager} from "../access/IRoleManager.sol";
-import {ITwineGatewayCallback} from "../callbacks/ITwineGatewayCallback.sol";
 
 /// @title TwineGatewayBase
 /// @notice The `TwineGatewayBase` is a base contract for gateway contracts used in both in L1 and L2.
@@ -51,23 +50,24 @@ abstract contract TwineL1GatewayBase is
         roleManager = _roleManager;
     }
 
-    function setRoleManagerAddress(address _roleManagerAddress)
-        external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    /// @notice sets the rolemanager contract address
+    function setRoleManagerAddress(
+        address _roleManagerAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         roleManager = _roleManagerAddress;
     }
 
-    function setGatewayRouter(address _gatewayRouter)
-        external
-        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    /// @notice sets the gateway router address
+    function setGatewayRouter(
+        address _gatewayRouter
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         gatewayRouter = _gatewayRouter;
     }
 
-    function setTwineMessenger(address _messenger)
-        external
-        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    /// @notice sets the twine messenger contract address
+    function setTwineMessenger(
+        address _messenger
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messenger = _messenger;
     }
 }

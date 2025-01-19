@@ -7,6 +7,48 @@ interface IL1ERC20Gateway {
      * Events *
      **********/
 
+    /// @notice Emitted when someone deposit ERC20 token from L1 to L2.
+    /// @param l1Token The address of the token in L1.
+    /// @param l2Token The address of the token in L2.
+    /// @param from The address of sender in L1.
+    /// @param to The address of recipient in L2.
+    /// @param amount The amount of token that will be deposited from L1 to L2.
+    /// @param data The optional calldata passed to recipient in L2.
+    event DepositERC20(
+        address indexed l1Token,
+        address indexed l2Token,
+        address indexed from,
+        address to,
+        uint256 amount,
+        uint256 blockNumber,
+        bytes data
+    );
+
+    /// @notice Emitted when token mapping for ERC20 token is updated.
+    /// @param l1Token The address of ERC20 token in L1.
+    /// @param oldL2Token The address of the old corresponding ERC20 token in L2.
+    /// @param newL2Token The address of the new corresponding ERC20 token in L2.
+    event UpdateTokenMapping(
+        address indexed l1Token,
+        address indexed oldL2Token,
+        address indexed newL2Token
+    );
+
+    /// @notice Emitted when someone initates forced withdrawal of Erc20
+    /// @param l1Token The address of the token in L1.
+    /// @param l2Token The address of the token in L2.
+    /// @param from The address of sender in L1.
+    /// @param to The address of recipient in L2.
+    /// @param amount The amount of token that will be deposited from L1 to L2.
+    event forcedWithdrawalERC20Initated(
+        address indexed from,
+        address to,
+        address indexed l1Token,
+        address indexed l2Token,
+        uint256 amount,
+        uint256 blockNumber
+    );
+
     /// @notice Emitted when ERC20 token withdrawal is finalized
     /// @param l1Token The address of the token in L1.
     /// @param l2Token The address of the token in L2.
@@ -20,53 +62,6 @@ interface IL1ERC20Gateway {
         uint256 blockNumber
     );
 
-    /// @notice Emitted when someone deposit ERC20 token from L1 to L2.
-    /// @param l1Token The address of the token in L1.
-    /// @param l2Token The address of the token in L2.
-    /// @param from The address of sender in L1.
-    /// @param to The address of recipient in L2.
-    /// @param amount The amount of token will be deposited from L1 to L2.
-    /// @param data The optional calldata passed to recipient in L2.
-    event DepositERC20(
-        address indexed l1Token,
-        address indexed l2Token,
-        address indexed from,
-        address to,
-        uint256 amount,
-        uint256 blockNumber,
-        bytes data
-    );
-
-    /// @notice Emitted when token mapping for ERC20 token is updated.
-    /// @param l1Token The address of ERC20 token in layer 1.
-    /// @param oldL2Token The address of the old corresponding ERC20 token in layer 2.
-    /// @param newL2Token The address of the new corresponding ERC20 token in layer 2.
-    event UpdateTokenMapping(
-        address indexed l1Token,
-        address indexed oldL2Token,
-        address indexed newL2Token
-    );
-
-    /// @notice Emitted when someone initates forced withdrawal fo erc20
-    /// @param l1Token The address of the token in L1.
-    /// @param l2Token The address of the token in L2.
-    /// @param from The address of sender in L1.
-    /// @param to The address of recipient in L2.
-    /// @param amount The amount of token will be deposited from L1 to L2.
-    event forcedWithdrawalERC20Initated(
-        address indexed from,
-        address to,
-        address indexed l1Token,
-        address indexed l2Token,
-        uint256 amount,
-        uint256 blockNumber
-    );
-
-    /// @notice get 
-     function getL2ERC20Address(
-        address _l1Token
-    ) external view returns (address);
-
     /// @notice Emitted when some ERC20 token is refunded.
     /// @param token The address of the token in L1.
     /// @param recipient The address of receiver in L1.
@@ -76,6 +71,12 @@ interface IL1ERC20Gateway {
         address indexed recipient,
         uint256 amount
     );
+
+    /// @notice get address of corressponding L2 Token
+    /// @param _l1Token The address of the token in L1.
+    function getL2ERC20Address(
+        address _l1Token
+    ) external view returns (address);
 
     /// @notice Deposit some token to a recipient's account on L2.
     /// @dev Make this function payable to send relayer fee in Ether.
@@ -121,9 +122,6 @@ interface IL1ERC20Gateway {
     ) external payable;
 
     /// @notice Complete ERC20 withdraw from L2 to L1 and send fund to recipient's account in L1.
-    /// @dev Make this function payable to handle WETH deposit/withdraw.
-    ///      The function should only be called by L1TwineMessenger.
-    ///      The function should also only be called by L2ERC20Gateway in L2.
     /// @param _l1Token The address of corresponding L1 token.
     /// @param _l2Token The address of corresponding L2 token.
     /// @param _to The address of recipient in L1 to receive the token.

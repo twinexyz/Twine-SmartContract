@@ -52,7 +52,14 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 _gasLimit,
         bytes memory data
     ) external payable override {
-        _forcedWithdrawalERC20(_l1Token, _l2Token, _to, _amount, _gasLimit,data);
+        _forcedWithdrawalERC20(
+            _l1Token,
+            _l2Token,
+            _to,
+            _amount,
+            _gasLimit,
+            data
+        );
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -61,17 +68,16 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         string memory _l2Token,
         string memory _to,
         string memory _amount
-    ) external payable virtual override nonReentrant {
+    ) external payable virtual override nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        require(_amount.stringToUint() > 0, "Amout must be greater than zero");
         _beforeFinalizeWithdrawERC20(
             _l1Token.stringToAddress(),
             _l2Token.stringToAddress()
         );
-
         IERC20(_l1Token.stringToAddress()).safeTransfer(
             _to.stringToAddress(),
             _amount.stringToUint()
         );
-
         emit FinalizeWithdrawERC20(
             _l1Token,
             _l2Token,
@@ -121,8 +127,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             _amount = _after - _before;
         }
         // ignore weird fee on transfer token
-        require(_amount > 0, "deposit zero amount");
-
+        require(_amount > 0, "deposit amount is zero");
         return (_from, _amount, _data);
     }
 

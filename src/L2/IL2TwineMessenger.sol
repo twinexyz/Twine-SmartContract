@@ -67,4 +67,45 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 amount;
         uint256 value;
     }
+
+    /// @notice set the precompile address.
+    /// @param _consensusPrecompileAddress The address of the consensus precompile.
+    /// @param _bridgingPrecompileAddress The address of the bridging Precompile.
+    function setPrecompileAddress(
+        address _consensusPrecompileAddress,
+        address _bridgingPrecompileAddress
+    ) external;
+
+    /// @notice verify the consensus proof and execute deposits
+    /// @param chainId The id of the chain
+    /// @param slotNumber slot number of solana
+    /// @param consensusProof consesus proof of the batch
+    /// @param depositTransactions deposit transactions of the batch
+    /// @param parityHash parity hash
+    function verifyConsensusProofAndExecuteDeposit(
+        uint256 chainId,
+        uint256 slotNumber,
+        bytes32 bankHash,
+        bytes memory consensusProof,
+        bytes memory depositTransactions,
+        bytes32 parityHash
+    ) external;
+
+    /// @notice Execute forced withdrawal
+    /// @param chainId The id of the chain
+    /// @param withdrawalTransaction Transaction to execute the withdrawal
+    function executeForcedWithdrawal(
+        uint256 chainId,
+        bytes memory withdrawalTransaction,
+        bytes32 parityHash
+    ) external;
+
+    /// @notice verify the layerzero payload
+    /// @param lzPayload layerzero payload
+    /// @param payloadProof  proof of payload
+    function verifyLayerZeroPayload(
+        uint256 chainId,
+        bytes memory lzPayload,
+        bytes memory payloadProof
+    ) external;
 }

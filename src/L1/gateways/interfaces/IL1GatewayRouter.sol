@@ -50,17 +50,22 @@ interface IL1GatewayRouter {
      ************************/
 
     /// @notice Update the address of ETH gateway contract.
-    /// @dev This function should only be called by contract owner.
+    /// @dev This function should only be called by chain admin.
     /// @param _ethGateway The address to update.
     function setETHGateway(address _ethGateway) external;
 
+    /// @notice Update the address of Role manager contract.
+    /// @dev This function should only be called by chain admin.
+    /// @param _roleManagerAddress The address to update.
+    function setRoleManagerAddress(address _roleManagerAddress) external;
+
     /// @notice Update the address of default ERC20 gateway contract.
-    /// @dev This function should only be called by contract owner.
+    /// @dev This function should only be called by chain admin.
     /// @param _defaultERC20Gateway The address to update.
     function setDefaultERC20Gateway(address _defaultERC20Gateway) external;
 
     /// @notice Update the mapping from token address to gateway address.
-    /// @dev This function should only be called by contract owner.
+    /// @dev This function should only be called by chain admin.
     /// @param _tokens The list of addresses of tokens to update.
     /// @param _gateways The list of addresses of gateways to update.
     function setERC20Gateway(address[] calldata _tokens, address[] calldata _gateways) external;

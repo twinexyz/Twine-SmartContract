@@ -83,6 +83,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address _l2Token
     ) internal virtual override {
         require(msg.value == 0, "nonzero msg.value");
+        require(_l1Token != address(0), "token address cannot be 0");
         require(_l2Token != address(0), "token address cannot be 0");
         require(_l2Token == tokenMapping[_l1Token], "l2 token mismatch");
     }
@@ -122,7 +123,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         bytes memory _data
     ) internal virtual override nonReentrant {
         require(_amount > 0, "withdrawing zero amount not allowd");
-        // 1. Extract real sender if this call is from L1GatewayRouter
+        // Extract real sender if this call is from L1GatewayRouter
         address _from;
         (_from, _data) = _getRealSender(_data);
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(

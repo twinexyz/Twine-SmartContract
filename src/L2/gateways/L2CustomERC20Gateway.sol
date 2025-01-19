@@ -63,23 +63,16 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /************************
      * Restricted Functions *
      ************************/
-
-    /// @notice Update layer 2 to layer 1 token mapping.
-    ///
-    /// @dev To make the token mapping consistent with L1, this should be called from L1.
-    ///
-    /// @param _l2Token The address of corresponding ERC20 token on layer 2.
-    /// @param _l1Token The address of ERC20 token on layer 1.
-    ///@param _chainId The chain Id of l1 Token.
+     
     function updateTokenMapping(
         uint256 _chainId,
         address _l2Token,
         string memory _l1Token
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(bytes(_l1Token).length > 0, "L1 token address cannot be empty");
         string memory _oldL1Token = tokenMapping[_chainId][_l2Token];
         tokenMapping[_chainId][_l2Token] = _l1Token;
-
-        emit UpdateTokenMapping(_chainId, _l2Token, _oldL1Token, _l1Token);
+        emit TokenMappingUpdated(_chainId, _l2Token, _oldL1Token, _l1Token);
     }
 
     /**********************

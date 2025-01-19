@@ -236,7 +236,17 @@ contract L2GatewayRouter is
         }
     }
 
-    function setRoleManagerAddress(address _roleManagerAddress) external {
+    function setRoleManagerAddress(
+        address _roleManagerAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         roleManager = _roleManagerAddress;
+    }
+
+    function updateTokenMapping(
+        uint256,
+        address,
+        string memory
+    ) external virtual {
+        revert("Not accessible from router contract");
     }
 }

@@ -168,7 +168,7 @@ contract L1GatewayRouter is
         string memory,
         string memory
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
-        revert("should never be called");
+        revert("Not accessible from router contract");
     }
 
     /// @inheritdoc IL1ERC20Gateway

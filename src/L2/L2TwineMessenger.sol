@@ -11,6 +11,7 @@ import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBas
 
 contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     using TypeConversionLib for address;
+
     /// @notice The address of Consensus Proving Precompile
     address public consensusPrecompileAddress;
 
@@ -62,7 +63,12 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 _value,
         uint256 _chainId,
         uint256 _gasLimit
-    ) external payable override {
+    )
+        external
+        payable
+        override
+        onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
+    {
         _sendMessage(
             _from,
             _l2Token,
@@ -83,7 +89,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory depositTransactions,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        // _verifyConsensusProof(consensusProof);
+        _verifyConsensusProof(consensusProof);
         blockReceiptRoots[chainId][slotNumber] = bankHash;
         if (depositTransactions.length > 0) {
             bytes memory data = abi.encode(chainId, depositTransactions);
@@ -119,6 +125,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         );
         emit ParityHash(parityHash, block.number, blockhash(block.number));
     }
+
     function verifyLayerZeroPayload(
         uint256 chainId,
         bytes memory lzPayload,
@@ -164,6 +171,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         );
     }
 
+    /// @notice function to verify the consensus proof
     function _verifyConsensusProof(bytes memory consensusProof) internal {
         (bool success, bytes memory output) = consensusPrecompileAddress.call(
             consensusProof
@@ -172,13 +180,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         emit consensusVerified(consensusProof);
     }
 
-    function _packWithdrawalData(
-        bytes memory withdrawalTransaction,
-        bytes memory proof
-    ) internal pure returns (bytes memory) {
-        return abi.encode(withdrawalTransaction, proof);
-    }
-
+    /// @notice decode the withdraw details
     function _decodeWithdrawalDetails(
         bytes memory output
     ) internal pure returns (WithdrawalDetails memory) {

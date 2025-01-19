@@ -45,4 +45,10 @@ interface IL2GatewayRouter is IL2ETHGateway, IL2ERC20Gateway {
     /// @param _tokens The list of addresses of tokens to update.
     /// @param _gateways The list of addresses of gateways to update.
     function setERC20Gateway(address[] calldata _tokens, address[] calldata _gateways) external;
+
+     function updateTokenMapping(
+        uint256 _chainId,
+        address _l2Token,
+        string memory _l1Token
+    ) external override(IL2ETHGateway, IL2ERC20Gateway);
 }

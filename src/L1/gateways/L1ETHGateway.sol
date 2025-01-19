@@ -76,7 +76,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         string memory _l2Token,
         string memory _to,
         string memory _amount
-    ) external payable override {
+    ) external payable override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         // @note can possible trigger reentrant call to messenger,
         // but it seems not a big problem.
         (bool _success, ) = _to.stringToAddress().call{
