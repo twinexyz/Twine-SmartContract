@@ -11,37 +11,61 @@ updateDefaultValues:
 # *						L1 Scripts					*
 # ***************************************************
 
-# DEPLOYMENTS:
+
+# *************** 
+# *	DEPLOYMENTS	*
+# ***************
 
 # deploy every L1 contract
 deployEveryL1Contracts:
 	bash script/shell/deployments/L1deployments/deployEveryL1Contracts.sh
 
-# SETUPS:
+# ***********
+# *	SETUPS	*
+# ***********
 
 #setup every L1 contract
 setupEveryL1Contracts:
 	bash script/shell/setups/L1setups/setupEveryL1Contracts.sh
 
-# ACTIONS:
+# ***********
+# *	ACTIONS	*
+# ***********
 
 # initiate eth deposit
 depositETH:
-	bash script/shell/actions/L1Actions/ethdeposit.sh
+	bash script/shell/actions/L1actions/ethdeposit.sh
 
+# initiate forced withdraw of eth
+forcedWithdrawETH:
+	bash script/shell/actions/L1actions/ethforcedWithdraw.sh
+
+# initiate erc20 deposit
+depositERC20:
+	bash script/shell/actions/L1actions/erc20deposit.sh
+
+# initiate forced withdraw of erc20
+forcedWithdrawERC20:
+	bash script/shell/actions/L1actions/erc20forcedWithdraw.sh
+
+commitAndFinalizeBatch:
+	bash script/shell/actions/L1actions/commitAndFinalize.sh
 
 # *************************************************** 
 # *						L2 Scripts					*
 # ***************************************************
 
-# DEPLOYMENTS:
+# *************** 
+# *	DEPLOYMENTS	*
+# ***************
 
 # deploy every L2 contract
 deployEveryL2Contracts:
 	bash script/shell/deployments/L2deployments/deployEveryL2Contracts.sh
 
-
-# SETUPS:
+# ***********
+# *	SETUPS	*
+# ***********
 
 #setup every L2 contract
 setupEveryL2Contracts:

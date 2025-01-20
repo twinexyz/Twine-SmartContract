@@ -10,16 +10,16 @@ DEFAULT_FORK_URL="http://127.0.0.1:8545"
 read -p "Enter receiver address (default: $DEFAULT_RECEIVER): " RECEIVER
 RECEIVER=${RECEIVER:-$DEFAULT_RECEIVER}
 
-read -p "Enter deposit amount in wei (default: $DEFAULT_AMOUNT): " DEPOSIT_AMOUNT
-DEPOSIT_AMOUNT=${DEPOSIT_AMOUNT:-$DEFAULT_AMOUNT}
+read -p "Enter withdraw amount in wei (default: $DEFAULT_AMOUNT): " DEPOSIT_AMOUNT
+WITHDRAW_AMOUNT=${DEPOSIT_AMOUNT:-$DEFAULT_AMOUNT}
 
 # export env variables:
 export RECEIVER
-export DEPOSIT_AMOUNT
+export WITHDRAW_AMOUNT
 export PRIVATE_KEY
  
 #Run the forge script with the provided default values
-forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:DepositETH \
+forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:ForcedWithdrawETH \
     --fork-url $DEFAULT_FORK_URL  \
     --broadcast \
-    -- --env "RECEIVER=$RECEIVER" --env "DEPOSIT_AMOUNT=$DEPOSIT_AMOUNT" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    -- --env "RECEIVER=$RECEIVER" --env "DEPOSIT_AMOUNT=$WITHDRAW_AMOUNT" --env "PRIVATE_KEY=$PRIVATE_KEY"
