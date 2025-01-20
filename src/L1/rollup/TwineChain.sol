@@ -123,13 +123,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      *****************************/
 
     /// @inheritdoc ITwineChain
-    function setChainId(
-        uint256 _chainId
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        chainId = _chainId;
-    }
-
-    /// @inheritdoc ITwineChain
     function setRoleManagerAddress(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -137,6 +130,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             revert ErrorZeroAddress();
         }
         roleManager = _roleManagerAddress;
+    }
+
+    /// @inheritdoc ITwineChain
+    function setChainId(
+        uint256 _chainId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        chainId = _chainId;
     }
 
     /// @inheritdoc ITwineChain

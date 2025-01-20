@@ -3,14 +3,14 @@ pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import {MockERC20} from "../../src/test/mocks/MockERC20.sol";
-import {TwineChain} from "../../src/L1/rollup/TwineChain.sol";
-import {L1TwineMessenger} from "../../src/L1/L1TwineMessenger.sol";
-import {L1ETHGateway} from "../../src/L1/gateways/L1ETHGateway.sol";
-import {L1MessageQueue} from "../../src/L1/rollup/L1MessageQueue.sol";
-import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
-import {L1GatewayRouter} from "../../src/L1/gateways/L1GatewayRouter.sol";
-import {L1CustomERC20Gateway} from "../../src/L1/gateways/L1CustomERC20Gateway.sol";
+import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
+import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
+import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
+import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
+import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
+import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
+import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract L1SetupScript is Script {
     MockERC20 token;
@@ -42,6 +42,7 @@ contract L1SetupScript is Script {
     address l2TwineMessengerAddress;
     address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
+    address l2ETHTokenAddress;
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
@@ -110,6 +111,11 @@ contract L1SetupScript is Script {
             ".Twine.JGToken"
         );
 
+        l2ETHTokenAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.ETHToken"
+        );
+
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2CustomERC20Gateway"
@@ -146,14 +152,18 @@ contract L1SetupScript is Script {
         //roleManager setup
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
         roleManager.checkRole(keccak256("CHAIN_ADMIN"), initialOwner);
-        roleManager.grantRole(
-            keccak256("TWINE_OPERATIONS_HANDLER"),
-            twineOperationsHandler
-        );
-        roleManager.checkRole(
-            keccak256("TWINE_OPERATIONS_HANDLER"),
-            twineOperationsHandler
-        );
+
+        roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l1ETHGatewayAddress);
+        roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l1ETHGatewayAddress);
+
+        roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l1CustomERC20GatewayAddress);
+        roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l1CustomERC20GatewayAddress);
+
+        roleManager.grantRole(keccak256("TWINE_CHAIN"), twineChainAddress);
+        roleManager.checkRole(keccak256("TWINE_CHAIN"), twineChainAddress);
+
+        roleManager.grantRole(keccak256("TWINE_OPERATIONS_HANDLER"),twineOperationsHandler);
+        roleManager.checkRole(keccak256("TWINE_OPERATIONS_HANDLER"),twineOperationsHandler);
 
         //TwineChain setup
         twineChain.setRoleManagerAddress(roleManagerAddress);
@@ -161,11 +171,13 @@ contract L1SetupScript is Script {
         twineChain.setMessengerQueueAddress(l1MessageQueueAddress);
         twineChain.setVeriferAddress(verifierAddress);
         twineChain.setProgramVKey(executionVkey, inclusionVKey, withdrawalVKey);
+        twineChain.setGatewayAddress(l1ETHGatewayAddress, l1CustomERC20GatewayAddress);
 
         //L1ETHGateway setup
         l1ETHGateway.setRoleManagerAddress(roleManagerAddress);
         l1ETHGateway.setGatewayRouter(l1GatewayRouterAddress);
         l1ETHGateway.setTwineMessenger(l1TwineMessengerAddress);
+        l1ETHGateway.setL2TokenAddress(l2ETHTokenAddress);
 
         //L1MessageQueue setup
         l1MessageQueue.setRoleManager(roleManagerAddress);

@@ -2,27 +2,27 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
+import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 
-import {TwineChain} from "../../src/L1/rollup/TwineChain.sol";
-import {L1TwineMessenger} from "../../src/L1/L1TwineMessenger.sol";
-import {L1ETHGateway} from "../../src/L1/gateways/L1ETHGateway.sol";
-import {L1MessageQueue} from "../../src/L1/rollup/L1MessageQueue.sol";
-import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
-import {L1GatewayRouter} from "../../src/L1/gateways/L1GatewayRouter.sol";
-import {L1CustomERC20Gateway} from "../../src/L1/gateways/L1CustomERC20Gateway.sol";
+import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
+import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
+import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+
+import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
+import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
+import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract DeployL1Contracts is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        string memory exportPath = vm.envString("ADDRESSES_EXPORT_PATH");
         address initialOwner = vm.addr(deployerPrivateKey);
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        string memory twine_sol_token = vm.envString("CHAIN_NAME");
-        console.log("chain name is: ", twine_sol_token);
+        MockERC20 randomToken = new MockERC20("TwineRandom","TWR");
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -105,7 +105,7 @@ contract DeployL1Contracts is Script {
         vm.serializeAddress(twineObject, "L1CustomERC20Gateway", L1CustomERC20GatewayAddress);
         vm.serializeAddress(twineObject, "L1XERC20Gateway", address(0));
         vm.serializeAddress(twineObject, "Verifier", address(0));
-        vm.serializeAddress(twineObject, "JGToken", address(0));
+        vm.serializeAddress(twineObject, "JGToken", address(randomToken));
 
         // Fill them manually
         vm.serializeString(twineObject, "executionVkey", "");
@@ -114,7 +114,7 @@ contract DeployL1Contracts is Script {
 
         vm.writeJson(
             finalJson,
-            exportPath
+            "./script/utils/L1Addresses.json"
         );
 
         // Stop broadcasting transactions
