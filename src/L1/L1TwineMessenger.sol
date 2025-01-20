@@ -11,6 +11,10 @@ import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
+
+    /**********
+     * Events *
+     **********/
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
     event RelayedMessage(bytes32 indexed messageHash);
@@ -19,14 +23,23 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @param messageHash The hash of the message.
     event FailedRelayedMessage(bytes32 indexed messageHash);
 
+    event WithdrawalSuccessful(
+        address l1Token,
+        address l2Token,
+        address recipient,
+        uint256 amount
+    );
+
+
+    /*************
+     * Variables *
+     *************/
+
     /// @notice The address of L1MessageQueue contract.
     address public messageQueue;
 
     /// @notice The address of Rollup contract.
     address public rollup;
-
-    /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
-    mapping(bytes32 => bool) public isL2MessageExecuted;
 
     //gateway address of eth, can be removed
     //gateway address of eth, can be removed
@@ -36,14 +49,11 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     //gateway address of erc20 gateway,can be removed
     address public ERC20Gateway;
 
-    event WithdrawalSuccessful(
-        address l1Token,
-        address l2Token,
-        address recipient,
-        uint256 amount
-    );
-
-    event WithdrawType(address l1Token);
+    /*************
+     * Mappings  *
+     *************/
+    /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
+    mapping(bytes32 => bool) public isL2MessageExecuted;
 
     /***************
      * Constructor *
@@ -68,17 +78,27 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
         messageQueue = _messageQueue;
         rollup = _rollup;
-    }
+    }   
 
+    
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
     function setMessengerQueueAddress(
         address _messageQueue
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_messageQueue == address(0)) {
+            revert ErrorZeroAddress();
+        }
         messageQueue = _messageQueue;
     }
 
     function setRollupAddress(
         address _rollup
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_rollup == address(0)) {
+            revert ErrorZeroAddress();
+        }
         rollup = _rollup;
     }
 
@@ -89,9 +109,14 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         string memory l1Token,
         string memory l2Token,
         string memory amount
-    ) external payable override {
+    ) external payable override onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS()){
         _sendMessage(_type, to, l1Token, l2Token, amount);
     }
+
+    
+    /**********************
+     * Internal Functions *
+     **********************/
 
     function _sendMessage(
         TransactionType _type,

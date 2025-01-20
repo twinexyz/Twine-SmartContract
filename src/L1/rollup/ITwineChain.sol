@@ -26,8 +26,20 @@ interface ITwineChain {
     event FinalizeBatch(uint256 indexed batchNumber, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot);
 
     /**********
+     * Errors *
+     **********/
+
+    /// @dev Thrown when the given address is `address(0)`.
+    error ErrorZeroAddress();
+
+    /**********
      * Enums  *
      **********/
+    /// @notice Transactions stored in queue
+    /// @param deposit Deposit Transactions
+    /// @param withdraw Withdraw Transactions
+    /// @param layerZero layer zero transactions
+
     enum TransactionType {
         deposit,
         withdraw,
@@ -120,6 +132,34 @@ interface ITwineChain {
      * Public Mutating Functions *
      *****************************/
 
+    /// @notice sets the chain id
+    function setChainId(uint256 _chainId) external;
+
+    /// @notice sets the role manager address
+    function setRoleManagerAddress(address _roleManagerAddress) external;
+
+    /// @notice sets the messager queue address
+    function setMessengerQueueAddress(address _messageQueue) external;
+
+    /// @notice sets the verifier address
+    function setVeriferAddress(address _verifier) external;
+
+    /// @notice sets vkeys for different proofs.
+    /// @param _executionVKey vKey for execution proof for a batch
+    /// @param _inclusionVKey vKey for transaction proof of a batch
+    /// @param _withdrawalVKey vKey for withdrawal proof 
+    function setProgramVKey(
+        bytes32 _executionVKey,
+        bytes32 _inclusionVKey,
+        bytes32 _withdrawalVKey
+    ) external;
+
+    ///@notice sets the gateway addresses
+    function setGatewayAddress(
+        address _ethGateway,
+        address _ERC20Gateway
+    ) external;
+
     /// @notice Commit and finalize a batch on Layer 1.
     /// @param commit_info The struct containing the batch's information
     /// @param execution_proof The execution proof for that batch
@@ -129,4 +169,6 @@ interface ITwineChain {
     /// @param transaction_info The sturct containing batch's transaction information
     /// @param inclusion_proof The inclusion proof for that batch of transaction
     function commitAndFinalizeTransactions(bytes memory transaction_info, bytes memory inclusion_proof) external;
+
+    function finalizeWithdrawal(FinalizeWithdrawalInput memory withdrawalInputs) external;
 }

@@ -7,7 +7,10 @@ import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
-    /// @notice The address of L1TwineMessenger contract.
+    
+    /*************
+     * Variables *
+     *************/
     uint64 chainId;
     uint64 depositMessageIndex;
     uint64 withdrawalMessageIndex;
@@ -16,6 +19,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     address public roleManager;
     address public messageQueueProxy;
 
+    /**********
+     * Queues *
+     **********/
     /// @notice The list of queued cross domain messages.
     MessageData[] public depositMessageQueue;
 
@@ -28,6 +34,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The list of queued transactions that are ready for execution.
     MessageData[] public executionMessageQueue;
 
+    /**********************
+     * Function Modifiers *
+     **********************/
     modifier onlyMessenger() {
         require(
             _msgSender() == messenger,
@@ -64,8 +73,126 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         roleManager = _roleManager;
     }
 
+    /*************************
+     * Public View Functions *
+     *************************/
+
     /// @inheritdoc IL1MessageQueue
-    function popFirstNDepositElement(uint n) external {
+    function nextCrossDomainDepositMessageIndex()
+        public
+        view
+        returns (uint256)
+    {
+        return depositMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainWithdrawalMessageIndex()
+        public
+        view
+        returns (uint256)
+    {
+        return withdrawalMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainExecutionMessageIndex()
+        public
+        view
+        returns (uint256)
+    {
+        return executionMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getCrossDomainDepositMessage(
+        uint256 _queueIndex
+    ) external view returns (MessageData memory) {
+        require(nextCrossDomainDepositMessageIndex() > _queueIndex, "Invalid index");    
+        return depositMessageQueue[_queueIndex];
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getCrossDomainWithdrawalMessage(
+        uint256 _queueIndex
+    ) external view returns (MessageData memory) {
+        require(nextCrossDomainWithdrawalMessageIndex() > _queueIndex, "Invalid index");    
+        return withdrawalMessageQueue[_queueIndex];
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getCrossDomainLayerZeroMessage(
+        uint256 _queueIndex
+    ) external view returns (MessageData memory) {
+        return layerZeroMessageQueue[_queueIndex];
+    } 
+
+    /// @inheritdoc IL1MessageQueue
+    function getExecutionMessage(
+        uint256 _queueIndex
+    ) external view returns (MessageData memory) {
+        require(nextCrossDomainExecutionMessageIndex() > _queueIndex, "Invalid index");    
+        return executionMessageQueue[_queueIndex];
+    } 
+
+    function _padAddress(address input) public pure returns (bytes32) {
+        return bytes32(uint256(uint160(input)));
+    }
+        
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
+
+    /// @inheritdoc IL1MessageQueue
+    function setMessengerAddress(
+        address _messenger
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_messenger == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        messenger = _messenger;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function setChainId(
+        uint64 _chainId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        chainId = _chainId;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function setRoleManager(
+        address _roleManager
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+         if (_roleManager == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        roleManager = _roleManager;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function setMessageQueueProxy(
+        address _proxyAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_proxyAddress == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        messageQueueProxy = _proxyAddress;
+    }
+
+    function removeExecutionMessage(uint256 index) external onlyMessenger {
+        require(index < nextCrossDomainExecutionMessageIndex(), "Invalid index");
+
+        // Shift elements to left
+        for(uint256 i = index; i < executionMessageQueue.length - 1; i++) {
+            executionMessageQueue[i] = executionMessageQueue[i + 1];
+        }
+        executionMessageQueue.pop();
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function popFirstNDepositElement(uint n) external onlyMessenger {
+        require(n < nextCrossDomainDepositMessageIndex(), "Invalid index");
         // Shift elements
         for (uint i = 0; i < depositMessageQueue.length - n; i++) {
             depositMessageQueue[i] = depositMessageQueue[i + n];
@@ -78,7 +205,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNWithdrawalElement(uint n) external {
+    function popFirstNWithdrawalElement(uint n) external onlyMessenger {
+        require(n < nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
         // Shift elements
         for (uint i = 0; i < withdrawalMessageQueue.length - n; i++) {
             withdrawalMessageQueue[i] = withdrawalMessageQueue[i + n];
@@ -90,8 +218,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         }
     }
 
-    function popFirstNLayerZeroElement(uint n) external {
-
+    /// @inheritdoc IL1MessageQueue
+    function popFirstNLayerZeroElement(uint n) external onlyMessenger {
         for (uint i = 0; i < layerZeroMessageQueue.length - n; i++) {
             layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
         }
@@ -100,24 +228,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         for (uint i = 0; i < n; i++) {
             layerZeroMessageQueue.pop();
         }
-    }
-
-    function getCrossDomainDepositMessage(
-        uint256 _queueIndex
-    ) external view returns (MessageData memory) {
-        return depositMessageQueue[_queueIndex];
-    }
-
-    function getCrossDomainWithdrawalMessage(
-        uint256 _queueIndex
-    ) external view returns (MessageData memory) {
-        return withdrawalMessageQueue[_queueIndex];
-    }
-
-    function getCrossDomainLayerZeroMessage(
-        uint256 _queueIndex
-    ) external view returns (MessageData memory) {
-        return layerZeroMessageQueue[_queueIndex];
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -129,7 +239,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     ) external override onlyMessenger {
         _queueDepositTransaction(to, l1Token, l2Token, amount);
     }
-
 
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainWithdrawalMessage(
@@ -150,7 +259,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint64 _chainId,
         string memory _amount,
         uint64 _blockNumber
-    ) external override {
+    ) external override onlyMessenger {
         _queueExecutionTransaction(
             _nonce,
             _to,
@@ -162,6 +271,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         );
     }
 
+    
+    /**********************
+     * Internal Functions *
+     **********************/
 
     function _queueDepositTransaction(
         string memory to,
@@ -247,76 +360,5 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         });
 
         executionMessageQueue.push(executionMessageData);
-    }
-
-    function _padAddress(address input) public pure returns (bytes32) {
-        return bytes32(uint256(uint160(input)));
-    }
-
-    function setMessengerAddress(
-        address _messenger
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        messenger = _messenger;
-    }
-
-    function setChainId(
-        uint64 _chainId
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        chainId = _chainId;
-    }
-
-    function setRoleManager(
-        address _roleManager
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        roleManager = _roleManager;
-    }
-
-    function setMessageQueueProxy(
-        address _proxyAddress
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        messageQueueProxy = _proxyAddress;
-    }
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainDepositMessageIndex()
-        external
-        view
-        returns (uint256)
-    {
-        return depositMessageQueue.length;
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainWithdrawalMessageIndex()
-        external
-        view
-        returns (uint256)
-    {
-        return withdrawalMessageQueue.length;
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainExecutionMessageIndex()
-        external
-        view
-        returns (uint256)
-    {
-        return executionMessageQueue.length;
-    }
-
-    function getExecutionMessage(
-        uint256 index
-    ) external view returns (MessageData memory) {
-        require(index < executionMessageQueue.length, "Invalid index");
-        return executionMessageQueue[index];
-    }
-
-    function removeExecutionMessage(uint256 index) external {
-        require(index < executionMessageQueue.length, "Invalid index");
-
-        // Shift elements to left
-        for(uint256 i = index; i < executionMessageQueue.length - 1; i++) {
-            executionMessageQueue[i] = executionMessageQueue[i + 1];
-        }
-        executionMessageQueue.pop();
     }
 }

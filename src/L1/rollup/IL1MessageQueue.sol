@@ -124,6 +124,18 @@ interface IL1MessageQueue {
      * Public Mutating Functions *
      *****************************/
 
+    /// @notice Sets the messenger address
+    function setMessengerAddress(address _messenger) external;
+
+    /// @notice Sets the chain id
+    function setChainId(uint64 _chainId) external;
+
+    /// @notice sets role manager address
+    function setRoleManager(address _roleManager) external;
+
+    /// @notice set the proxy Address of MessageQueue
+    function setMessageQueueProxy(address proxyAddress) external;
+
     /// @notice Removes the first N message from the Deposit Queue
     function popFirstNDepositElement(uint n) external;
 
@@ -133,8 +145,6 @@ interface IL1MessageQueue {
     /// @notice Removes the first N message from the Layer Zero Queue
     function popFirstNLayerZeroElement(uint n) external;
 
-    /// @notice set the proxy Address of MessageQueue
-    function setMessageQueueProxy(address proxyAddress) external;
 
     /// @notice Append new message to the deposit queue
     function appendCrossDomainDepositMessage(

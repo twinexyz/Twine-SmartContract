@@ -18,9 +18,6 @@ import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 contract TwineChain is ContextUpgradeable, ITwineChain {
     using TypeConversionLib for string;
 
-    /// @dev Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-
     /*************
      * Variables *
      *************/
@@ -125,30 +122,44 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      * Public Mutating Functions *
      *****************************/
 
+    /// @inheritdoc ITwineChain
     function setChainId(
         uint256 _chainId
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         chainId = _chainId;
     }
 
+    /// @inheritdoc ITwineChain
     function setRoleManagerAddress(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_roleManagerAddress == address(0)) {
+            revert ErrorZeroAddress();
+        }
         roleManager = _roleManagerAddress;
     }
 
+    /// @inheritdoc ITwineChain
     function setMessengerQueueAddress(
         address _messageQueue
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_messageQueue == address(0)) {
+            revert ErrorZeroAddress();
+        }
         messageQueue = _messageQueue;
     }
 
+    /// @inheritdoc ITwineChain
     function setVeriferAddress(
         address _verifier
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_verifier == address(0)) {
+            revert ErrorZeroAddress();
+        }
         verifier = _verifier;
     }
 
+    /// @inheritdoc ITwineChain
     function setProgramVKey(
         bytes32 _executionVKey,
         bytes32 _inclusionVKey,
@@ -159,10 +170,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         withdrawalVKey = _withdrawalVKey;
     }
 
+    /// @inheritdoc ITwineChain
     function setGatewayAddress(
         address _ethGateway,
         address _ERC20Gateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_ethGateway == address(0) || _ERC20Gateway == address(0)) {
+            revert ErrorZeroAddress();
+        }
         ethGateway = _ethGateway;
         ERC20Gateway = _ERC20Gateway;
     }
@@ -173,8 +188,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes memory execution_proof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
 
-        require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
+        // Commit the batch only if the pervious batch is finalized properlya
+        require(commit_info.batchNumber == lastFinalizedBatchNumber + 1, "Invalid Batch Sequence");
+
         require(commit_info.previousStateRoot == committedBatches[commit_info.batchNumber].previousStateRoot, "Invalid Batch Sequence");
+
+        require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
 
         // Verify Execution Proof
         bytes memory publicInputForExecution = abi.encodePacked(
@@ -225,6 +244,16 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
 
         ChainCommitment memory chain_data = _decodeChainCommitment(chainDataBytes);
+
+        require(
+            chain_data.depositCount < IL1MessageQueue(messageQueue).nextCrossDomainDepositMessageIndex(),
+            "Invalid deposit count"    
+        );
+
+        require(
+            chain_data.withdrawCount < IL1MessageQueue(messageQueue).nextCrossDomainWithdrawalMessageIndex(),
+            "Invalid withdraw count"
+        );
 
        //  Calculating deposit and withdraw rolling hash from the data in queue
         uint64 depositCount = chain_data.depositCount;
