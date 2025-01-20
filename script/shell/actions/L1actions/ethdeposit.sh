@@ -2,15 +2,15 @@
 
 # Default values
 DEFAULT_RECEIVER="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-DEFAULT_AMOUNT="1000000000000000000" # 1 ETH in wei
+DEFAULT_AMOUNT="2000000000000000000" # 1 ETH in wei
 PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 DEFAULT_FORK_URL="http://127.0.0.1:8545"
 
 #prompt the user
-read -p "Enter receiver address (default: $DEFAULT_RECEIVER): " RECEIVER
+read -p "Receiver address (default: $DEFAULT_RECEIVER): " RECEIVER
 RECEIVER=${RECEIVER:-$DEFAULT_RECEIVER}
 
-read -p "Enter deposit amount in wei (default: $DEFAULT_AMOUNT): " DEPOSIT_AMOUNT
+read -p "Deposit amount in wei (default: $DEFAULT_AMOUNT): " DEPOSIT_AMOUNT
 DEPOSIT_AMOUNT=${DEPOSIT_AMOUNT:-$DEFAULT_AMOUNT}
 
 # export env variables:

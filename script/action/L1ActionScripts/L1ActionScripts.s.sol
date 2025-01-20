@@ -263,3 +263,110 @@ contract CommitAndFinalizeBatch is Script {
     }
 }
 
+contract commitAndFinalizeTransaction is Script {
+    TwineChain twineChain;
+    L1MessageQueue l1MessageQueue;
+
+    address twineChainAddress;
+    address l1MessageQueueAddress;
+
+    // data required for transaction finalization
+    bytes transactionInfo;
+    bytes inclusionProof;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+
+        twineChain = TwineChain(twineChainAddress);
+        l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
+
+        // Read parameters dynamically
+        transactionInfo = vm.envBytes("TRANSACTION_INFO");
+        inclusionProof = vm.envBytes("INCLUSION_PROOF");
+    }
+
+     function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
+
+        vm.startBroadcast(deployerPrivateKey);
+        console.log("Deposit Message Queue Before Finalization: ", l1MessageQueue.nextCrossDomainDepositMessageIndex());
+
+        twineChain.commitAndFinalizeTransactions(transactionInfo, inclusionProof);
+
+        console.log("Deposit Message Queue After Finalization: ", l1MessageQueue.nextCrossDomainDepositMessageIndex());
+        vm.stopBroadcast();
+
+    }
+}
+
+contract finalizeWithdrawal is Script {
+    TwineChain twineChain;
+    address twineChainAddress;
+
+    // Data required for finalization
+    uint64 chainId;
+    uint64 batchNumber;
+    uint64 nonce;
+    bool isForced;
+    bytes32 receiptRoot;
+    string l1ReceiverAddress;
+    string l1TokenAddress;
+    string l2TokenAddress;
+    string amount;
+
+    bytes inclusionProof;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
+        twineChain = TwineChain(twineChainAddress);
+
+        // Read parameters dynamically
+        chainId = uint64(vm.envUint("CHAIN_ID"));
+        batchNumber = uint64(vm.envUint("BATCH_NUMBER"));
+        nonce = uint64(vm.envUint("NONCE"));
+        isForced = vm.envBool("IS_FORCED");
+        receiptRoot = vm.envBytes32("RECEIPT_ROOT");
+        l1ReceiverAddress = vm.envString("L1_RECEIVER_ADDRESS");
+        l1TokenAddress = vm.envString("L1_TOKEN_ADDRESS");
+        l2TokenAddress = vm.envString("L2_TOKEN_ADDRESS");
+        amount = vm.envString("AMOUNT");
+
+        inclusionProof = vm.envBytes("INCLUSION_PROOF");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
+        // Prepare Input
+        ITwineChain.WithdrawalPublicInput memory publicInput = ITwineChain.WithdrawalPublicInput({
+            chainId: chainId,
+            batchNumber: batchNumber,
+            nonce: nonce,
+            isForced: isForced,
+            receiptRoot: receiptRoot,
+            l1ReceiverAddress: l1ReceiverAddress,
+            l1TokenAddress: l1TokenAddress,
+            l2TokenAddress: l2TokenAddress,
+            amount: amount
+        });
+
+        ITwineChain.FinalizeWithdrawalInput memory withdrawalInput = ITwineChain.FinalizeWithdrawalInput({
+            publicInput: publicInput,
+            inclusionProof: inclusionProof
+        });
+
+        vm.startBroadcast(deployerPrivateKey);
+        console.log("Admin Balance before deposit", admin.balance);
+
+        twineChain.finalizeWithdrawal(withdrawalInput);
+        
+        console.log("Admin Balance after deposit", admin.balance);
+        vm.stopBroadcast();
+    }
+}

@@ -48,8 +48,17 @@ depositERC20:
 forcedWithdrawERC20:
 	bash script/shell/actions/L1actions/erc20forcedWithdraw.sh
 
+# commit and finalize a batch
 commitAndFinalizeBatch:
 	bash script/shell/actions/L1actions/commitAndFinalize.sh
+
+# commit and finalize transaction for a batch
+commitAndFinalizeTransaction:
+	bash script/shell/actions/L1actions/commitAndFinalizeTxn.sh
+
+finalizeWithdrawal:
+	bash script/shell/actions/L1actions/finalizeWithdrawal.sh
+
 
 # *************************************************** 
 # *						L2 Scripts					*
