@@ -11,16 +11,20 @@ import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 
 contract DepositETH is Script {
     L1GatewayRouter l1GatewayRouter;
+    L1ETHGateway l1ETHGateway;
     address l1GatewayRouterAddress;
+    address l1ETHGatewayAddress;
 
     uint256 depositAmount;
     address receiver;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./scripts/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
 
         l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
+        l1ETHGateway = L1ETHGateway(l1GatewayRouterAddress);
 
         // Read parameters dynamically or use defaults
         depositAmount = vm.envUint("DEPOSIT_AMOUNT");
@@ -33,11 +37,15 @@ contract DepositETH is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
+        console.log("Gateway Balance before deposit", address(l1ETHGateway).balance);
+        console.log("User Balance before deposit", admin.balance);
         l1GatewayRouter.depositETH{value: depositAmount}(
             receiver,
             depositAmount,
             0
         );
+        console.log("Gateway Balance after deposit", address(l1ETHGateway).balance);
+        console.log("User Balance after deposit", admin.balance);
 
         // Stop broadcasting transactions
         vm.stopBroadcast();

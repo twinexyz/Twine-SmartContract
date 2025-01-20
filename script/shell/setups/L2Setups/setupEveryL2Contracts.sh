@@ -7,6 +7,9 @@ DEFAULT_FORK_URL="http://127.0.0.1:8545"
 read -p "Enter fork URL (default: $DEFAULT_FORK_URL): " FORK_URL
 FORK_URL=${FORK_URL:-$DEFAULT_FORK_URL}
 
+# export env variables:
+export PRIVATE_KEY
+
 #Run the forge script
 forge script script/setup/L2SetupScripts/L2SetupScript.s.sol:L2SetupScript \
     --fork-url $FORK_URL  \
