@@ -6,7 +6,8 @@ pragma solidity 0.8.24;
  * @notice TypeConversionUtils contains different conversion functions .
  **/
 library TypeConversionLib {
-    
+    /// @notice Converts an Ethereum address to its string representation
+    ///  @param _address The Ethereum address to convert
     function addressToString(
         address _address
     ) internal pure returns (string memory) {
@@ -21,6 +22,10 @@ library TypeConversionLib {
         }
         return string(_string);
     }
+
+    /// @notice Converts a string representation of an Ethereum address to its address type
+    /// @dev Requires the input string to be a valid Ethereum address format (0x followed by 40 hexadecimal characters)
+    /// @param _addressString The string representation of an Ethereum address
     function stringToAddress(
         string memory _addressString
     ) internal pure returns (address) {
@@ -49,6 +54,9 @@ library TypeConversionLib {
         return address(result);
     }
 
+    /// @notice Converts a string representation of a number to a uint256
+    /// @dev Reverts if the input string contains non-numeric characters
+    /// @param s The string representation of a number
     function stringToUint(
         string memory s
     ) internal pure returns (uint256 result) {
@@ -69,5 +77,4 @@ library TypeConversionLib {
             }
         }
     }
-    
 }

@@ -7,9 +7,9 @@ import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
-import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 /// @title L1CustomERC20Gateway
@@ -18,19 +18,6 @@ import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1Messenger
 contract L1CustomERC20Gateway is L1ERC20Gateway {
     using TypeConversionLib for string;
     using TypeConversionLib for address;
-    /**********
-     * Events *
-     **********/
-
-    /// @notice Emitted when token mapping for ERC20 token is updated.
-    /// @param l1Token The address of ERC20 token in layer 1.
-    /// @param oldL2Token The address of the old corresponding ERC20 token in layer 2.
-    /// @param newL2Token The address of the new corresponding ERC20 token in layer 2.
-    event UpdateTokenMapping(
-        address indexed l1Token,
-        address indexed oldL2Token,
-        address indexed newL2Token
-    );
 
     /// @notice Mapping from l1 token address to l2 token address for ERC20 token.
     mapping(address => address) public tokenMapping;
@@ -96,6 +83,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address _l2Token
     ) internal virtual override {
         require(msg.value == 0, "nonzero msg.value");
+        require(_l1Token != address(0), "token address cannot be 0");
         require(_l2Token != address(0), "token address cannot be 0");
         require(_l2Token == tokenMapping[_l1Token], "l2 token mismatch");
     }
@@ -113,7 +101,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         require(_l2Token != address(0), "no corresponding l2 token");
 
         // 1. Transfer token into this contract.
-        address _from = _msgSender();
+        address _from;
         (_from, _amount, _data) = _transferERC20In(_token, _amount, _data);
 
         // 4. Send message to L1TwineMessenger.
@@ -131,18 +119,28 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address _l2Token,
         address _to,
         uint256 _amount,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual override nonReentrant {
         require(_amount > 0, "withdrawing zero amount not allowd");
-        // 1. Extract real sender if this call is from L1GatewayRouter
-        address _from = _msgSender();
-
+        // Extract real sender if this call is from L1GatewayRouter
+        address _from;
+        (_from, _data) = _getRealSender(_data);
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
             _to.addressToString(),
             _l1Token.addressToString(),
             _l2Token.addressToString(),
             Strings.toString(_amount)
+        );
+
+        emit forcedWithdrawalERC20Initated(
+            _from,
+            _to,
+            _l1Token,
+            _l2Token,
+            _amount,
+            block.number
         );
     }
 }

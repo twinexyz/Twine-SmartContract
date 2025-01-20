@@ -10,7 +10,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
  **/
 contract RoleManager is ContextUpgradeable, AccessControlUpgradeable {
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
-    bytes32 public constant TWINE_OPERATIONS_HANDLER = keccak256("TWINE_OPERATIONS_HANDLER");
+    bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
+    bytes32 public constant TWINE_OPERATIONS_HANDLER =
+        keccak256("TWINE_OPERATIONS_HANDLER");
+    bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

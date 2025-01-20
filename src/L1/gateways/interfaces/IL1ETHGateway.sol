@@ -2,17 +2,6 @@
 pragma solidity ^0.8.24;
 
 interface IL1ETHGateway {
-    /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
-    /// @param to The address of recipient in L1.
-    /// @param amount The amount of ETH withdrawn from L2 to L1.
-    event FinalizeWithdrawETH(
-        string l1Token,
-        string l2Token,
-        string indexed to,
-        string amount,
-        uint256 blockNumber
-    );
-
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
@@ -28,6 +17,17 @@ interface IL1ETHGateway {
     /// @param recipient The address of receiver in L1.
     /// @param amount The amount of ETH refunded to receiver.
     event RefundETH(address indexed recipient, uint256 amount);
+
+    /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
+    /// @param to The address of recipient in L1.
+    /// @param amount The amount of ETH withdrawn from L2 to L1.
+    event FinalizeWithdrawETH(
+        string l1Token,
+        string l2Token,
+        string indexed to,
+        string amount,
+        uint256 blockNumber
+    );
 
     /*****************************
      * Public Mutating Functions *
@@ -56,7 +56,7 @@ interface IL1ETHGateway {
     ) external payable;
 
     /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.
-    /// @dev This function should only be called by L1TwineMessenger.
+    /// @dev This function should only be called by Twinechain
     /// @param to The address of recipient in L1 to receive ETH.
     function finalizeTokenWithdrawal(
         string memory l1Token,
@@ -72,6 +72,7 @@ interface IL1ETHGateway {
     function forcedWithdrawalETH(
         address to,
         uint256 amount,
-        uint256 gasLimit
+        uint256 gasLimit,
+        bytes memory data
     ) external payable;
 }

@@ -7,13 +7,14 @@ import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
-import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     using TypeConversionLib for string;
     using TypeConversionLib for address;
+
     address l2TokenAddress;
 
     /***************
@@ -63,9 +64,10 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function forcedWithdrawalETH(
         address _to,
         uint256 _amount,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) external payable override {
-        _forcedWithdrawalEth(_to, _amount, _gasLimit);
+        _forcedWithdrawalEth(_to, _amount, _gasLimit, _data);
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -74,7 +76,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         string memory _l2Token,
         string memory _to,
         string memory _amount
-    ) external payable override {
+    ) external payable override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         // @note can possible trigger reentrant call to messenger,
         // but it seems not a big problem.
         (bool _success, ) = _to.stringToAddress().call{
@@ -141,12 +143,15 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function _forcedWithdrawalEth(
         address _to,
         uint256 _amount,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual {
-        require(_amount > 0, "withdrawing zero amount not allowd");
+        require(_amount > 0, "withdrawing zero amount not allowed");
         // 1. Extract real sender if this call is from L1GatewayRouter
         address _from = _msgSender();
-
+        if (gatewayRouter == _from) {
+            (_from, _data) = abi.decode(_data, (address, bytes));
+        }
         // 3. Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType _type = ITwineL1MessengerBase
             .TransactionType

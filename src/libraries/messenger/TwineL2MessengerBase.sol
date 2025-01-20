@@ -25,9 +25,10 @@ abstract contract TwineL2MessengerBase is
     mapping(uint256 => address) counterpartMessenger;
 
     //chainId=> L1Gateway
-    mapping(uint256=>mapping(string => string)) public  tokenCounterpartGateWay;
-    
-    //count for the messages 
+    mapping(uint256 => mapping(string => string))
+        public tokenCounterpartGateWay;
+
+    //count for the messages
     uint256 public messageCount;
 
     /**********************
@@ -59,18 +60,21 @@ abstract contract TwineL2MessengerBase is
         roleManager = _roleManagerAddress;
     }
 
+    /// @notice sets the rolemanager contract address
     function setRoleManager(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         roleManager = _roleManagerAddress;
     }
 
+    /// @notice sets the fee vault address
     function setFeeVault(
         address _freeVault
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         feeVault = _freeVault;
     }
 
+    /// @notice sets the counter part messenger
     function setCounterpartMessenger(
         uint256[] memory _chainId,
         address[] memory _counterpartMessenger

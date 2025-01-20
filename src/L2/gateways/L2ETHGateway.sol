@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IL1ETHGateway} from "../../L1/gateways/interfaces/IL1ETHGateway.sol";
-import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
+import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IL1ETHGateway} from "../../L1/gateways/interfaces/IL1ETHGateway.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
 /// @title L2ETHGateway
 /// @notice The `L2ETHGateway` contract is used to withdraw ETH token on layer 2 and
-/// finalize deposit ETH from layer 1.
-/// @dev The ETH are not held in the gateway. The ETH will be sent to the `L2TwineMessenger` contract.
 /// On finalizing deposit, the Ether will be transferred from `L2TwineMessenger`, then transfer to recipient.
 contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
@@ -72,6 +71,19 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
         _withdraw(_l2Token, _l1Token, _to, _amount, _chainId, _gasLimit, _data);
     }
 
+
+    function updateTokenMapping(
+        uint256 _chainId,
+        address _l2Token,
+        string memory _l1Token
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(bytes(_l1Token).length > 0, "L1 token address cannot be empty");
+        string memory _oldL1Token = tokenMapping[_chainId][_l2Token];
+        tokenMapping[_chainId][_l2Token] = _l1Token;
+        emit EthTokenMappingUpdated(_chainId, _l2Token, _oldL1Token, _l1Token);
+    }
+
+
     /// @dev The internal ETH withdraw implementation.
     /// @param _to The address of recipient's account on L1.
     /// @param _amount The amount of ETH to be withdrawn.
@@ -107,5 +119,4 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
             _gasLimit
         );
     }
-
 }

@@ -2,13 +2,14 @@
 
 pragma solidity ^0.8.24;
 
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
@@ -17,8 +18,10 @@ import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1Messenger
 /// @notice The `L1ERC20Gateway` as a base contract for ERC20 gateways in L1.
 /// It has implementation of common used functions for ERC20 gateways.
 abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
-    
     using SafeERC20 for IERC20;
+    using TypeConversionLib for string;
+    using TypeConversionLib for address;
+
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address _token,
@@ -26,7 +29,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 _amount,
         uint256 _gasLimit
     ) external payable override {
-        _deposit(_token, _to, _amount, _gasLimit,new bytes(0));
+        _deposit(_token, _to, _amount, _gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -37,7 +40,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 _gasLimit,
         bytes memory _data
     ) external payable override {
-        _deposit(_token, _to, _amount,_gasLimit, _data);
+        _deposit(_token, _to, _amount, _gasLimit, _data);
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -46,9 +49,17 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         address _l2Token,
         address _to,
         uint256 _amount,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory data
     ) external payable override {
-        _forcedWithdrawalERC20(_l1Token,_l2Token,_to, _amount, _gasLimit);
+        _forcedWithdrawalERC20(
+            _l1Token,
+            _l2Token,
+            _to,
+            _amount,
+            _gasLimit,
+            data
+        );
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -57,12 +68,23 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         string memory _l2Token,
         string memory _to,
         string memory _amount
-    ) external payable virtual override nonReentrant{
-        _beforeFinalizeWithdrawERC20(stringToAddress(_l1Token), stringToAddress(_l2Token));
-        
-        IERC20(stringToAddress(_l1Token)).safeTransfer(stringToAddress(_to), stringToUint(_amount));
-
-        emit FinalizeWithdrawERC20(_l1Token, _l2Token, _to,_amount,block.number);
+    ) external payable virtual override nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        require(_amount.stringToUint() > 0, "Amout must be greater than zero");
+        _beforeFinalizeWithdrawERC20(
+            _l1Token.stringToAddress(),
+            _l2Token.stringToAddress()
+        );
+        IERC20(_l1Token.stringToAddress()).safeTransfer(
+            _to.stringToAddress(),
+            _amount.stringToUint()
+        );
+        emit FinalizeWithdrawERC20(
+            _l1Token,
+            _l2Token,
+            _to,
+            _amount,
+            block.number
+        );
     }
 
     /**********************
@@ -75,7 +97,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     function _beforeFinalizeWithdrawERC20(
         address _l1Token,
         address _l2Token
-    ) internal virtual;   
+    ) internal virtual;
 
     /// @dev Internal function to transfer ERC20 token to this contract.
     /// @param _token The address of token to transfer.
@@ -85,20 +107,17 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         address _token,
         uint256 _amount,
         bytes memory _data
-    )
-        internal
-        returns (
-            address,
-            uint256,
-            bytes memory
-        )
-    {
+    ) internal returns (address, uint256, bytes memory) {
         address _sender = _msgSender();
         address _from = _sender;
         if (gatewayRouter == _sender) {
             // Extract real sender if this call is from L1GatewayRouter.
             (_from, _data) = abi.decode(_data, (address, bytes));
-            _amount = IL1GatewayRouter(_sender).requestERC20(_from, _token, _amount);
+            _amount = IL1GatewayRouter(_sender).requestERC20(
+                _from,
+                _token,
+                _amount
+            );
         } else {
             // common practice to handle fee on transfer token.
             uint256 _before = IERC20(_token).balanceOf(address(this));
@@ -108,58 +127,22 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             _amount = _after - _before;
         }
         // ignore weird fee on transfer token
-        require(_amount > 0, "deposit zero amount");
-
+        require(_amount > 0, "deposit amount is zero");
         return (_from, _amount, _data);
     }
 
-    function stringToAddress(
-        string memory _addressString
-    ) public pure returns (address) {
-        bytes memory stringBytes = bytes(_addressString);
-        require(
-            stringBytes.length == 42 &&
-                stringBytes[0] == "0" &&
-                stringBytes[1] == "x",
-            "Invalid address format"
-        );
-
-        uint160 result = 0;
-        for (uint i = 2; i < 42; i++) {
-            result *= 16;
-            uint8 digit = uint8(stringBytes[i]);
-            if (digit >= 48 && digit <= 57) {
-                result += (digit - 48);
-            } else if (digit >= 65 && digit <= 70) {
-                result += (digit - 55);
-            } else if (digit >= 97 && digit <= 102) {
-                result += (digit - 87);
-            } else {
-                revert("Invalid character in address string");
-            }
+    /// @dev Internal function to get the real sender.
+    /// @param _data The data passed by caller.
+    function _getRealSender(
+        bytes memory _data
+    ) internal view returns (address, bytes memory) {
+        address _sender = _msgSender();
+        address _from = _sender;
+        if (gatewayRouter == _sender) {
+            // Extract real sender if this call is from L1GatewayRouter.
+            (_from, _data) = abi.decode(_data, (address, bytes));
         }
-        return address(result);
-    }
-
-     function stringToUint(
-        string memory s
-    ) internal pure returns (uint256 result) {
-        bytes memory b = bytes(s);
-        uint256 oldResult = 0;
-        for (uint256 i = 0; i < b.length; i++) {
-            // c = b[i] was not needed
-            if (uint8(b[i]) >= 48 && uint8(b[i]) <= 57) {
-                // store old value so we can check for overflows
-                oldResult = result;
-                result = result * 10 + (uint8(b[i]) - 48);
-                if (oldResult > result) {
-                    // we can only get here if the result overflowed and is smaller than last stored value
-                    revert("Invalid String");
-                }
-            } else {
-                revert("InvalidStringNumber");
-            }
-        }
+        return (_from, _data);
     }
 
     /// @dev Internal function to do all the deposit operations.
@@ -182,6 +165,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         address _l2Token,
         address _to,
         uint256 _amount,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        bytes memory data
     ) internal virtual;
 }

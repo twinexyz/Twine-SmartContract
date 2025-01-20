@@ -5,21 +5,26 @@ pragma solidity ^0.8.24;
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
+import {IL2GatewayRouter} from "./interfaces/IL2GatewayRouter.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 
 /// @title L2GatewayRouter
 /// @notice The `L2GatewayRouter` is the main entry for withdrawing Ether and ERC20 tokens.
 /// All deposited tokens are routed to corresponding gateways.
 /// @dev One can also use this contract to query L1/L2 token address mapping.
 /// In the future, ERC-721 and ERC-1155 tokens will be added to the router too.
-contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2GatewayRouter {
+contract L2GatewayRouter is
+    ContextUpgradeable,
+    ReentrancyGuardUpgradeable,
+    IL2GatewayRouter
+{
+    using TypeConversionLib for address;
     /*************
      * Variables *
      *************/
-
     /// @notice The address of L2ETHGateway.
     address public ethGateway;
 
@@ -32,7 +37,7 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
 
     address public roleManager;
 
-     modifier onlyRoles(bytes32 role) {
+    modifier onlyRoles(bytes32 role) {
         IRoleManager(roleManager).checkRole(role, _msgSender());
         _;
     }
@@ -46,7 +51,11 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         _disableInitializers();
     }
 
-    function initialize(address _ethGateway, address _defaultERC20Gateway,address _roleManagerAddress) external initializer {
+    function initialize(
+        address _ethGateway,
+        address _defaultERC20Gateway,
+        address _roleManagerAddress
+    ) external initializer {
         // OwnableUpgradeable.__Ownable_init();
 
         // it can be zero during initialization
@@ -68,13 +77,17 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
      *************************/
 
     /// @inheritdoc IL2ERC20Gateway
-    function getL1ERC20Address(uint256 _chainId,address _l2Address) external view returns (string memory) {
+    function getL1ERC20Address(
+        uint256 _chainId,
+        address _l2Address
+    ) external view returns (string memory) {
         address _gateway = getERC20Gateway(_l2Address);
         if (_gateway == address(0)) {
-            return addressToString(address(0));
+            return address(0).addressToString();
         }
 
-        return IL2ERC20Gateway(_gateway).getL1ERC20Address(_chainId,_l2Address);
+        return
+            IL2ERC20Gateway(_gateway).getL1ERC20Address(_chainId, _l2Address);
     }
 
     /// @notice Return the corresponding gateway address for given token address.
@@ -98,8 +111,15 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         uint256 _amount,
         uint256 _chainId,
         uint256 _gasLimit
-    ) external payable  {
-        withdrawERC20AndCall(_token, _to, _amount, _chainId, _gasLimit,new bytes(0));
+    ) external payable {
+        withdrawERC20AndCall(
+            _token,
+            _to,
+            _amount,
+            _chainId,
+            _gasLimit,
+            new bytes(0)
+        );
     }
 
     /// @inheritdoc IL2ERC20Gateway
@@ -117,10 +137,16 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(_token, _to, _amount,_chainId,_gasLimit, _routerData);
+        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(
+            _token,
+            _to,
+            _amount,
+            _chainId,
+            _gasLimit,
+            _routerData
+        );
     }
 
-    
     /// @inheritdoc IL2ETHGateway
     function withdrawETH(
         address _l2Token,
@@ -130,7 +156,15 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         uint256 _chainId,
         uint256 _gasLimit
     ) external payable override {
-        withdrawETHAndCall(_l2Token,_l1Token,_to, _amount,_chainId, _gasLimit,new bytes(0));
+        withdrawETHAndCall(
+            _l2Token,
+            _l1Token,
+            _to,
+            _amount,
+            _chainId,
+            _gasLimit,
+            new bytes(0)
+        );
     }
 
     /// @inheritdoc IL2ETHGateway
@@ -149,7 +183,15 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         // encode msg.sender with _data
         bytes memory _routerData = abi.encode(_msgSender(), _data);
 
-        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(_l2Token,_l1Token,_to, _amount,_chainId,_gasLimit, _routerData);
+        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(
+            _l2Token,
+            _l1Token,
+            _to,
+            _amount,
+            _chainId,
+            _gasLimit,
+            _routerData
+        );
     }
 
     /************************
@@ -157,7 +199,9 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
      ************************/
 
     /// @inheritdoc IL2GatewayRouter
-    function setETHGateway(address _newEthGateway) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setETHGateway(
+        address _newEthGateway
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         address _oldEthGateway = ethGateway;
         ethGateway = _newEthGateway;
 
@@ -165,15 +209,23 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setDefaultERC20Gateway(
+        address _newDefaultERC20Gateway
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         address _oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = _newDefaultERC20Gateway;
 
-        emit SetDefaultERC20Gateway(_oldDefaultERC20Gateway, _newDefaultERC20Gateway);
+        emit SetDefaultERC20Gateway(
+            _oldDefaultERC20Gateway,
+            _newDefaultERC20Gateway
+        );
     }
 
     /// @inheritdoc IL2GatewayRouter
-    function setERC20Gateway(address[] memory _tokens, address[] memory _gateways) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    function setERC20Gateway(
+        address[] memory _tokens,
+        address[] memory _gateways
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
 
         for (uint256 i = 0; i < _tokens.length; i++) {
@@ -184,24 +236,17 @@ contract L2GatewayRouter is ContextUpgradeable,ReentrancyGuardUpgradeable, IL2Ga
         }
     }
 
-     function setRoleManagerAddress(address _roleManagerAddress)
-        external
-    {
+    function setRoleManagerAddress(
+        address _roleManagerAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         roleManager = _roleManagerAddress;
     }
 
-    function addressToString(
-        address _address
-    ) public pure returns (string memory) {
-        bytes32 _bytes = bytes32(uint256(uint160(_address)));
-        bytes memory HEX = "0123456789abcdef";
-        bytes memory _string = new bytes(42);
-        _string[0] = "0";
-        _string[1] = "x";
-        for (uint i = 0; i < 20; i++) {
-            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
-            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
-        }
-        return string(_string);
+    function updateTokenMapping(
+        uint256,
+        address,
+        string memory
+    ) external virtual {
+        revert("Not accessible from router contract");
     }
 }

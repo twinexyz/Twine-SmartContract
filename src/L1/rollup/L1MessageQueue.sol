@@ -13,8 +13,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     uint64 withdrawalMessageIndex;
     uint64 layerZeroMessageIndex;
     address public messenger;
+    address public roleManager;
     address public messageQueueProxy;
-    address public roleManager; 
 
     /// @notice The list of queued cross domain messages.
     MessageData[] public depositMessageQueue;
