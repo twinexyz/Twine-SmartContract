@@ -25,7 +25,7 @@ contract DeployL2Contracts is Script {
             "TWS"
         );
         MockERC20 ethToken = new MockERC20("TwineEth", "TWE");
-        MockERC20 randomToken = new MockERC20("JholaGang", "JG");
+        MockERC20 randomToken = new MockERC20("FauxCoin", "FAUX");
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -77,7 +77,7 @@ contract DeployL2Contracts is Script {
         string memory twineObject = "TwineContracts";
         vm.serializeAddress(twineObject, "SolToken", address(solToken));
         vm.serializeAddress(twineObject, "ETHToken", address(ethToken));
-        vm.serializeAddress(twineObject, "JGToken", address(randomToken));
+        vm.serializeAddress(twineObject, "FauxCoin", address(randomToken));
         vm.serializeAddress(twineObject, "L2RoleManager", roleManagerAddress);
         vm.serializeAddress(twineObject, "L2ETHGateway", L2ETHGatewayAddress);
         vm.serializeAddress(twineObject, "L2GatewayRouter", L2GatewayRouterAddress);
