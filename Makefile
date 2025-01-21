@@ -11,26 +11,79 @@ updateDefaultValues:
 # *						L1 Scripts					*
 # ***************************************************
 
-
-# *************** 
-# *	DEPLOYMENTS	*
-# ***************
+# *********************** 
+# *		DEPLOYMENTS		*
+# ***********************
 
 # deploy every L1 contract
 deployEveryL1Contracts:
 	bash script/shell/deployments/L1deployments/deployEveryL1Contracts.sh
 
-# ***********
-# *	SETUPS	*
-# ***********
+
+# *******************
+# *		SETUPS		*
+# *******************
+
+#<-------------SETUP EVERYTHING------------->
 
 #setup every L1 contract
 setupEveryL1Contracts:
 	bash script/shell/setups/L1setups/setupEveryL1Contracts.sh
 
-# ***********
-# *	ACTIONS	*
-# ***********
+#<-------------TWINE CHAIN SETUPS------------->
+
+#setup rolemanager
+setupRoleManagerTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setRoleManagerTC.sh
+
+#setup chain id 
+setupChainIdTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setChainIdTC.sh
+
+#setup message queue 
+setupMessageQueueTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setMessageQueueTC.sh
+
+#setup verifier
+setupVerifierTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setVerifierTC.sh
+
+#setup program V keys
+setupVkeysTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setVkeysTC.sh
+
+#setup gateway
+setupGatewayTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setGatewayTC.sh
+
+#<-------------ETH GATEWAY SETUP------------->
+
+#setup role manager
+
+#setup gateway router
+
+#setup twine messenger
+
+#setup L2 Token Address
+
+#<-------------MESSAGE QUEUE SETUP------------->
+
+
+#<-------------GATEWAY ROUTER SETUP------------->
+
+#<-------------MESSENGER SETUP------------->
+
+#<-------------CUSTOM ERC20 SETUP------------->
+
+
+
+
+
+# *******************
+# *		ACTIONS		*
+# *******************
+
+#<-------------ETH GATEWAY ACTIONS------------->
 
 # initiate eth deposit
 depositETH:
@@ -40,6 +93,8 @@ depositETH:
 forcedWithdrawETH:
 	bash script/shell/actions/L1actions/ethforcedWithdraw.sh
 
+#<-------------ERC20 GATEWAY ACTIONS------------->
+
 # initiate erc20 deposit
 depositERC20:
 	bash script/shell/actions/L1actions/erc20deposit.sh
@@ -47,6 +102,8 @@ depositERC20:
 # initiate forced withdraw of erc20
 forcedWithdrawERC20:
 	bash script/shell/actions/L1actions/erc20forcedWithdraw.sh
+
+#<-------------TWINE CHAIN ACTIONS------------->
 
 # commit and finalize a batch
 commitAndFinalizeBatch:
@@ -56,6 +113,7 @@ commitAndFinalizeBatch:
 commitAndFinalizeTransaction:
 	bash script/shell/actions/L1actions/commitAndFinalizeTxn.sh
 
+# finalize a withdrawal
 finalizeWithdrawal:
 	bash script/shell/actions/L1actions/finalizeWithdrawal.sh
 
