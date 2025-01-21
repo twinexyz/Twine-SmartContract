@@ -4,13 +4,13 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import {MockERC20} from "../../src/test/mocks/MockERC20.sol";
-import {MockERC20_9Decimals} from "../../src/test/mocks/MockERC20_9Decimals.sol";
-import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
-import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
-import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
-import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
-import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
+import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
+import {MockERC20_9Decimals} from "../../../src/test/mocks/MockERC20_9Decimals.sol";
+import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
+import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
+import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
+import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract DeployL2Contracts is Script {
     function run() external {
@@ -87,7 +87,7 @@ contract DeployL2Contracts is Script {
 
         vm.writeJson(
             finalJson,
-            "./script/utils/twine.json"
+            "./script/utils/twineAddresses.json"
         );
 
         // Stop broadcasting transactions

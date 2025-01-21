@@ -5,13 +5,13 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import {MockERC20} from "../../src/test/mocks/MockERC20.sol";
-import {MockERC20_9Decimals} from "../../src/test/mocks/MockERC20_9Decimals.sol";
-import {L2TwineMessenger} from "../../src/L2/L2TwineMessenger.sol";
-import {L2ETHGateway} from "../../src/L2/gateways/L2ETHGateway.sol";
-import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
-import {L2GatewayRouter} from "../../src/L2/gateways/L2GatewayRouter.sol";
-import {L2CustomERC20Gateway} from "../../src/L2/gateways/L2CustomERC20Gateway.sol";
+import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
+import {MockERC20_9Decimals} from "../../../src/test/mocks/MockERC20_9Decimals.sol";
+import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
+import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
+import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
+import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
 
 contract L2SetupScript is Script {
     RoleManager roleManager;
@@ -21,13 +21,13 @@ contract L2SetupScript is Script {
     L2CustomERC20Gateway l2CustomERC20Gateway;
     MockERC20_9Decimals solToken;
     MockERC20 ethToken ;
-    MockERC20 fauxCoin ;
+    MockERC20 fauxCoin;
 
     uint256 chainIdEth;
     uint256 chainIdSolana;
     address solTokenAddress;
     address ethTokenAddress;
-    address fauxCoinAddress;
+    address fauxCoinAddress;    
     address roleManagerAddress;
     address l2ETHGatewayAddress;
     address l1FauxCoinAddress;
@@ -84,12 +84,12 @@ contract L2SetupScript is Script {
             ".Twine.ETHToken" 
         );
 
-        fauxCoinAddress = vm.parseJsonAddress(
+        fauxCoinAddress  = vm.parseJsonAddress(
             deployedJson,
             ".Twine.FauxCoin" 
         );
 
-        l1FauxCoinAddress = vm.parseJsonAddress(
+        l1FauxCoinAddress  = vm.parseJsonAddress(
             deployedJson,
             ".Dev1.FauxCoin"
         );
@@ -122,7 +122,7 @@ contract L2SetupScript is Script {
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
         solToken = MockERC20_9Decimals(solTokenAddress);
         ethToken = MockERC20(ethTokenAddress);
-        fauxCoin = MockERC20(fauxCoinAddress);
+        fauxCoin  = MockERC20(fauxCoinAddress);
         bridgingPrecompileAddress = address(0x15);
         consensusPrecompileAddress = address(0x16);
     }
@@ -201,7 +201,7 @@ contract L2SetupScript is Script {
             "11111111111111111111111111111111"
         );
 
-        // TODO: Map FauxCoin on Twine to FauxCoin on solana
+        // TODO: Map FauxCoin  on Twine to FauxCoin on solana
 
 
         uint256[] memory chainIdset = new uint256[](1);

@@ -99,6 +99,7 @@ interface ITwineChain {
         uint64 chainId;
         uint64 batchNumber;
         uint64 nonce;
+        bool isForced;
         bytes32 receiptRoot;
         string l1ReceiverAddress;
         string l1TokenAddress;
