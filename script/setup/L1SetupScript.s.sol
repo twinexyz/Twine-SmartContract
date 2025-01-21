@@ -188,8 +188,7 @@ contract L1SetupScript is Script {
         l1TwineMessenger.setRoleManager(roleManagerAddress);
         l1TwineMessenger.setRollupAddress(twineChainAddress);
         l1TwineMessenger.setMessengerQueueAddress(l1MessageQueueAddress);
-        // TODO: FIX
-        // l1TwineMessenger.setCounterpartMessenger(l2TwineMessengerAddress);
+        l1TwineMessenger.setCounterpartMessenger(l2TwineMessengerAddress);
 
         //L1CustomERC20Gateway setup
         l1CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
