@@ -59,7 +59,7 @@ contract UpgradeL1Contracts is Script {
 
         l1ERC20TokenAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.JGToken"
+            ".Dev1.FauxCoin"
         );
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(

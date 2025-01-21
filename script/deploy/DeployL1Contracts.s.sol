@@ -105,7 +105,7 @@ contract DeployL1Contracts is Script {
         vm.serializeAddress(twineObject, "L1CustomERC20Gateway", L1CustomERC20GatewayAddress);
         vm.serializeAddress(twineObject, "L1XERC20Gateway", address(0));
         vm.serializeAddress(twineObject, "Verifier", address(0));
-        vm.serializeAddress(twineObject, "JGToken", address(0));
+        vm.serializeAddress(twineObject, "FauxCoin", address(0));
 
         // Fill them manually
         vm.serializeString(twineObject, "executionVkey", "");

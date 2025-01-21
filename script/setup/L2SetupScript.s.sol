@@ -21,16 +21,16 @@ contract L2SetupScript is Script {
     L2CustomERC20Gateway l2CustomERC20Gateway;
     MockERC20_9Decimals solToken;
     MockERC20 ethToken ;
-    MockERC20 jgToken ;
+    MockERC20 fauxCoin ;
 
     uint256 chainIdEth;
     uint256 chainIdSolana;
     address solTokenAddress;
     address ethTokenAddress;
-    address jgTokenAddress;
+    address fauxCoinAddress;
     address roleManagerAddress;
     address l2ETHGatewayAddress;
-    address l1JgTokenAddress;
+    address l1FauxCoinAddress;
     address l1ETHGatewayAddress;
     address l2ERC20TokenAddress;
     address l2MessageQueueAddress;
@@ -84,14 +84,14 @@ contract L2SetupScript is Script {
             ".Twine.ETHToken" 
         );
 
-        jgTokenAddress = vm.parseJsonAddress(
+        fauxCoinAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Twine.JGToken" 
+            ".Twine.FauxCoin" 
         );
 
-        l1JgTokenAddress = vm.parseJsonAddress(
+        l1FauxCoinAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.JGToken"
+            ".Dev1.FauxCoin"
         );
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
@@ -122,7 +122,7 @@ contract L2SetupScript is Script {
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
         solToken = MockERC20_9Decimals(solTokenAddress);
         ethToken = MockERC20(ethTokenAddress);
-        jgToken = MockERC20(jgTokenAddress);
+        fauxCoin = MockERC20(fauxCoinAddress);
         bridgingPrecompileAddress = address(0x15);
         consensusPrecompileAddress = address(0x16);
     }
@@ -152,7 +152,7 @@ contract L2SetupScript is Script {
         string[] memory l1Tokens = new string[](1);
         string[] memory CounterpartGateWay = new string[](1);
         GatewaychainId[0] = chainIdEth;
-        l1Tokens[0] =  addressToString(l1JgTokenAddress);
+        l1Tokens[0] =  addressToString(l1FauxCoinAddress);
         CounterpartGateWay[0] = addressToString(l1ETHGatewayAddress);
 
         //L2GatewayRouter Setup
@@ -162,7 +162,7 @@ contract L2SetupScript is Script {
         gateways[0] = l2CustomERC20GatewayAddress;
         tokens[0] = ethTokenAddress;
         gateways[0] = l2CustomERC20GatewayAddress;
-        tokens[0] = jgTokenAddress;
+        tokens[0] = fauxCoinAddress;
         gateways[0] = l2CustomERC20GatewayAddress;
         l2GatewayRouter.setRoleManagerAddress(address(roleManager));
         l2GatewayRouter.setERC20Gateway(tokens, gateways);
@@ -185,8 +185,8 @@ contract L2SetupScript is Script {
 
         l2CustomERC20Gateway.updateTokenMapping(
             chainIdEth,
-            jgTokenAddress,
-            addressToString(l1JgTokenAddress)
+            fauxCoinAddress,
+            addressToString(l1FauxCoinAddress)
         );
 
         l2CustomERC20Gateway.updateTokenMapping(
@@ -201,7 +201,7 @@ contract L2SetupScript is Script {
             "11111111111111111111111111111111"
         );
 
-        // TODO: Map JG Token on Twine to JG Token on solana
+        // TODO: Map FauxCoin on Twine to FauxCoin on solana
 
 
         uint256[] memory chainIdset = new uint256[](1);
@@ -209,7 +209,7 @@ contract L2SetupScript is Script {
         string[] memory erc20CounterpartGateWay = new string[](1);
 
         chainIdset[0] = chainIdEth;
-        l1Token[0] = addressToString(l1JgTokenAddress);
+        l1Token[0] = addressToString(l1FauxCoinAddress);
         erc20CounterpartGateWay[0] = addressToString(l1CustomERC20GatewayAddress);
 
         // Stop broadcasting transactions

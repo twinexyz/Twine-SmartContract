@@ -10,7 +10,7 @@ ONE_L1_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f
 ONE_L1_EXECUTION_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
 ONE_L1_TRANSACTION_INCLUSION_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
 ONE_L1_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
-ONE_L1_JG_TOKEN=0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
+ONE_L1_FAUX_COIN=0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
 ONE_L1_SP1_VERIFIER=0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
 
 TWINE_CHAIN_NAME=twine
@@ -107,7 +107,7 @@ jq --arg vkey "$ONE_L1_EXECUTION_VKEY" '.executionVkey = $vkey' "$ONE_L1_ADDRESS
 jq --arg vkey "$ONE_L1_TRANSACTION_INCLUSION_VKEY" '.inclusionVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 jq --arg vkey "$ONE_L1_WITHDRAW_VKEY" '.withdrawalVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 jq --arg vkey "$ONE_L1_SP1_VERIFIER" '.Verifier = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
-jq --arg vkey "$ONE_L1_JG_TOKEN" '.JGToken = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
+jq --arg vkey "$ONE_L1_FAUX_COIN" '.FauxCoin= $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 
 dev_contracts=$(cat "$ONE_L1_ADDRESSES")
 twine_contracts=$(cat "$TWINE_ADDRESSES")
