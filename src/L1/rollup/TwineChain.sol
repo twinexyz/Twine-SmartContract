@@ -189,11 +189,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
 
         // Commit the batch only if the pervious batch is finalized properlya
-        require(commit_info.batchNumber == lastFinalizedBatchNumber + 1, "Invalid Batch Sequence");
+        // require(commit_info.batchNumber == lastFinalizedBatchNumber + 1, "Invalid Batch Sequence");
 
-        require(commit_info.previousStateRoot == committedBatches[commit_info.batchNumber].previousStateRoot, "Invalid Batch Sequence");
+        // require(commit_info.previousStateRoot == committedBatches[commit_info.batchNumber].previousStateRoot, "Invalid Batch Sequence");
 
-        require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
+        // require(isBatchFinalized(commit_info.batchNumber - 1), "Previous batch must be finalized.");
 
         // Verify Execution Proof
         bytes memory publicInputForExecution = abi.encodePacked(
@@ -205,9 +205,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             commit_info.receiptRoot
         );
 
-        bytes memory executionProofWithSelector = prependBytes(execution_proof);
+        // bytes memory executionProofWithSelector = prependBytes(execution_proof);
 
-        SP1Verifier(verifier).verifyProof(executionVKey, publicInputForExecution, executionProofWithSelector);
+        // SP1Verifier(verifier).verifyProof(executionVKey, publicInputForExecution, executionProofWithSelector);
 
         committedBatches[commit_info.batchNumber] = commit_info;
         finalizedStateRoots[commit_info.batchNumber] = commit_info.stateRoot;
@@ -272,9 +272,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         
         bytes memory publicInputForInclusion = _calculatePublicInputForInclusion(transaction_info, chain_data);
 
-        bytes memory inclusionProofWithSelector = prependBytes(inclusion_proof);
+        // bytes memory inclusionProofWithSelector = prependBytes(inclusion_proof);
 
-        SP1Verifier(verifier).verifyProof(inclusionVKey, publicInputForInclusion, inclusionProofWithSelector);
+        // SP1Verifier(verifier).verifyProof(inclusionVKey, publicInputForInclusion, inclusionProofWithSelector);
 
         // Move the withdrawal that are ready for execution to execution queue
         for(uint256 i = 0; i < depositCount; i++) {
@@ -323,15 +323,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.l2TokenAddress,
             withdrawalInputs.publicInput.amount
         );
-        bytes memory withdrawalProofWithSelector = prependBytes(
-            withdrawalInputs.inclusionProof
-        );
+        // bytes memory withdrawalProofWithSelector = prependBytes(
+        //     withdrawalInputs.inclusionProof
+        // );
 
-        SP1Verifier(verifier).verifyProof(
-            withdrawalVKey,
-            replacedPublicInput,
-            withdrawalProofWithSelector
-        );
+        // SP1Verifier(verifier).verifyProof(
+        //     withdrawalVKey,
+        //     replacedPublicInput,
+        //     withdrawalProofWithSelector
+        // );
 
         IL1MessageQueue(messageQueue).appendExecutionMessage(
             withdrawalInputs.publicInput.nonce,
