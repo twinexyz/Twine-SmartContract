@@ -6,14 +6,14 @@ DEFAULT_FORK_URL="http://127.0.0.1:8545"
 
 
 #prompt the user
-read -p "Verifier Address: " VERIFIER_ADDRESS
+read -p "L1 Messenger Address: " L1_MESSENGER_ADDRESS
 
 #export env variables:
 export PRIVATE_KEY
-export VERIFIER_ADDRESS
+export L1_MESSENGER_ADDRESS
 
 #Run the forge script with the provided values
-forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetVerifierAddress \
+forge script script/setup/L1SetupScripts/MessageQueueSetup.s.sol:SetMessagengerAddress \
     --fork-url $DEFAULT_FORK_URL  \
     --broadcast \
-    -- --env "VERIFIER_ADDRESS=$VERIFIER_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    -- --env "L1_MESSENGER_ADDRESS=$L1_MESSENGER_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"

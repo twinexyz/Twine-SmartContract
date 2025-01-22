@@ -114,7 +114,7 @@ contract DepositERC20 is Script {
     function setUp() public {
         string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
 
-        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Dev1.JGToken");
+        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Dev1.FauxCoin");
         l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
 
@@ -170,8 +170,8 @@ contract ForcedWithdrawERC20 is Script {
     function setUp() public {
         string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
 
-        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Dev1.JGToken");
-        l2ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Twine.JGToken");
+        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Dev1.FauxCoin");
+        l2ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Twine.FauxCoin");
         l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
         l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
 

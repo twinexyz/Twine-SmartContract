@@ -259,7 +259,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint64 _chainId,
         string memory _amount,
         uint64 _blockNumber
-    ) external override onlyMessenger {
+    ) external override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         _queueExecutionTransaction(
             _nonce,
             _to,

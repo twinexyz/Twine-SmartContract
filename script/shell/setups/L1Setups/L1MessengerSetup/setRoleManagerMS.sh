@@ -6,14 +6,14 @@ DEFAULT_FORK_URL="http://127.0.0.1:8545"
 
 
 #prompt the user
-read -p "Verifier Address: " VERIFIER_ADDRESS
+read -p "Role Manager Address: " ROLE_MANAGER_ADDRESS
 
 #export env variables:
 export PRIVATE_KEY
-export VERIFIER_ADDRESS
+export ROLE_MANAGER_ADDRESS
 
 #Run the forge script with the provided values
-forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetVerifierAddress \
+forge script script/setup/L1SetupScripts/L1TwineMessengerSetup.s.sol:SetRoleManagerAddress \
     --fork-url $DEFAULT_FORK_URL  \
     --broadcast \
-    -- --env "VERIFIER_ADDRESS=$VERIFIER_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    -- --env "ROLE_MANAGER_ADDRESS=$ROLE_MANAGER_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"

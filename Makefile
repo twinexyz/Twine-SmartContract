@@ -19,66 +19,7 @@ updateDefaultValues:
 deployEveryL1Contracts:
 	bash script/shell/deployments/L1deployments/deployEveryL1Contracts.sh
 
-
-# *******************
-# *		SETUPS		*
-# *******************
-
-#<-------------SETUP EVERYTHING------------->
-
-#setup every L1 contract
-setupEveryL1Contracts:
-	bash script/shell/setups/L1setups/setupEveryL1Contracts.sh
-
-#<-------------TWINE CHAIN SETUPS------------->
-
-#setup rolemanager
-setupRoleManagerTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setRoleManagerTC.sh
-
-#setup chain id 
-setupChainIdTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setChainIdTC.sh
-
-#setup message queue 
-setupMessageQueueTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setMessageQueueTC.sh
-
-#setup verifier
-setupVerifierTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setVerifierTC.sh
-
-#setup program V keys
-setupVkeysTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setVkeysTC.sh
-
-#setup gateway
-setupGatewayTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setGatewayTC.sh
-
-#<-------------ETH GATEWAY SETUP------------->
-
-#setup role manager
-
-#setup gateway router
-
-#setup twine messenger
-
-#setup L2 Token Address
-
-#<-------------MESSAGE QUEUE SETUP------------->
-
-
-#<-------------GATEWAY ROUTER SETUP------------->
-
-#<-------------MESSENGER SETUP------------->
-
-#<-------------CUSTOM ERC20 SETUP------------->
-
-
-
-
-
+	
 # *******************
 # *		ACTIONS		*
 # *******************
@@ -118,21 +59,162 @@ finalizeWithdrawal:
 	bash script/shell/actions/L1actions/finalizeWithdrawal.sh
 
 
+# *******************
+# *		SETUPS		*
+# *******************
+
+#<-------------SETUP EVERYTHING------------->
+
+#setup every L1 contract
+setupEveryL1Contracts:
+	bash script/shell/setups/L1setups/setupEveryL1Contracts.sh
+
+#<-------------TWINE CHAIN SETUPS------------->
+
+#setup rolemanager
+setupRoleManagerTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setRoleManagerTC.sh
+
+#setup chain id 
+setupChainIdTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setChainIdTC.sh
+
+#setup message queue 
+setupMessageQueueTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setMessageQueueTC.sh
+
+#setup verifier
+setupVerifierTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setVerifierTC.sh
+
+#setup program V keys
+setupVkeysTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setVkeysTC.sh
+
+#setup gateway
+setupGatewayTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setGatewayTC.sh
+
+#<-------------L1 ETH GATEWAY SETUP------------->
+
+#setup role manager
+setupRoleManagerL1ETHGateway:
+	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setRoleManagerETH.sh
+
+#setup gateway router
+setGatewayRouterL1ETHGateway:
+	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setGatewayRouterETH.sh
+
+#setup twine messenger
+setTwineMessengerL1ETHGateway:
+	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setTwineMessengerETH.sh
+
+#setup L2 Token Address
+setL2TokenL1ETHGateway:
+	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setL2TokenETH.sh
+
+#<-------------L1 MESSAGE QUEUE SETUP------------->
+
+#setup role manager
+setRoleManagerMQ:
+	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setRoleManagerMQ.sh
+
+#setup chain id
+setChainIdMQ:
+	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setChainIdMQ.sh
+
+#setup l1 twine messenger 
+setTwineMessengerMQ:
+	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setTwineMessengerMQ.sh
+
+#setup message queue proxy
+setMessageProxyMQ:
+	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setMessageProxyMQ.sh
+
+
+#<-------------L1 GATEWAY ROUTER SETUP------------->
+
+#setup role manager
+setRoleManagerGR:
+	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setRoleManagerGR.sh
+
+#setup ETH Gateway
+setETHGatewayGR:
+	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setETHGatewayGR.sh
+
+#setup Default ERC20 Gateway
+setDefaultERC20GatewayGR:
+	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setDefaultERC20GatewayGR.sh
+
+#setup ERC20 Gaetway
+setERC20GatewayGR:
+	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setERC20GatewayGR.sh
+
+
+#<-------------L1 MESSENGER SETUP------------->
+
+#setup role manager
+setRoleManagerMS:
+	bash script/shell/setups/L1Setups/L1MessengerSetup/setRoleManagerMS.sh
+
+#setup rollup
+setRollupMS:
+	bash script/shell/setups/L1Setups/L1MessengerSetup/setRollupMS.sh
+
+#setup message queue
+setMessageQueueMS:
+	bash script/shell/setups/L1Setups/L1MessengerSetup/setMessageQueueMS.sh
+
+#setup counterpart messenger
+setCounterpartMessengerMS:
+	bash script/shell/setups/L1Setups/L1MessengerSetup/setCounterpartMessengerMS.sh
+
+#<-------------L1 CUSTOM ERC20 SETUP------------->
+
+#setup role manager
+setRoleManagerCG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setRoleManagerCG.sh
+
+#setup gateway router
+setGatewayRouterCG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setGatewayRouterCG.sh
+
+#setup twine messenger
+setTwineMessengerCG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setTwineMessengerCG.sh
+
+#update token mapping
+updateTokenMappingCG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/updateTokenMappingCG.sh
+
+
 # *************************************************** 
 # *						L2 Scripts					*
 # ***************************************************
 
-# *************** 
-# *	DEPLOYMENTS	*
-# ***************
+# *********************** 
+# *		DEPLOYMENTS		*
+# ***********************
 
 # deploy every L2 contract
 deployEveryL2Contracts:
 	bash script/shell/deployments/L2deployments/deployEveryL2Contracts.sh
 
-# ***********
-# *	SETUPS	*
-# ***********
+# *******************
+# *		ACTIONS		*
+# *******************
+
+#withdraw ETH
+	bash script/shell/actions/L2actions/ethwithdraw.sh
+
+
+#withdraw ERC20
+	bash script/shell/actions/L2actions/erc20withdraw.sh
+
+
+# *******************
+# *		SETUPS		*
+# *******************
 
 #setup every L2 contract
 setupEveryL2Contracts:
