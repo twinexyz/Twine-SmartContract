@@ -11,24 +11,6 @@ import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
-    /**********
-     * Events *
-     **********/
-    /// @notice Emitted when a cross domain message is relayed successfully.
-    /// @param messageHash The hash of the message.
-    event RelayedMessage(bytes32 indexed messageHash);
-
-    /// @notice Emitted when a cross domain message is failed to relay.
-    /// @param messageHash The hash of the message.
-    event FailedRelayedMessage(bytes32 indexed messageHash);
-
-    event WithdrawalSuccessful(
-        address l1Token,
-        address l2Token,
-        address recipient,
-        uint256 amount
-    );
-
     /*************
      * Variables *
      *************/
@@ -81,6 +63,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /*****************************
      * Public Mutating Functions *
      *****************************/
+    
     function setMessengerQueueAddress(
         address _messageQueue
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {

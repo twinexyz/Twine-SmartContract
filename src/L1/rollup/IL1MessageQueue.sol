@@ -130,27 +130,38 @@ interface IL1MessageQueue {
      *****************************/
 
     /// @notice Sets the messenger address
+    /// @param _messenger messenger address to set
     function setMessengerAddress(address _messenger) external;
 
     /// @notice Sets the chain id
+    /// @param _chainId chain id to set
     function setChainId(uint64 _chainId) external;
 
     /// @notice sets role manager address
+    /// @param _roleManager role manager address to set
     function setRoleManager(address _roleManager) external;
 
     /// @notice set the proxy Address of MessageQueue
+    /// @param proxyAddress message queue proxy address to set
     function setMessageQueueProxy(address proxyAddress) external;
 
     /// @notice Removes the first N message from the Deposit Queue
+    /// @param n number of deposit message to pop
     function popFirstNDepositElement(uint n) external;
 
     /// @notice Removes the first N message from the Withdrawal Queue
+    /// @param n number of withdraw message  to pop
     function popFirstNWithdrawalElement(uint n) external;
 
     /// @notice Removes the first N message from the Layer Zero Queue
+    /// @param n number of lz message to pop
     function popFirstNLayerZeroElement(uint n) external;
 
     /// @notice Append new message to the deposit queue
+    /// @param to Address of receiver on Twine
+    /// @param l1_token address of token to deposit on L1
+    /// @param l2_token address of token to be received on L2
+    /// @param amount amount of token to deposit
     function appendCrossDomainDepositMessage(
         address from,
         address to,
@@ -160,6 +171,10 @@ interface IL1MessageQueue {
     ) external;
 
     /// @notice Append new message to the deposit queue
+    /// @param to Address of receiver on L1
+    /// @param l1_token address of token to receive on L1
+    /// @param l2_token address of token to be withdrawan from L2
+    /// @param amount amount of token to withdraw
     function appendCrossDomainWithdrawalMessage(
         address from,
         address to,
@@ -168,7 +183,14 @@ interface IL1MessageQueue {
         uint256 amount
     ) external;
 
-    /// @notice Append new message to the deposit queue
+    /// @notice Append message that are ready for execution
+    /// @param _nonce the nonce of the message
+    /// @param _to the receiver address
+    /// @param _l1_token adress of token to be received on l1
+    /// @param _l2_token adress of token withdrawan from Twine
+    /// @param _chainId chain Id of L1
+    /// @param _amount amount to be received on L1
+    /// @param _block_number L2 block number in which this transaction was present
     function appendExecutionMessage(
         uint64 _nonce,
         uint64 _chainId,

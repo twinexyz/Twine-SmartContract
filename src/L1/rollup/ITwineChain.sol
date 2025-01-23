@@ -40,11 +40,10 @@ interface ITwineChain {
     /**********
      * Enums  *
      **********/
-    /// @notice Transactions stored in queue
+    /// @notice Types of transactions stored in the queue
     /// @param deposit Deposit Transactions
     /// @param withdraw Withdraw Transactions
     /// @param layerZero layer zero transactions
-
     enum TransactionType {
         deposit,
         withdraw,
@@ -95,11 +94,24 @@ interface ITwineChain {
         bytes32 lzTransactionRollingHash;
     }
 
+    /// @notice Input required to finalize the withdrawal
+    /// @param publicInput Public Input for the g16 proof
+    /// @param inclusionProof groth16 proof for proving the withdrawal's inclusion
     struct FinalizeWithdrawalInput {
         WithdrawalPublicInput publicInput;
         bytes inclusionProof;
-    }
+    }  
 
+    /// @notice required withdrawal data to execute withdrawal
+    /// @param chainId chain id of the L1 to withdraw on
+    /// @param batchNumber Twine batch number on which the withdrawal was initiated
+    /// @param nonce nonce of the message
+    /// @param isForced identifier for denoting forced withdrawal
+    /// @param receiptRoot receipt root of the batch
+    /// @param l1ReceiverAddress receiver address on l1
+    /// @param l1TokenAddress address of token to be received on l1
+    /// @param l2TokenAddress address of token withdrawan from l2
+    /// @param amount amount of token to withdraw
     struct WithdrawalPublicInput {
         bytes32 receiptRoot;
         uint64 chainId;
@@ -116,42 +128,42 @@ interface ITwineChain {
      * Public View Functions *
      *************************/
 
-    /// @return The latest finalized batch number.
+    /// @return lastFinalizedBatchNumber batch number of latest finalized batch
     function lastFinalizedBatchNumber() external view returns (uint256);
 
     /// @return The latest committed finalized batch number.
     function lastCommittedBatchNumber() external view returns (uint256);
+    
+    /// @param batchNumber The number of the batch.
+    /// @return stateRoot state root of the provided batch
+    function finalizedStateRoots(uint256 batchNumber) external view returns (bytes32);
 
     /// @param batchNumber The number of the batch.
-    /// @return The state root of a committed batch.
-    function finalizedStateRoots(
-        uint256 batchNumber
-    ) external view returns (bytes32);
-
-    /// @param batchNumber The number of the batch.
-    /// @return Whether the batch is finalized by batch number.
+    /// @return IsFinalized weather the provided batch is finalized or not
     function isBatchFinalized(uint256 batchNumber) external view returns (bool);
 
     /// @param batchNumber The number of the batch.
-    /// @return The receiptRoot of the batch
-    function getReceiptRoot(
-        uint256 batchNumber
-    ) external view returns (bytes32);
+    /// @return receiptRoot receiptRoot of the provided batch
+    function getReceiptRoot(uint256 batchNumber) external view returns (bytes32);
 
     /*****************************
      * Public Mutating Functions *
      *****************************/
 
     /// @notice sets the chain id
+    /// @param _chainId the chain id to set
     function setChainId(uint256 _chainId) external;
 
     /// @notice sets the role manager address
+    /// @param _roleManagerAddress the address of role manager to set
     function setRoleManagerAddress(address _roleManagerAddress) external;
 
     /// @notice sets the messager queue address
+    /// @param _messageQueue the address message queue of to set
     function setMessengerQueueAddress(address _messageQueue) external;
 
     /// @notice sets the verifier address
+    /// @param _verifier the address of verifier to set
     function setVeriferAddress(address _verifier) external;
 
     /// @notice sets vkeys for different proofs.
@@ -165,6 +177,8 @@ interface ITwineChain {
     ) external;
 
     ///@notice sets the gateway addresses
+    /// @param _ethGateway ETHGateway address to set
+    /// @param _ERC20Gateway ERC2OGateway address to set
     function setGatewayAddress(
         address _ethGateway,
         address _ERC20Gateway
@@ -186,7 +200,7 @@ interface ITwineChain {
         bytes memory inclusion_proof
     ) external;
 
-    function finalizeWithdrawal(
-        FinalizeWithdrawalInput memory withdrawalInputs
-    ) external;
+    /// @notice Finalizes both l2 initiated and forced withdrawal of different tokens
+    /// @param withdrawalInputs required withdrawal data to execute withdrawal
+    function finalizeWithdrawal(FinalizeWithdrawalInput memory withdrawalInputs) external;
 }
