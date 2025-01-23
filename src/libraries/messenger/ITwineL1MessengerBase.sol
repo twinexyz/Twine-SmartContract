@@ -36,10 +36,11 @@ interface ITwineL1MessengerBase {
     /// @param amount amount to withdraw/deposit 
     function sendMessage(
         TransactionType _type,
-        string memory to,
-        string memory l1_token,
-        string memory l2_token,
-        string memory amount
+        address from,
+        address to,
+        address l1_token,
+        address l2_token,
+        uint256 amount
     ) external payable;
     
 }

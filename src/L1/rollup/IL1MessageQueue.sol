@@ -8,38 +8,42 @@ interface IL1MessageQueue {
 
     /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
     /// @param nonce The nonce of the message.
-    /// @param to_twine_address The address of receiver.
-    /// @param l1_token Address of token to send from L1.
-    /// @param l2_token address of token to receive on L2.
     /// @param chainId Chain Id of this L1.
+    /// @param blockNumber The block number in which this transaction occured.
     /// @param amount The amount of token to send.
-    /// @param block_number The block number in which this transaction occured.
+    /// @param l1Token Address of token to send from L1.
+    /// @param l2Token address of token to receive on L2.
+    /// @param toTwineAddress The address of receiver.
+
     event QueueDepositTransaction(
         uint64 nonce,
-        string to_twine_address,
-        string l1_token,
-        string l2_token,
         uint64 chainId,
-        string amount,
-        uint64 block_number
+        uint64 blockNumber,
+        address l1Token,
+        address l2Token,
+        address from,
+        address toTwineAddress,
+        uint256 amount
     );
 
     /// @notice Emitted when a new L1 => L2 forced withdrawal transaction is appended to the queue.
     /// @param nonce The nonce of the message.
-    /// @param to_twine_address The address of receiver.
-    /// @param l1_token Address of token to receive on L1.
-    /// @param l2_token address of token to send from L2.
     /// @param chainId Chain Id of this L1.
+    /// @param blockNumber The block number in which this transaction occured.
     /// @param amount The amount of token to send.
-    /// @param block_number The block number in which this transaction occured.
+    /// @param l1Token Address of token to receive on L1.
+    /// @param l2Token address of token to send from L2.
+    /// @param toTwineAddress The address of receiver.
+
     event QueueWithdrawalTransaction(
         uint64 nonce,
-        string to_twine_address,
-        string l1_token,
-        string l2_token,
         uint64 chainId,
-        string amount,
-        uint64 block_number
+        uint64 blockNumber,
+        address l1Token,
+        address l2Token,
+        address from,
+        address toTwineAddress,
+        uint256 amount
     );
 
     /**********
@@ -53,9 +57,9 @@ interface IL1MessageQueue {
      * Struct *
      **********/
 
-    /// @notice Deposit message stored data 
+    /// @notice Deposit message stored data
     /// @param nonce the nonce of the message
-    /// @param toAddress the Twine address to deposit into 
+    /// @param toAddress the Twine address to deposit into
     /// @param l1Token the address of token to deposit on l1
     /// @param l2Token the address of token to receive on l2
     /// @param chainId chain id of the l1 where deposit is initiated
@@ -63,12 +67,13 @@ interface IL1MessageQueue {
     /// @param blockNumber block number on which deposit occured
     struct MessageData {
         uint64 nonce;
+        uint64 chainId;
+        uint64 blockNumber;
+        string fromAddress;
         string toAddress;
         string l1Token;
         string l2Token;
-        uint64 chainId;
         string amount;
-        uint64 blockNumber;
     }
 
     /*************************
@@ -90,7 +95,7 @@ interface IL1MessageQueue {
         returns (uint256);
 
     /// @notice Return the index of next appended message.
-    /// @dev Also the total number of appended messages. 
+    /// @dev Also the total number of appended messages.
     function nextCrossDomainExecutionMessageIndex()
         external
         view
@@ -152,17 +157,17 @@ interface IL1MessageQueue {
     /// @param n number of lz message to pop
     function popFirstNLayerZeroElement(uint n) external;
 
-
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on Twine
     /// @param l1_token address of token to deposit on L1
     /// @param l2_token address of token to be received on L2
     /// @param amount amount of token to deposit
     function appendCrossDomainDepositMessage(
-        string memory to,
-        string memory l1_token,
-        string memory l2_token,
-        string memory amount
+        address from,
+        address to,
+        address l1_token,
+        address l2_token,
+        uint256 amount
     ) external;
 
     /// @notice Append new message to the deposit queue
@@ -171,10 +176,11 @@ interface IL1MessageQueue {
     /// @param l2_token address of token to be withdrawan from L2
     /// @param amount amount of token to withdraw
     function appendCrossDomainWithdrawalMessage(
-        string memory to,
-        string memory l1_token,
-        string memory l2_token,
-        string memory amount
+        address from,
+        address to,
+        address l1_token,
+        address l2_token,
+        uint256 amount
     ) external;
 
     /// @notice Append message that are ready for execution
@@ -187,17 +193,20 @@ interface IL1MessageQueue {
     /// @param _block_number L2 block number in which this transaction was present
     function appendExecutionMessage(
         uint64 _nonce,
-        string memory _to,
-        string memory _l1_token,
-        string memory _l2_token,
         uint64 _chainId,
-        string memory _amount,
-        uint64 _block_number
+        uint64 _blockNumber,
+        string memory _from,
+        string memory _to,
+        string memory _l1Token,
+        string memory _l2Token,
+        string memory _amount
     ) external;
 
-    /// @notice Remove message on index form execution message queue 
-    /// @param index index where the message is to be removed from
-    function removeExecutionMessage(uint256 index) external;
+    function isNonceInExecutionQueue(
+        uint256 _nonce
+    ) external view returns (bool);
 
-
+    /// @notice Remove message with the given nonce from the execution message queue
+    /// @param nonce The nonce of the message to be removed
+    function removeExecutionMessage(uint256 nonce) external;
 }

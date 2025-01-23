@@ -129,10 +129,11 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
         IL1TwineMessenger(messenger).sendMessage{value: _gasLimit}(
             _type,
-            _to.addressToString(),
-            address(0).addressToString(),
-            l2TokenAddress.addressToString(),
-            Strings.toString(_amount)
+            _from,
+            _to,
+            address(0),
+            l2TokenAddress, 
+            _amount
         );
     }
 
@@ -159,10 +160,11 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             _type,
-            _to.addressToString(),
-            address(0).addressToString(),
-            l2TokenAddress.addressToString(),
-            Strings.toString(_amount)
+             _from,
+            _to,
+            address(0),
+            l2TokenAddress,
+            _amount
         );
     }
 }

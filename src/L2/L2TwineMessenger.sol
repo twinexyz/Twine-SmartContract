@@ -83,14 +83,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function verifyConsensusProofAndExecuteDeposit(
         uint256 chainId,
-        uint256 slotNumber,
+        uint256 blockNumber,
         bytes32 bankHash,
         bytes memory consensusProof,
         bytes memory depositTransactions,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         _verifyConsensusProof(consensusProof);
-        blockReceiptRoots[chainId][slotNumber] = bankHash;
+        blockReceiptRoots[chainId][blockNumber] = bankHash;
         if (depositTransactions.length > 0) {
             bytes memory data = abi.encode(chainId, depositTransactions);
             (bool success, bytes memory output) = bridgingPrecompileAddress
@@ -103,6 +103,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function executeForcedWithdrawal(
         uint256 chainId,
+        uint256 blockNumber,
+        bytes32 bankHash,
         bytes memory withdrawalTransaction,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
@@ -113,15 +115,15 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         WithdrawalDetails memory details = _decodeWithdrawalDetails(output);
 
         emit ForcedWithdrawal(
-            details.from,
             details.l2Token,
-            details.to.addressToString(),
-            details.l1Token.addressToString(),
             details.amount,
-            details.value,
+            details.l1Nonce,
             chainId,
             block.number,
-            0
+            0,
+            details.l1Token,
+            details.from,
+            details.to
         );
         emit ParityHash(parityHash, block.number, blockhash(block.number));
     }
@@ -185,18 +187,17 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory output
     ) internal pure returns (WithdrawalDetails memory) {
         (
-            address l1Token,
+            uint256 l1Nonce,
+            uint256 amount,
             address l2Token,
-            address from,
-            address to,
-            uint256 amount
-        ) = abi.decode(output, (address, address, address, address, uint256));
-        uint256 value;
-        if (l1Token == address(0)) {
-            value = amount;
-        } else {
-            value = 0;
-        }
-        return WithdrawalDetails(l1Token, l2Token, from, to, amount, value);
+            string memory l1Token,
+            string memory to,
+            string memory from
+        ) = abi.decode(
+                output,
+                (uint256, uint256, address, string, string, string)
+            );
+
+        return WithdrawalDetails(amount, l1Nonce, l2Token, to, l1Token, from);
     }
 }

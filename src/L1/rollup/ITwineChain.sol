@@ -23,7 +23,12 @@ interface ITwineChain {
     /// @param batchHash The hash of the batch
     /// @param stateRoot The state Root on layer 2 after this batch
     /// @param withdrawRoot The merkle root on layer2 after this batch
-    event FinalizeBatch(uint256 indexed batchNumber, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot);
+    event FinalizeBatch(
+        uint256 indexed batchNumber,
+        bytes32 indexed batchHash,
+        bytes32 stateRoot,
+        bytes32 withdrawRoot
+    );
 
     /**********
      * Errors *
@@ -108,11 +113,11 @@ interface ITwineChain {
     /// @param l2TokenAddress address of token withdrawan from l2
     /// @param amount amount of token to withdraw
     struct WithdrawalPublicInput {
+        bytes32 receiptRoot;
         uint64 chainId;
         uint64 batchNumber;
         uint64 nonce;
-        bool isForced;
-        bytes32 receiptRoot;
+        uint8 isForced;
         string l1ReceiverAddress;
         string l1TokenAddress;
         string l2TokenAddress;
@@ -126,7 +131,7 @@ interface ITwineChain {
     /// @return lastFinalizedBatchNumber batch number of latest finalized batch
     function lastFinalizedBatchNumber() external view returns (uint256);
 
-     /// @return lastCommittedBatchNumber fbatch number of latest committed batch
+    /// @return The latest committed finalized batch number.
     function lastCommittedBatchNumber() external view returns (uint256);
     
     /// @param batchNumber The number of the batch.
@@ -164,7 +169,7 @@ interface ITwineChain {
     /// @notice sets vkeys for different proofs.
     /// @param _executionVKey vKey for execution proof for a batch
     /// @param _inclusionVKey vKey for transaction proof of a batch
-    /// @param _withdrawalVKey vKey for withdrawal proof 
+    /// @param _withdrawalVKey vKey for withdrawal proof
     function setProgramVKey(
         bytes32 _executionVKey,
         bytes32 _inclusionVKey,
@@ -182,12 +187,18 @@ interface ITwineChain {
     /// @notice Commit and finalize a batch on Layer 1.
     /// @param commit_info The struct containing the batch's information
     /// @param execution_proof The execution proof for that batch
-    function commitAndFinalizeBatch(StoredBatchInfo memory commit_info, bytes memory execution_proof) external;
+    function commitAndFinalizeBatch(
+        StoredBatchInfo memory commit_info,
+        bytes memory execution_proof
+    ) external;
 
     /// @notice Finalize transaction data for a batch
     /// @param transaction_info The sturct containing batch's transaction information
     /// @param inclusion_proof The inclusion proof for that batch of transaction
-    function commitAndFinalizeTransactions(bytes memory transaction_info, bytes memory inclusion_proof) external;
+    function commitAndFinalizeTransactions(
+        bytes memory transaction_info,
+        bytes memory inclusion_proof
+    ) external;
 
     /// @notice Finalizes both l2 initiated and forced withdrawal of different tokens
     /// @param withdrawalInputs required withdrawal data to execute withdrawal

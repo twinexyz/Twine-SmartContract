@@ -5,7 +5,6 @@ pragma solidity ^0.8.24;
 import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
@@ -107,10 +106,11 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         // 4. Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
-            _to.addressToString(),
-            _token.addressToString(),
-            _l2Token.addressToString(),
-            Strings.toString(_amount)
+            _from,
+            _to,
+            _token,
+            _l2Token,
+           _amount
         );
     }
 
@@ -128,10 +128,11 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         (_from, _data) = _getRealSender(_data);
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.withdrawal,
-            _to.addressToString(),
-            _l1Token.addressToString(),
-            _l2Token.addressToString(),
-            Strings.toString(_amount)
+            _from,
+            _to,
+            _l1Token,
+            _l2Token,
+            _amount
         );
 
         emit forcedWithdrawalERC20Initated(
