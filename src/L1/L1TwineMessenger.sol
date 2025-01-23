@@ -11,7 +11,6 @@ import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
-
     /**********
      * Events *
      **********/
@@ -29,7 +28,6 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address recipient,
         uint256 amount
     );
-
 
     /*************
      * Variables *
@@ -78,9 +76,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
         messageQueue = _messageQueue;
         rollup = _rollup;
-    }   
+    }
 
-    
     /*****************************
      * Public Mutating Functions *
      *****************************/
@@ -105,25 +102,31 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
         TransactionType _type,
-        string memory to,
-        string memory l1Token,
-        string memory l2Token,
-        string memory amount
-    ) external payable override onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS()){
-        _sendMessage(_type, to, l1Token, l2Token, amount);
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
+    )
+        external
+        payable
+        override
+        onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
+    {
+        _sendMessage(_type, from, to, l1Token, l2Token, amount);
     }
 
-    
     /**********************
      * Internal Functions *
      **********************/
 
     function _sendMessage(
         TransactionType _type,
-        string memory to,
-        string memory l1Token,
-        string memory l2Token,
-        string memory amount
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
     ) internal {
         // If transaction type is Deposit
         if (_type == TransactionType.deposit) {
@@ -131,6 +134,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
             // append message to L1 depositMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
+                from,
                 to,
                 l1Token,
                 l2Token,
@@ -139,60 +143,12 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         } else {
             // append message to L1 withdrawalMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
+                from,
                 to,
                 l1Token,
                 l2Token,
                 amount
             );
-        }
-    }
-
-    function stringToAddress(
-        string memory _addressString
-    ) public pure returns (address) {
-        bytes memory stringBytes = bytes(_addressString);
-        require(
-            stringBytes.length == 42 &&
-                stringBytes[0] == "0" &&
-                stringBytes[1] == "x",
-            "Invalid address format"
-        );
-
-        uint160 result = 0;
-        for (uint i = 2; i < 42; i++) {
-            result *= 16;
-            uint8 digit = uint8(stringBytes[i]);
-            if (digit >= 48 && digit <= 57) {
-                result += (digit - 48);
-            } else if (digit >= 65 && digit <= 70) {
-                result += (digit - 55);
-            } else if (digit >= 97 && digit <= 102) {
-                result += (digit - 87);
-            } else {
-                revert("Invalid character in address string");
-            }
-        }
-        return address(result);
-    }
-
-    function stringToUint(
-        string memory s
-    ) internal pure returns (uint256 result) {
-        bytes memory b = bytes(s);
-        uint256 oldResult = 0;
-        for (uint256 i = 0; i < b.length; i++) {
-            // c = b[i] was not needed
-            if (uint8(b[i]) >= 48 && uint8(b[i]) <= 57) {
-                // store old value so we can check for overflows
-                oldResult = result;
-                result = result * 10 + (uint8(b[i]) - 48);
-                if (oldResult > result) {
-                    // we can only get here if the result overflowed and is smaller than last stored value
-                    revert("Invalid String");
-                }
-            } else {
-                revert("InvalidStringNumber");
-            }
         }
     }
 }

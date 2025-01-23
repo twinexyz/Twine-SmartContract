@@ -33,21 +33,21 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event L1TokenDeposit();
 
     /// @notice Emitted when the forcedWithdrawal is successful
-    /// @param from The address of the sender who initiates the message.
     /// @param to The address of the receiver
-    /// @param value The amount of value passed to the target contract.
+    /// @param from The address of the sender who initiates the message.
+    /// @param l1Nonce The l1 nonce value.
     /// @param chainId The chainId of L1
     /// @param gasLimit The optional gas limit passed to L1 or L2.
     event ForcedWithdrawal(
-        address indexed from,
         address l2Token,
-        string to,
-        string l1Token,
         uint256 amount,
-        uint256 value,
+        uint256 l1Nonce,
         uint256 indexed chainId,
         uint256 blockNumber,
-        uint256 gasLimit
+        uint256 gasLimit,
+        string l1Token,
+        string indexed from,
+        string indexed to
     );
 
     /// @notice Emitted when the Layerzero payload is successfully verified
@@ -60,12 +60,12 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     );
 
     struct WithdrawalDetails {
-        address l1Token;
-        address l2Token;
-        address from;
-        address to;
+        uint256 l1Nonce;
         uint256 amount;
-        uint256 value;
+        address l2Token;
+        string l1Token;
+        string from;
+        string to;
     }
 
     /// @notice set the precompile address.
@@ -78,14 +78,14 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     /// @notice verify the consensus proof and execute deposits
     /// @param chainId The id of the chain
-    /// @param slotNumber slot number of solana
+    /// @param blockNumber block number or slot number of solana
     /// @param consensusProof consesus proof of the batch
     /// @param depositTransactions deposit transactions of the batch
     /// @param parityHash parity hash
     function verifyConsensusProofAndExecuteDeposit(
         uint256 chainId,
-        uint256 slotNumber,
-        bytes32 bankHash,
+        uint256 blockNumber, //block number or slot
+        bytes32 bankHash, // receipt_root or bank_hash
         bytes memory consensusProof,
         bytes memory depositTransactions,
         bytes32 parityHash
@@ -96,6 +96,8 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @param withdrawalTransaction Transaction to execute the withdrawal
     function executeForcedWithdrawal(
         uint256 chainId,
+        uint256 blockNumber, // block number or slot
+        bytes32 bankHash, //receipt_root or bank_hash
         bytes memory withdrawalTransaction,
         bytes32 parityHash
     ) external;
