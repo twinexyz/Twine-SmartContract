@@ -369,16 +369,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         //     withdrawalProofWithSelector
         // );
 
-        IL1MessageQueue(messageQueue).appendExecutionMessage(
-            withdrawalInputs.publicInput.nonce,
-            withdrawalInputs.publicInput.l1ReceiverAddress,
-            withdrawalInputs.publicInput.l1TokenAddress,
-            withdrawalInputs.publicInput.l2TokenAddress,
-            withdrawalInputs.publicInput.chainId,
-            withdrawalInputs.publicInput.amount,
-            0
-        );
-
         if (
             withdrawalInputs.publicInput.l1TokenAddress.stringToAddress() ==
             address(0)

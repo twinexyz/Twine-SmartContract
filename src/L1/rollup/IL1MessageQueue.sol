@@ -185,12 +185,14 @@ interface IL1MessageQueue {
 
     /// @notice Append message that are ready for execution
     /// @param _nonce the nonce of the message
-    /// @param _to the receiver address
-    /// @param _l1_token adress of token to be received on l1
-    /// @param _l2_token adress of token withdrawan from Twine
     /// @param _chainId chain Id of L1
+    /// @param _blockNumber L2 block number in which this transaction was present
+    /// @param _from the sender address
+    /// @param _to the receiver address
+    /// @param _l1Token adress of token to be received on l1
+    /// @param _l2Token adress of token withdrawan from Twine
     /// @param _amount amount to be received on L1
-    /// @param _block_number L2 block number in which this transaction was present
+
     function appendExecutionMessage(
         uint64 _nonce,
         uint64 _chainId,
