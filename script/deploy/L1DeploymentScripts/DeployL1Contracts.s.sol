@@ -17,12 +17,15 @@ import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gatewa
 contract DeployL1Contracts is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        string memory defaultAddressPath = "./script/utils/L1Addresses.json";
+        string memory exportPath = vm.envOr("ADDRESSES_EXPORT_PATH", defaultAddressPath);
+
         address initialOwner = vm.addr(deployerPrivateKey);
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        MockERC20 randomToken = new MockERC20("TwineRandom","TWR");
+        MockERC20 randomToken = new MockERC20("FauxCoin","FAUX");
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -114,7 +117,7 @@ contract DeployL1Contracts is Script {
 
         vm.writeJson(
             finalJson,
-            "./script/utils/L1Addresses.json"
+            exportPath
         );
 
         // Stop broadcasting transactions
