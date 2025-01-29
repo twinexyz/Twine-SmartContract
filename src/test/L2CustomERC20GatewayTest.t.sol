@@ -24,6 +24,8 @@ contract L2CustomERC20GatewayTest is Test {
 
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
+    bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
+     bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
     address L2CustomERC20GatewayAddress;
 
     function setUp() public {
@@ -58,7 +60,7 @@ contract L2CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0, address(0), address(0))
+                (0, address(0), address(roleManager))
             )
         );
 
@@ -77,7 +79,7 @@ contract L2CustomERC20GatewayTest is Test {
             )
         );
         gateway = L2CustomERC20Gateway(L2CustomERC20GatewayAddress);
-
+         roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
         //setup the rolemanager
 
         address[] memory tokens = new address[](1);

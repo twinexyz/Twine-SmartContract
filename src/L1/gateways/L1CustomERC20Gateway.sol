@@ -96,6 +96,8 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         bytes memory _data
     ) internal virtual override nonReentrant {
         require(_amount > 0, "Amount can not be zero");
+        require(msg.value > 0, "Amount for gas is needed");
+        require(msg.value >= _gasLimit, "Not efficient gas value");
         address _l2Token = tokenMapping[_token];
         require(_l2Token != address(0), "no corresponding l2 token");
 
@@ -110,7 +112,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             _to,
             _token,
             _l2Token,
-           _amount
+            _amount
         );
     }
 

@@ -30,6 +30,8 @@ contract L1CustomERC20GatewayTest is Test {
 
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
+     bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
+     bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
 
     function setUp() public {
         vm.startPrank(initialOwner);
@@ -87,7 +89,7 @@ contract L1CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
-                (address(l2Messenger), address(messageQueue), address(0),address(0))
+                (address(l2Messenger), address(messageQueue), address(0),address(roleManager))
             )
         );
 
@@ -104,6 +106,7 @@ contract L1CustomERC20GatewayTest is Test {
         );
 
         gateway = L1CustomERC20Gateway(L1CustomERC20GatewayAddress);
+        roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
 
         address[] memory tokens = new address[](1);
         address[] memory gateways = new address[](1);
@@ -126,8 +129,11 @@ contract L1CustomERC20GatewayTest is Test {
         assertEq(l1Token.balanceOf(initialOwner),100000);
         l1Token.approve(address(gateway), 100000);
         l1Token.approve(address(router), 100000);
-        router.depositERC20{value: 0}(address(l1Token), address(this), 10, 0);
-        assertEq(l1Token.balanceOf(initialOwner),99990);
+        console.log("gateway:",router.getERC20Gateway(address(l1Token)));
+        vm.deal(initialOwner, 10 ether);
+        router.depositERC20{value: 1 ether}(address(l1Token), address(this), 10, 0);
+        gateway.depositERC20{value: 1 ether}(address(l1Token), address(this), 10, 0);
+        assertEq(l1Token.balanceOf(initialOwner),99980);
     }
 
     function testWithdrawERC20Demo() public {
@@ -136,8 +142,10 @@ contract L1CustomERC20GatewayTest is Test {
         assertEq(l1Token.balanceOf(initialOwner),100000);
         l1Token.approve(address(gateway), 100000);
         l1Token.approve(address(router), 100000);
-        router.depositERC20{value: 0}(address(l1Token), address(this), 10, 0);
+        vm.deal(initialOwner, 10 ether);
+        router.depositERC20{value: 1}(address(l1Token), address(this), 10, 0);
         assertEq(l1Token.balanceOf(initialOwner),99990);
+        roleManager.grantRole(TWINE_CHAIN,initialOwner);
         gateway.finalizeTokenWithdrawal(
             addressToString(address(l1Token)),
             addressToString(address(l2Token)),
