@@ -54,27 +54,53 @@ interface ITwineChain {
      * Structs  *
      ************/
 
-    /// @notice Twine batch stored data
-    /// @param batchNumber Twine batch number
-    /// @param batchHash Hash of Twine batch
-    /// @param previousStateRoot State root of the previous Twine batch
-    /// @param stateRoot State root of the current Twine batch
-    /// @param transactionRoot Transaction root of the batch
-    /// @param receiptRoot Receipt root of the batch
-    struct StoredBatchInfo {
-        uint64 batchNumber;
-        bytes32 batchHash;
-        bytes32 previousStateRoot;
-        bytes32 stateRoot;
+    struct StoredBlockInfo {
+        bytes32 previousHash;
+        bytes32 blockHash;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
     }
 
+    /// @notice Twine batch stored data
+    /// @param startBlock start of the block
+    /// @param endBlock end of the block
+    /// @param batchHash Hash of Twine batch
+    struct StoredBatchInfo {
+        uint64 startBlock;
+        uint64 endBlock;
+        bytes32 batchHash;
+    }
+
+    struct CommitBatchInfo {
+        uint64 startBlock;
+        uint64 endBlock;
+        bytes32 transactionRoot;
+        bytes32 receiptRoot;
+    }
+
+    struct CommitBlockInfo {
+        uint64 blockNumber;
+        bytes32 blockHash;
+        bytes32 transactionRoot;
+        bytes32 receiptRoot;
+    }
+
+    // struct StoredBatchInfo {
+    //     uint64 batchNumber;
+    //     bytes32 batchHash;
+    //     bytes32 previousStateRoot;
+    //     bytes32 stateRoot;
+    //     bytes32 transactionRoot;
+    //     bytes32 receiptRoot;
+    // }
+
     /// @notice First 40 bytes of the transaction data commitment
-    /// @param batchNumber Twine batch number
+    /// @param startBlock first block of the batch
+    /// @param endBlock   last block of the batch
     /// @param transactionRoot Transaction root of the batch
     struct TransactionInfo {
-        uint64 batchNumber;
+        uint64 startBlock;
+        uint64 endBlock;
         bytes32 transactionRoot;
     }
 
@@ -100,7 +126,7 @@ interface ITwineChain {
     struct FinalizeWithdrawalInput {
         WithdrawalPublicInput publicInput;
         bytes inclusionProof;
-    }  
+    }
 
     /// @notice required withdrawal data to execute withdrawal
     /// @param chainId chain id of the L1 to withdraw on
@@ -129,22 +155,26 @@ interface ITwineChain {
      *************************/
 
     /// @return lastFinalizedBatchNumber batch number of latest finalized batch
-    function lastFinalizedBatchNumber() external view returns (uint256);
+    function lastFinalizedBlockNumber() external view returns (uint256);
 
     /// @return The latest committed finalized batch number.
-    function lastCommittedBatchNumber() external view returns (uint256);
-    
-    /// @param batchNumber The number of the batch.
-    /// @return stateRoot state root of the provided batch
-    function finalizedStateRoots(uint256 batchNumber) external view returns (bytes32);
+    function lastCommittedBlockNumber() external view returns (uint256);
 
-    /// @param batchNumber The number of the batch.
+    /// @param batchId The id of the batch.
+    /// @return stateRoot state root of the provided batch
+    function finalizedStateRoots(
+        bytes32 batchId
+    ) external view returns (bytes32);
+
+    /// @param batchId The id of the batch.
     /// @return IsFinalized weather the provided batch is finalized or not
-    function isBatchFinalized(uint256 batchNumber) external view returns (bool);
+    function isBatchFinalized(bytes32 batchId) external view returns (bool);
 
     /// @param batchNumber The number of the batch.
     /// @return receiptRoot receiptRoot of the provided batch
-    function getReceiptRoot(uint256 batchNumber) external view returns (bytes32);
+    // function getReceiptRoot(
+    //     uint256 batchNumber
+    // ) external view returns (bytes32);
 
     /*****************************
      * Public Mutating Functions *
@@ -187,10 +217,10 @@ interface ITwineChain {
     /// @notice Commit and finalize a batch on Layer 1.
     /// @param commit_info The struct containing the batch's information
     /// @param execution_proof The execution proof for that batch
-    function commitAndFinalizeBatch(
-        StoredBatchInfo memory commit_info,
-        bytes memory execution_proof
-    ) external;
+    // function commitAndFinalizeBatch(
+    //     StoredBatchInfo memory commit_info,
+    //     bytes memory execution_proof
+    // ) external;
 
     /// @notice Finalize transaction data for a batch
     /// @param transaction_info The sturct containing batch's transaction information
@@ -202,5 +232,7 @@ interface ITwineChain {
 
     /// @notice Finalizes both l2 initiated and forced withdrawal of different tokens
     /// @param withdrawalInputs required withdrawal data to execute withdrawal
-    function finalizeWithdrawal(FinalizeWithdrawalInput memory withdrawalInputs) external;
+    function finalizeWithdrawal(
+        FinalizeWithdrawalInput memory withdrawalInputs
+    ) external;
 }
