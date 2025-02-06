@@ -27,10 +27,11 @@ contract L1ETHGatewayTest is Test {
     L1TwineMessenger private l1TwineMessenger;
     L2TwineMessenger private l2Messenger;
     L2ETHGateway private counterpartGateway;
-   
 
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
+    bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
+    bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
 
     function setUp() public {
         vm.startPrank(initialOwner);
@@ -49,7 +50,10 @@ contract L1ETHGatewayTest is Test {
         address L1GatewayRouterAddress = Upgrades.deployTransparentProxy(
             "L1GatewayRouter.sol",
             msg.sender,
-            abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0),address(roleManager)))
+            abi.encodeCall(
+                L1GatewayRouter.initialize,
+                (address(0), address(0), address(roleManager))
+            )
         );
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
@@ -58,7 +62,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1MessageQueue.initialize,
-                (0,address(0),address(roleManager))
+                (0, address(0), address(roleManager))
             )
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
@@ -68,7 +72,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0,address(0), address(0))
+                (0, address(0), address(0))
             )
         );
 
@@ -77,7 +81,10 @@ contract L1ETHGatewayTest is Test {
         address TwineChainAddress = Upgrades.deployTransparentProxy(
             "TwineChain.sol",
             msg.sender,
-            abi.encodeCall(TwineChain.initialize, (address(0), address(0),address(roleManager)))
+            abi.encodeCall(
+                TwineChain.initialize,
+                (address(0), address(0), address(roleManager))
+            )
         );
 
         twineChain = TwineChain(TwineChainAddress);
@@ -88,7 +95,12 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1TwineMessenger.initialize,
-                (address(l2Messenger), address(messageQueue), address(0),address(0))
+                (
+                    address(l2Messenger),
+                    address(messageQueue),
+                    address(0),
+                    address(roleManager)
+                )
             )
         );
 
@@ -100,12 +112,16 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(router), address(l1TwineMessenger),address(roleManager))
+                (
+                    address(router),
+                    address(l1TwineMessenger),
+                    address(roleManager)
+                )
             )
         );
         gateway = L1ETHGateway(L1ETHGatewayAddress);
+        roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
 
-       
         //setup gateway in router;
         vm.startPrank(initialOwner);
         router.setETHGateway(address(gateway));
@@ -115,7 +131,6 @@ contract L1ETHGatewayTest is Test {
         gateway.setRoleManagerAddress(address(roleManager));
         messageQueue.setMessengerAddress(address(l1TwineMessenger));
         vm.stopPrank();
-
     }
 
     function testDepositETH() public {
@@ -128,24 +143,6 @@ contract L1ETHGatewayTest is Test {
             depositAmount,
             0
         );
-        assertEq(address(gateway).balance,2 ether);
+        assertEq(address(gateway).balance, 2 ether);
     }
- 
-
- function prependBytes(
-        bytes memory prefix,
-        bytes memory originalData
-    ) public pure returns (bytes memory) {
-        require(prefix.length == 4, "Prefix must be exactly 4 bytes");
-        bytes memory result = new bytes(prefix.length + originalData.length);
- 
-        for (uint256 i = 0; i < prefix.length; i++) {
-            result[i] = prefix[i];
-        }
-        for (uint256 i = 0; i < originalData.length; i++) {
-            result[i + prefix.length] = originalData[i];
-        }
-        return result;
-    }
-   
 }

@@ -56,8 +56,7 @@ contract L2GatewayRouter is
         address _defaultERC20Gateway,
         address _roleManagerAddress
     ) external initializer {
-        // OwnableUpgradeable.__Ownable_init();
-
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         // it can be zero during initialization
         if (_defaultERC20Gateway != address(0)) {
             defaultERC20Gateway = _defaultERC20Gateway;

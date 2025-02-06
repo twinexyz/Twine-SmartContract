@@ -307,16 +307,16 @@
 //     TwineChain twineChain;
 //     address twineChainAddress;
 
-//     // Data required for finalization
-//     uint64 chainId;
-//     uint64 batchNumber;
-//     uint64 nonce;
-//     uint8 isForced;
-//     bytes32 receiptRoot;
-//     string l1ReceiverAddress;
-//     string l1TokenAddress;
-//     string l2TokenAddress;
-//     string amount;
+    // Data required for finalization
+    uint64 chainId;
+    uint64 batchNumber;
+    uint64 nonce;
+    uint8 isForced;
+    bytes32 receiptRoot;
+    string l1ReceiverAddress;
+    string l1TokenAddress;
+    string l2TokenAddress;
+    string amount;
 
 //     bytes inclusionProof;
 
@@ -326,18 +326,18 @@
 //         twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
 //         twineChain = TwineChain(twineChainAddress);
 
-//         // Read parameters dynamically
-//         chainId = uint64(vm.envUint("CHAIN_ID"));
-//         batchNumber = uint64(vm.envUint("BATCH_NUMBER"));
-//         nonce = uint64(vm.envUint("NONCE"));
-//         isForced = uint8(vm.envUint("IS_FORCED"));
-//         receiptRoot = vm.envBytes32("RECEIPT_ROOT");
-//         l1ReceiverAddress = vm.envString("L1_RECEIVER_ADDRESS");
-//         l1TokenAddress = vm.envString("L1_TOKEN_ADDRESS");
-//         l2TokenAddress = vm.envString("L2_TOKEN_ADDRESS");
-//         amount = vm.envString("AMOUNT");
-//         inclusionProof = vm.envBytes("INCLUSION_PROOF");
-//     }
+        // Read parameters dynamically
+        chainId = uint64(vm.envUint("CHAIN_ID"));
+        batchNumber = uint64(vm.envUint("BATCH_NUMBER"));
+        nonce = uint64(vm.envUint("NONCE"));
+        isForced = uint8(vm.envUint("IS_FORCED"));
+        receiptRoot = vm.envBytes32("RECEIPT_ROOT");
+        l1ReceiverAddress = vm.envString("L1_RECEIVER_ADDRESS");
+        l1TokenAddress = vm.envString("L1_TOKEN_ADDRESS");
+        l2TokenAddress = vm.envString("L2_TOKEN_ADDRESS");
+        amount = vm.envString("AMOUNT");
+        inclusionProof = vm.envBytes("INCLUSION_PROOF");
+    }
 
 //     function run() external {
 //         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

@@ -283,9 +283,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // Decode the next 120 bytes for transaction information for ethererum
         bytes memory chainDataBytes = new bytes(120);
         for (uint256 i = 0; i < 120; i++) {
+        for (uint256 i = 0; i < 120; i++) {
             chainDataBytes[i] = transaction_info[40 + i];
         }
 
+        ChainCommitment memory chain_data = _decodeChainCommitment(
+            chainDataBytes
+        );
         ChainCommitment memory chain_data = _decodeChainCommitment(
             chainDataBytes
         );
@@ -304,6 +308,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             "Invalid withdraw count"
         );
 
+        //  Calculating deposit and withdraw rolling hash from the data in queue
         //  Calculating deposit and withdraw rolling hash from the data in queue
         uint64 depositCount = chain_data.depositCount;
         bytes32 depositRollingHash = _calculateRollingHash(
@@ -332,11 +337,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             TransactionType.layerZero,
             lzTransactionCount
         );
+        bytes32 lzTransactionRollingHash = _calculateRollingHash(
+            TransactionType.layerZero,
+            lzTransactionCount
+        );
 
         // Replacing the deposit and withdraw Rolling hash
         chain_data.depositRollingHash = depositRollingHash;
         chain_data.withdrawRollingHash = withdrawRollingHash;
         chain_data.lzTransactionRollingHash = lzTransactionRollingHash;
+
+        bytes
+            memory publicInputForInclusion = _calculatePublicInputForInclusion(
+                transaction_info,
+                chain_data
+            );
 
         bytes
             memory publicInputForInclusion = _calculatePublicInputForInclusion(
@@ -357,9 +372,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             IL1MessageQueue.MessageData memory forced_message = IL1MessageQueue(
                 messageQueue
             ).getCrossDomainWithdrawalMessage(i);
+        for (uint256 i = 0; i < depositCount; i++) {
+            IL1MessageQueue.MessageData memory forced_message = IL1MessageQueue(
+                messageQueue
+            ).getCrossDomainWithdrawalMessage(i);
 
             IL1MessageQueue(messageQueue).appendExecutionMessage(
                 forced_message.nonce,
+                forced_message.chainId,
+                forced_message.blockNumber,
                 forced_message.chainId,
                 forced_message.blockNumber,
                 forced_message.l1Token,
@@ -373,6 +394,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // remove deposits, withdrawals and layerZero messages from queue
         IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
+        IL1MessageQueue(messageQueue).popFirstNLayerZeroElement(
+            lzTransactionCount
+        );
+    }
         IL1MessageQueue(messageQueue).popFirstNLayerZeroElement(
             lzTransactionCount
         );
@@ -402,10 +427,20 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             );
         }
 
+        if (withdrawalInputs.publicInput.isForced == 1) {
+            require(
+                IL1MessageQueue(messageQueue).isNonceInExecutionQueue(
+                    withdrawalInputs.publicInput.nonce
+                ) == true,
+                "Nonce not present in execution message buffer"
+            );
+        }
+
         bytes memory replacedPublicInput = abi.encodePacked(
             withdrawalInputs.publicInput.chainId,
             withdrawalInputs.publicInput.batchNumber,
             withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.isForced,
             withdrawalInputs.publicInput.isForced,
             withdrawalInputs.publicInput.receiptRoot,
             withdrawalInputs.publicInput.l1ReceiverAddress,
@@ -448,6 +483,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 withdrawalInputs.publicInput.nonce
             );
         }
+
+        if (withdrawalInputs.publicInput.isForced == 1) {
+            IL1MessageQueue(messageQueue).removeExecutionMessage(
+                withdrawalInputs.publicInput.nonce
+            );
+        }
     }
 
     /**********************
@@ -478,6 +519,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function _decodeChainCommitment(
         bytes memory chainCommitment
     ) internal pure returns (ChainCommitment memory) {
+    function _decodeChainCommitment(
+        bytes memory chainCommitment
+    ) internal pure returns (ChainCommitment memory) {
         uint64 depositCount;
         bytes32 depositRollingHash;
         uint64 withdrawCount;
@@ -494,6 +538,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             lzTransactionRollingHash := mload(add(chainCommitment, 120))
         }
 
+        return
+            ChainCommitment({
+                depositCount: depositCount,
+                depositRollingHash: depositRollingHash,
+                withdrawCount: withdrawCount,
+                withdrawRollingHash: withdrawRollingHash,
+                lzTransactionCount: lzTransactionCount,
+                lzTransactionRollingHash: lzTransactionRollingHash
+            });
         return
             ChainCommitment({
                 depositCount: depositCount,
@@ -557,13 +610,23 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             for (uint64 i = 0; i < count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue)
                     .getCrossDomainDepositMessage(i);
+        if (transaction_type == TransactionType.deposit) {
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainDepositMessage(i);
             }
         } else if (transaction_type == TransactionType.withdraw) {
             for (uint64 i = 0; i < count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue)
                     .getCrossDomainWithdrawalMessage(i);
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainWithdrawalMessage(i);
             }
         } else {
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainLayerZeroMessage(i);
             for (uint64 i = 0; i < count; i++) {
                 selectedMessages[i] = IL1MessageQueue(messageQueue)
                     .getCrossDomainLayerZeroMessage(i);
@@ -630,8 +693,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     function _calculatePublicInputForInclusion(
         bytes memory transaction_info,
+        bytes memory transaction_info,
         ChainCommitment memory chain_data
     ) internal returns (bytes memory) {
+        bytes memory prefix = slice(transaction_info, 0, 40); // First 40 bytes
+        bytes memory suffix = slice(
+            transaction_info,
+            160,
+            transaction_info.length - 160
+        ); // After 160 bytes
         bytes memory prefix = slice(transaction_info, 0, 40); // First 40 bytes
         bytes memory suffix = slice(
             transaction_info,

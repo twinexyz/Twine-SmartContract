@@ -17,8 +17,8 @@ TWINE_CHAIN_NAME=twine
 TWINE_RPC=http://127.0.0.1:8545
 TWINE_PRIVATE_KEY=0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e
 
-ONE_L1_ADDRESSES="script/utils/${ONE_L1_CHAIN_NAME}.json"
-TWINE_ADDRESSES="script/utils/${TWINE_CHAIN_NAME}.json"
+ONE_L1_ADDRESSES="script/utils/${ONE_L1_CHAIN_NAME}Addresses.json"
+TWINE_ADDRESSES="script/utils/${TWINE_CHAIN_NAME}Addresses.json"
 DEPLOYED_CONTRACTS="script/utils/deployedContracts.json"
 
 L1_DEPLOYMENT_MARKER="$MARKER/L1_deployment_marker.txt"
@@ -93,14 +93,14 @@ run_if_not_done() {
 load_l2_env
 forge clean
 
-L2_DEPLOY_CMD="forge script script/deploy/DeployL2Contracts.s.sol --broadcast --rpc-url $TWINE_RPC"
+L2_DEPLOY_CMD="forge script script/deploy/L2DeploymentScripts/DeployL2Contracts.s.sol --broadcast --rpc-url $TWINE_RPC"
 run_if_not_done "$L2_DEPLOYMENT_MARKER" "$L2_DEPLOY_CMD" "L2 Deployment failed." "Deploy"
 
 # Deploy on L1
 load_l1_env
 forge clean
 
-L1_DEPLOY_CMD="forge script script/deploy/DeployL1Contracts.s.sol --broadcast --rpc-url $ONE_L1_RPC"
+L1_DEPLOY_CMD="forge script script/deploy/L1DeploymentScripts/DeployL1Contracts.s.sol --broadcast --rpc-url $ONE_L1_RPC"
 run_if_not_done "$L1_DEPLOYMENT_MARKER" "$L1_DEPLOY_CMD"  "L1 Deployment failed." "Deploy"
 
 jq --arg vkey "$ONE_L1_EXECUTION_VKEY" '.executionVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
@@ -122,12 +122,12 @@ echo "$json_output" > $DEPLOYED_CONTRACTS
 
 # Setup L1
 load_l1_env
-L1_SETUP_CMD="forge script script/setup/L1SetupScript.s.sol --broadcast --rpc-url $ONE_L1_RPC"
+L1_SETUP_CMD="forge script script/setup/L1SetupScripts/L1SetupScript.s.sol --broadcast --rpc-url $ONE_L1_RPC"
 run_if_not_done "$L1_SETUP_MARKER" "$L1_SETUP_CMD"  "L1 Setup failed." "Setup"
 
 # Setup L2
 load_l2_env
-L2_SETUP_CMD="forge script script/setup/L2SetupScript.s.sol --broadcast --rpc-url $TWINE_RPC"
+L2_SETUP_CMD="forge script script/setup/L2SetupScripts/L2SetupScript.s.sol --broadcast --rpc-url $TWINE_RPC"
 run_if_not_done "$L2_SETUP_MARKER" "$L2_SETUP_CMD"  "L2 Setup failed." "Setup"
 
 # Clear .env
