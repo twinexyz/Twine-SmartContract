@@ -9,6 +9,8 @@ import {IL1ERC20Gateway} from "../L1/gateways/interfaces/IL1ERC20Gateway.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
+import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
+
 contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     using TypeConversionLib for address;
 
@@ -19,10 +21,20 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     address public bridgingPrecompileAddress;
 
     /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
-    mapping(bytes32 => bool) public isL1MessageExecuted;
+    mapping(uint256 => mapping(L1TxnType => uint256))
+        public isL1MessageExecuted;
 
     /// @notice Mapping to store the receipt roots for each block number
     mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
+
+    /// @notice Mapping to store consensus verification keys of L1s
+    mapping(uint256 => bytes32) public vKeys;
+
+    /// @notice SP1 Verifier Address
+    address public sp1Verifier;
+
+    /// @notice Skip Verification For Testing
+    bool public skipVerification;
 
     /***************
      * Constructor *
@@ -43,6 +55,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             _ethCounterpart,
             _roleManager
         );
+        consensusPrecompileAddress = address(0x16);
+        bridgingPrecompileAddress = address(0x15);
+        skipVerification = true;
     }
 
     function setPrecompileAddress(
@@ -51,6 +66,18 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         consensusPrecompileAddress = _consensusPrecompileAddress;
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
+    }
+
+    function setZkVerifyStatus(
+        bool status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        skipVerification = status;
+    }
+
+    function setSp1VerifierAddress(
+        address _sp1VerifierAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        sp1Verifier = _sp1VerifierAddress;
     }
 
     /// @inheritdoc ITwineL2MessengerBase
@@ -89,8 +116,12 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory depositTransactions,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        _verifyConsensusProof(consensusProof);
-        blockReceiptRoots[chainId][blockNumber] = bankHash;
+        if (skipVerification) {
+            blockReceiptRoots[chainId][blockNumber] = bankHash;
+        } else {
+            _verifyConsensusProof(chainId, consensusProof);
+        }
+
         if (depositTransactions.length > 0) {
             bytes memory data = abi.encode(chainId, depositTransactions);
             (bool success, bytes memory output) = bridgingPrecompileAddress
@@ -108,6 +139,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory withdrawalTransaction,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        if (skipVerification) {
+            blockReceiptRoots[chainId][blockNumber] = bankHash;
+        }
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(
             abi.encode(chainId, withdrawalTransaction)
         );
@@ -174,11 +208,23 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     /// @notice function to verify the consensus proof
-    function _verifyConsensusProof(bytes memory consensusProof) internal {
+    function _verifyConsensusProof(
+        uint256 chainId,
+        bytes memory consensusProof
+    ) internal {
         (bool success, bytes memory output) = consensusPrecompileAddress.call(
             consensusProof
         );
-        require(success, "Consensus proof Failed!");
+        require(success, "Consensus proof parsing failed!");
+        VerifierPrecompileOutput memory sp1Params = abi.decode(
+            output,
+            (VerifierPrecompileOutput)
+        );
+        ISP1Verifier(sp1Verifier).verifyProof(
+            vKeys[chainId],
+            sp1Params.publicValues,
+            sp1Params.proof
+        );
         emit consensusVerified(consensusProof);
     }
 

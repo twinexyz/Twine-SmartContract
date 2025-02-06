@@ -7,6 +7,15 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         BridgeTxns,
         LayerZeroDVN
     }
+
+    /// @notice All types of messages incoming from L1
+    enum L1TxnType{
+        Deposit,
+        ForcedWithdraw,
+        LayerZero,
+        Message
+    }
+
     /// @notice Emitted when a cross domain message is sent.
     /// @param from The address of the sender who initiates the message.
     /// @param to The address of the receiver
@@ -58,6 +67,11 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 blockNumber,
         bytes32 blockHash
     );
+
+    struct VerifierPrecompileOutput {
+        bytes publicValues;
+        bytes proof;
+    }
 
     struct WithdrawalDetails {
         uint256 l1Nonce;
