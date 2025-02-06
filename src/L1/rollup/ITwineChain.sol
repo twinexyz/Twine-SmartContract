@@ -23,7 +23,7 @@ interface ITwineChain {
     /// @param batchHash The hash of the batch
     /// @param stateRoot The state Root on layer 2 after this batch
     /// @param withdrawRoot The merkle root on layer2 after this batch
-    event FinalizeBatch(
+    event FinalizedBatch(
         uint256 indexed batchNumber,
         bytes32 indexed batchHash,
         bytes32 stateRoot,
@@ -71,28 +71,12 @@ interface ITwineChain {
         bytes32 batchHash;
     }
 
-    struct CommitBatchInfo {
-        uint64 startBlock;
-        uint64 endBlock;
-        bytes32 transactionRoot;
-        bytes32 receiptRoot;
-    }
-
     struct CommitBlockInfo {
         uint64 blockNumber;
         bytes32 blockHash;
         bytes32 transactionRoot;
         bytes32 receiptRoot;
     }
-
-    // struct StoredBatchInfo {
-    //     uint64 batchNumber;
-    //     bytes32 batchHash;
-    //     bytes32 previousStateRoot;
-    //     bytes32 stateRoot;
-    //     bytes32 transactionRoot;
-    //     bytes32 receiptRoot;
-    // }
 
     /// @notice First 40 bytes of the transaction data commitment
     /// @param startBlock first block of the batch
