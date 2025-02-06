@@ -192,7 +192,6 @@ interface IL1MessageQueue {
     /// @param _l1Token adress of token to be received on l1
     /// @param _l2Token adress of token withdrawan from Twine
     /// @param _amount amount to be received on L1
-
     function appendExecutionMessage(
         uint64 _nonce,
         uint64 _chainId,

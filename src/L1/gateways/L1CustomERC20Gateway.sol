@@ -112,7 +112,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             _to,
             _token,
             _l2Token,
-            _amount
+           _amount
         );
     }
 
