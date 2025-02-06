@@ -68,6 +68,12 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
 
+    function setZkVerifyStatus(
+        bool status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        skipVerification = status;
+    }
+
     function setSp1VerifierAddress(
         address _sp1VerifierAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -110,7 +116,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory depositTransactions,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if ( skipVerification ) {
+        if (skipVerification) {
             blockReceiptRoots[chainId][blockNumber] = bankHash;
         } else {
             _verifyConsensusProof(chainId, consensusProof);
@@ -133,7 +139,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory withdrawalTransaction,
         bytes32 parityHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if ( skipVerification ) {
+        if (skipVerification) {
             blockReceiptRoots[chainId][blockNumber] = bankHash;
         }
         (bool success, bytes memory output) = bridgingPrecompileAddress.call(
