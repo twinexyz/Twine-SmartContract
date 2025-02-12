@@ -77,7 +77,7 @@ contract WithdrawERC20 is Script {
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2CustomERC20Gateway"); 
         tokenAddress = vm.parseJsonAddress(deployedJson, ".Twine.FauxCoin");
 
-        l2CustomERC20Gateway = L2CustomERC20Gateway(tokenAddress);
+        l2CustomERC20Gateway = L2CustomERC20Gateway(l2CustomERC20GatewayAddress);
         token = MockERC20(tokenAddress);
 
         // Read parameters dynamically
