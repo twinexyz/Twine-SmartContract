@@ -143,6 +143,9 @@ contract L2SetupScript is Script {
             keccak256("TWINE_OPERATIONS_HANDLER"),
             twineOperationsHandler
         );
+        roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l2CustomERC20GatewayAddress);
+        roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l2CustomERC20GatewayAddress);
+
 
         //L2ETHGateway setup
         l2ETHGateway.setRoleManagerAddress(roleManagerAddress);
