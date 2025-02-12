@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import "forge-std/console.sol";
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";

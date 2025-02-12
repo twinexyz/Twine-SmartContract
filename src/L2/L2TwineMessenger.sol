@@ -106,65 +106,71 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         );
     }
 
-    function verifyConsensusProofAndExecuteDeposit(
+    function handleSolanaTransactions(
         uint256 chainId,
-        uint256 blockNumber,
-        bytes32 bankHash,
+        bytes calldata precompileInput
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        (bool success, bytes memory output) = consensusPrecompileAddress.call(
+            precompileInput
+        );
+        require(success, "Consensus verification failed!");
+
+        SolanaVerifierPrecompileOutput memory verifierOutput = abi.decode(
+            output,
+            (SolanaVerifierPrecompileOutput)
+        );
+
+        ISP1Verifier(sp1Verifier).verifyProof(
+            vKeys[chainId],
+            verifierOutput.publicValue,
+            verifierOutput.proof
+        );
+
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(output);
+        require(txnSuccess, "Failed executing transactions");
+
+        emit solanaTransactionsHandled(txnOutput);
+    }
+
+    function handleEthereumProofAndTransactions(
+        uint256 chainId,
         bytes memory consensusProof,
-        bytes memory depositTransactions,
-        bytes32 parityHash
-    ) external nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (skipVerification) {
-            blockReceiptRoots[chainId][blockNumber] = bankHash;
-        } else {
+        bytes memory ethereumTransactions
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        if (consensusProof.length > 0) {
             _verifyConsensusProof(chainId, consensusProof);
         }
 
-        if (depositTransactions.length > 0) {
-            bytes memory data = abi.encode(chainId, depositTransactions);
-            (bool success, ) = bridgingPrecompileAddress
-                .call(data);
-            require(success, "Deposits failed!");
-            emit L1TokenDeposit();
-            emit ParityHash(parityHash, block.number, blockhash(block.number));
+        if (ethereumTransactions.length > 0) {
+            bytes memory data = abi.encode(chainId, ethereumTransactions);
+            (
+                bool txnSuccess,
+                bytes memory txnOutput
+            ) = bridgingPrecompileAddress.call(data);
+            require(txnSuccess, "Ethereum Transactions failed!");
+            emit ethereumTransactionsHandled(txnOutput);
         }
     }
 
-    function executeForcedWithdrawal(
-        uint256 chainId,
-        uint256 blockNumber,
-        bytes32 bankHash,
-        bytes memory withdrawalTransaction,
-        bytes32 parityHash
-    ) external nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (skipVerification) {
-            blockReceiptRoots[chainId][blockNumber] = bankHash;
-        }
-        (bool success, bytes memory output) = bridgingPrecompileAddress.call(
-            abi.encode(chainId, withdrawalTransaction)
-        );
-        require(success, "Withdrawal failed!");
-        WithdrawalDetails memory details = _decodeWithdrawalDetails(output);
-
-        emit ForcedWithdrawal(
-            details.l2Token,
-            details.amount,
-            details.l1Nonce,
-            chainId,
-            block.number,
-            0,
-            details.l1Token,
-            details.from,
-            details.to
-        );
-        emit ParityHash(parityHash, block.number, blockhash(block.number));
-    }
 
     function verifyLayerZeroPayload(
         uint256 chainId,
         bytes memory lzPayload,
         bytes memory payloadProof
-    ) external nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
         bytes[] memory lzPayloads = new bytes[](1);
         bytes[] memory payloadProofs = new bytes[](1);
         lzPayloads[0] = lzPayload;
@@ -221,13 +227,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             consensusProof
         );
         require(success, "Consensus proof parsing failed!");
-        VerifierPrecompileOutput memory sp1Params = abi.decode(
+        EthereumVerifierPrecompileOutput memory sp1Params = abi.decode(
             output,
-            (VerifierPrecompileOutput)
+            (EthereumVerifierPrecompileOutput)
         );
         ISP1Verifier(sp1Verifier).verifyProof(
             vKeys[chainId],
-            sp1Params.publicValues,
+            sp1Params.publicValue,
             sp1Params.proof
         );
         emit consensusVerified(consensusProof);

@@ -9,7 +9,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     }
 
     /// @notice All types of messages incoming from L1
-    enum L1TxnType{
+    enum L1TxnType {
         Deposit,
         ForcedWithdraw,
         LayerZero,
@@ -34,6 +34,12 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 blockNumber,
         uint256 gasLimit
     );
+
+    /// @notice Emitted when consenus  verification and transaction of solana are executed successfully
+    event solanaTransactionsHandled(bytes transactionOutput);
+
+    /// @notice Emitted when consenus  verification and transaction of ethereum are executed successfully
+    event ethereumTransactionsHandled(bytes transactionOutput);
 
     /// @notice Emitted when consensus verificiation is successful
     event consensusVerified(bytes consensusProof);
@@ -68,8 +74,14 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes32 blockHash
     );
 
-    struct VerifierPrecompileOutput {
-        bytes publicValues;
+    struct SolanaVerifierPrecompileOutput {
+        bytes publicValue;
+        bytes proof;
+        bytes transactionInput;
+    }
+
+    struct EthereumVerifierPrecompileOutput {
+        bytes publicValue;
         bytes proof;
     }
 
@@ -90,32 +102,18 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         address _bridgingPrecompileAddress
     ) external;
 
-    /// @notice verify the consensus proof and execute deposits
-    /// @param chainId The id of the chain
-    /// @param blockNumber block number or slot number of solana
-    /// @param consensusProof consesus proof of the batch
-    /// @param depositTransactions deposit transactions of the batch
-    /// @param parityHash parity hash
-    function verifyConsensusProofAndExecuteDeposit(
+    /// @notice handle the solana transactions
+    function handleSolanaTransactions(
         uint256 chainId,
-        uint256 blockNumber, //block number or slot
-        bytes32 bankHash, // receipt_root or bank_hash
+        bytes calldata precompileInput
+    ) external;
+
+    /// @notice handle the ethereum  transactions
+    function handleEthereumProofAndTransactions(
+        uint256 chainId,
         bytes memory consensusProof,
-        bytes memory depositTransactions,
-        bytes32 parityHash
+        bytes memory ethereumTransactions
     ) external;
-
-    /// @notice Execute forced withdrawal
-    /// @param chainId The id of the chain
-    /// @param withdrawalTransaction Transaction to execute the withdrawal
-    function executeForcedWithdrawal(
-        uint256 chainId,
-        uint256 blockNumber, // block number or slot
-        bytes32 bankHash, //receipt_root or bank_hash
-        bytes memory withdrawalTransaction,
-        bytes32 parityHash
-    ) external;
-
     /// @notice verify the layerzero payload
     /// @param lzPayload layerzero payload
     /// @param payloadProof  proof of payload

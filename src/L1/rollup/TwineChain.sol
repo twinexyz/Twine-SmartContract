@@ -73,6 +73,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     mapping(bytes32 => bool) public finalizedBatchStatus;
     /// @inheritdoc ITwineChain
     mapping(bytes32 => bytes32) public override finalizedStateRoots;
+    
+    /// @notice Mapping of executed withdraw hash to a boolean value
+    mapping(bytes32 => bool) public isWithdrawExecuted;
 
     /**********************
      * Function Modifiers *
@@ -377,12 +380,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             );
         }
 
-        // remove deposits, withdrawals and layerZero messages from queue
+        // remove deposits, and withdrawals  messages from queue
         IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
-        IL1MessageQueue(messageQueue).popFirstNLayerZeroElement(
-            lzTransactionCount
-        );
     }
 
     function finalizeWithdrawal(
@@ -420,6 +420,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.l2TokenAddress,
             withdrawalInputs.publicInput.amount
         );
+        require(!isWithdrawExecuted[keccak256(replacedPublicInput)],"Withdrawal already executed");
         // bytes memory withdrawalProofWithSelector = prependBytes(
         //     withdrawalInputs.inclusionProof
         // );
@@ -455,6 +456,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 withdrawalInputs.publicInput.nonce
             );
         }
+
+        isWithdrawExecuted [keccak256(replacedPublicInput)] = true;
     }
 
     /**********************
