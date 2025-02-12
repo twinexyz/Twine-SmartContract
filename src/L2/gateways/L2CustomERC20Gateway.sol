@@ -7,7 +7,6 @@ import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
 
 import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {IL1ERC20Gateway} from "../../L1/gateways/interfaces/IL1ERC20Gateway.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
 /// @title L2CustomERC20Gateway

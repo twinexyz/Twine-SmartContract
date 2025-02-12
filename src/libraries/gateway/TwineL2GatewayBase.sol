@@ -54,6 +54,7 @@ abstract contract TwineL2GatewayBase is
 
     /// @notice sets the rolemanager contract address
     function setRoleManagerAddress(address _roleManagerAddress) external {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 

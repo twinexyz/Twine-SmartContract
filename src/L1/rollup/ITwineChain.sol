@@ -30,6 +30,13 @@ interface ITwineChain {
         bytes32 withdrawRoot
     );
 
+     /// @notice Emitted when vkeys are set
+    event setProgramVkey(
+        bytes32 executionVKey,
+        bytes32 inclusionVKey,
+        bytes32 withdrawalVKey
+    );
+
     /**********
      * Errors *
      **********/
@@ -114,7 +121,7 @@ interface ITwineChain {
 
     /// @notice required withdrawal data to execute withdrawal
     /// @param chainId chain id of the L1 to withdraw on
-    /// @param batchNumber Twine batch number on which the withdrawal was initiated
+    /// @param batchId Twine batch Id on which the withdrawal was initiated
     /// @param nonce nonce of the message
     /// @param isForced identifier for denoting forced withdrawal
     /// @param receiptRoot receipt root of the batch
@@ -124,8 +131,8 @@ interface ITwineChain {
     /// @param amount amount of token to withdraw
     struct WithdrawalPublicInput {
         bytes32 receiptRoot;
+        bytes32 batchId;
         uint64 chainId;
-        uint64 batchNumber;
         uint64 nonce;
         uint8 isForced;
         string l1ReceiverAddress;

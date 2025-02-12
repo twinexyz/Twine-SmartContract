@@ -7,7 +7,6 @@ import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
-import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
@@ -48,7 +47,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @inheritdoc IL1ERC20Gateway
     function getL2ERC20Address(
         address _l1Token
-    ) public view override returns (address) {
+    ) external view override returns (address) {
         return tokenMapping[_l1Token];
     }
 

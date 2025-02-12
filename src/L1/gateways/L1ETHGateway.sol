@@ -4,9 +4,7 @@ import "forge-std/console.sol";
 
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {IL2ETHGateway} from "../../L2/gateways/interfaces/IL2ETHGateway.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
@@ -76,9 +74,8 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         string memory _l2Token,
         string memory _to,
         string memory _amount
-    ) external payable override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        // @note can possible trigger reentrant call to messenger,
-        // but it seems not a big problem.
+    ) external payable override nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        require(_amount.stringToUint() > 0, "Amout must be greater than zero");
         (bool _success, ) = _to.stringToAddress().call{
             value: _amount.stringToUint()
         }("");
@@ -97,7 +94,9 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function setL2TokenAddress(
         address _l2TokenAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_l2TokenAddress != address(0),"value cann't be zero");
         l2TokenAddress = _l2TokenAddress;
+        emit L2TokenSET(_l2TokenAddress);
     }
 
     /// @dev The internal ETH deposit implementation.

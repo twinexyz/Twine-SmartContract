@@ -147,15 +147,15 @@ interface IL1MessageQueue {
 
     /// @notice Removes the first N message from the Deposit Queue
     /// @param n number of deposit message to pop
-    function popFirstNDepositElement(uint n) external;
+    function popFirstNDepositElement(uint256 n) external;
 
     /// @notice Removes the first N message from the Withdrawal Queue
     /// @param n number of withdraw message  to pop
-    function popFirstNWithdrawalElement(uint n) external;
+    function popFirstNWithdrawalElement(uint256 n) external;
 
     /// @notice Removes the first N message from the Layer Zero Queue
     /// @param n number of lz message to pop
-    function popFirstNLayerZeroElement(uint n) external;
+    function popFirstNLayerZeroElement(uint256 n) external;
 
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on Twine

@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
-import {IL1ETHGateway} from "./gateways/interfaces/IL1ETHGateway.sol";
-import {IL1ERC20Gateway} from "./gateways/interfaces/IL1ERC20Gateway.sol";
 import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.sol";
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 

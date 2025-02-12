@@ -5,14 +5,11 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
-import {IL2ERC20Gateway} from "../../L2/gateways/interfaces/IL2ERC20Gateway.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
-import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 /// @title L1ERC20Gateway
 /// @notice The `L1ERC20Gateway` as a base contract for ERC20 gateways in L1.
@@ -28,7 +25,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable override {
+    ) external payable override nonReentrant{
         _deposit(_token, _to, _amount, _gasLimit, new bytes(0));
     }
 
@@ -39,7 +36,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) external payable override {
+    ) external payable override nonReentrant{
         _deposit(_token, _to, _amount, _gasLimit, _data);
     }
 
@@ -51,7 +48,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory data
-    ) external payable override {
+    ) external payable override nonReentrant {
         _forcedWithdrawalERC20(
             _l1Token,
             _l2Token,
@@ -107,7 +104,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         address _token,
         uint256 _amount,
         bytes memory _data
-    ) internal returns (address, uint256, bytes memory) {
+    ) internal nonReentrant returns (address, uint256, bytes memory) {
         address _sender = _msgSender();
         address _from = _sender;
         if (gatewayRouter == _sender) {

@@ -5,7 +5,6 @@ import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {ITwineChain} from "./ITwineChain.sol";
-import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
@@ -178,6 +177,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         executionVKey = _executionVKey;
         inclusionVKey = _inclusionVKey;
         withdrawalVKey = _withdrawalVKey;
+
+        emit setProgramVkey(_executionVKey, _inclusionVKey, _withdrawalVKey);
     }
 
     /// @inheritdoc ITwineChain
@@ -205,7 +206,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
         bytes32 batchId = getBatchId(startBlock, endBlock);
         bytes32 previousBlockHash = lastCommittedEndBlockHash;
-        for (uint64 i; i < commitBlockInfo.length; i++) {
+        uint256 len = commitBlockInfo.length;
+        for (uint64 i; i < len; i++) {
             StoredBlockInfo memory blockInfo = StoredBlockInfo({
                 previousHash: previousBlockHash,
                 blockHash: commitBlockInfo[i].blockHash,
@@ -226,6 +228,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         });
         committedBatches[batchId] = batchInfo;
         lastCommittedBlockNumber = endBlock;
+        commitedBatchStatus[batchId] = true;
     }
 
     function FinalizeBatch(
@@ -247,6 +250,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         );
         lastFinalizedBlockNumber = batchInfo.endBlock;
         finalizedBatchStatus[batchId] = true;
+        
     }
 
     /// @inheritdoc ITwineChain
@@ -272,10 +276,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             transaction_data.startBlock,
             transaction_data.endBlock
         );
-        // require(
-        //     isBatchFinalized(batchId),
-        //     "Batch needs to be finalized first."
-        // );
+
+        require(
+            isBatchFinalized(batchId),
+            "Batch needs to be finalized first."
+        );
+
         // require(
         //     transaction_data.transactionRoot ==
         //         committedBatches[transaction_data.batchNumber].transactionRoot,
@@ -382,14 +388,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function finalizeWithdrawal(
         FinalizeWithdrawalInput memory withdrawalInputs
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        // require(
-        //     isBatchFinalized(withdrawalInputs.publicInput.batchNumber),
-        //     "Batch needs to be finalized first."
-        // );
+        require(
+            isBatchFinalized(withdrawalInputs.publicInput.batchId),
+            "Batch needs to be finalized first."
+        );
 
-        // StoredBatchInfo memory committedTransaction = committedBatches[
-        //     withdrawalInputs.publicInput.batchNumber
-        // ];
+        StoredBatchInfo memory committedTransaction = committedBatches[
+            withdrawalInputs.publicInput.batchId
+        ];
 
         // withdrawalInputs.publicInput.receiptRoot = committedTransaction
         //     .receiptRoot;
@@ -405,7 +411,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         bytes memory replacedPublicInput = abi.encodePacked(
             withdrawalInputs.publicInput.chainId,
-            withdrawalInputs.publicInput.batchNumber,
+            withdrawalInputs.publicInput.batchId,
             withdrawalInputs.publicInput.nonce,
             withdrawalInputs.publicInput.isForced,
             withdrawalInputs.publicInput.receiptRoot,
@@ -532,8 +538,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) internal view returns (bytes32) {
         bytes memory calculatedBatchHash;
         StoredBlockInfo[] memory blockInfo = commitedBlockInfo[batchId];
-
-        for (uint256 i = 0; i < blockInfo.length; i++) {
+        uint256 len = blockInfo.length;
+        for (uint256 i = 0; i < len; i++) {
             calculatedBatchHash = abi.encodePacked(
                 calculatedBatchHash,
                 abi.encodePacked(
@@ -571,8 +577,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                     .getCrossDomainLayerZeroMessage(i);
             }
         }
-
-        for (uint64 i = 0; i < selectedMessages.length; i++) {
+        uint256 len = selectedMessages.length;
+        for (uint64 i = 0; i < len; i++) {
 
             calculatedRollingHash = abi.encodePacked(
                 calculatedRollingHash,
@@ -618,11 +624,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function getCombinedTxRoot(
         uint64 _startBlock,
         uint64 _endBlock
-    ) internal returns (bytes32) {
+    ) internal view returns (bytes32) {
         bytes32 batchId = getBatchId(_startBlock, _endBlock);
         bytes memory combinedTxRoot;
         StoredBlockInfo[] memory blockInfo = commitedBlockInfo[batchId];
-        for (uint256 i; i < blockInfo.length; i++) {
+        uint256 len = blockInfo.length;
+        for (uint256 i; i < len; i++) {
             combinedTxRoot = abi.encodePacked(
                 combinedTxRoot,
                 abi.encodePacked(blockInfo[i].transactionRoot)
@@ -635,7 +642,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function _calculatePublicInputForInclusion(
         bytes memory transaction_info,
         ChainCommitment memory chain_data
-    ) internal returns (bytes memory) {
+    ) internal pure returns (bytes memory) {
         bytes memory prefix = slice(transaction_info, 0, 40); // First 40 bytes
         bytes memory suffix = slice(
             transaction_info,

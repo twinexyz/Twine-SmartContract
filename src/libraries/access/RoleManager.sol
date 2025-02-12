@@ -20,7 +20,7 @@ contract RoleManager is ContextUpgradeable, AccessControlUpgradeable {
         _disableInitializers();
     }
 
-    function initialize(address _owner) public initializer {
+    function initialize(address _owner) external initializer {
         __AccessControl_init();
         // Grant the contract deployer the default admin role: it will be able
         // to grant and revoke any roles

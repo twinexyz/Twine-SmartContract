@@ -5,6 +5,8 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+
 
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
@@ -16,6 +18,7 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 /// All deposited tokens are routed to corresponding gateways.
 contract L1GatewayRouter is
     ContextUpgradeable,
+    ReentrancyGuardUpgradeable,
     IL1GatewayRouter,
     IL1ETHGateway,
     IL1ERC20Gateway
@@ -73,6 +76,7 @@ contract L1GatewayRouter is
         address _defaultERC20Gateway,
         address _roleManager
     ) external initializer {
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         // it can be zero during initialization
         if (_defaultERC20Gateway != address(0)) {
             defaultERC20Gateway = _defaultERC20Gateway;
@@ -129,7 +133,7 @@ contract L1GatewayRouter is
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable override {
+    ) external payable nonReentrant override {
         depositERC20AndCall(_token, _to, _amount, _gasLimit, new bytes(0));
     }
 
@@ -140,7 +144,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) public payable override onlyNotInContext {
+    ) public payable override nonReentrant onlyNotInContext {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
 
@@ -179,7 +183,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) external payable virtual override {
+    ) external payable virtual nonReentrant override {
         address _gateway = getERC20Gateway(_l1Token);
         require(_gateway != address(0), "no gateway available");
         bytes memory _routerData = abi.encode(_msgSender(), _data);
@@ -198,7 +202,7 @@ contract L1GatewayRouter is
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable override {
+    ) external payable nonReentrant override {
         depositETHAndCall(_to, _amount, _gasLimit, new bytes(0));
     }
 
@@ -208,7 +212,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) public payable override onlyNotInContext {
+    ) public payable override nonReentrant onlyNotInContext {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
 
@@ -229,7 +233,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) external payable virtual override {
+    ) external payable virtual nonReentrant override {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
         bytes memory _routerData = abi.encode(_msgSender(), _data);
@@ -237,6 +241,7 @@ contract L1GatewayRouter is
     }
 
     function setRoleManagerAddress(address _roleManagerAddress) external {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 
@@ -268,8 +273,10 @@ contract L1GatewayRouter is
         address[] memory _gateways
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        uint256 len = _tokens.length;
+        for (uint256 i = 0; i < len; i++) {
             require(_tokens[i] != address(0), " Value cann't be zero");
+            require(_gateways[i] != address(0), " Value cann't be zero");
             address _oldGateway = ERC20Gateway[_tokens[i]];
             ERC20Gateway[_tokens[i]] = _gateways[i];
             emit SetERC20Gateway(_tokens[i], _oldGateway, _gateways[i]);

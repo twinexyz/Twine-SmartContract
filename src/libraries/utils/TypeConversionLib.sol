@@ -16,7 +16,7 @@ library TypeConversionLib {
         bytes memory _string = new bytes(42);
         _string[0] = "0";
         _string[1] = "x";
-        for (uint i = 0; i < 20; i++) {
+        for (uint256 i = 0; i < 20; i++) {
             _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
             _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
         }
@@ -38,7 +38,7 @@ library TypeConversionLib {
         );
 
         uint160 result = 0;
-        for (uint i = 2; i < 42; i++) {
+        for (uint256 i = 2; i < 42; i++) {
             result *= 16;
             uint8 digit = uint8(stringBytes[i]);
             if (digit >= 48 && digit <= 57) {

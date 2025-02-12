@@ -29,6 +29,10 @@ interface IL1ETHGateway {
         uint256 blockNumber
     );
 
+    ///@notice Emmitted when L2TokenAddress  is set
+    ///@param l2TokenAddress The L2 address of the token
+    event L2TokenSET(address l2TokenAddress);
+
     /*****************************
      * Public Mutating Functions *
      *****************************/

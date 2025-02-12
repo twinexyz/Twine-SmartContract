@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
 import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {IL1ETHGateway} from "../../L1/gateways/interfaces/IL1ETHGateway.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
 /// @title L2ETHGateway

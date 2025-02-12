@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
+
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
-import {ITwineL2Gateway} from "../libraries/gateway/ITwineL2Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
-import {IL1ERC20Gateway} from "../L1/gateways/interfaces/IL1ERC20Gateway.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
-
-import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 
 contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     using TypeConversionLib for address;
@@ -115,7 +113,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes memory consensusProof,
         bytes memory depositTransactions,
         bytes32 parityHash
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         if (skipVerification) {
             blockReceiptRoots[chainId][blockNumber] = bankHash;
         } else {
@@ -124,7 +122,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
         if (depositTransactions.length > 0) {
             bytes memory data = abi.encode(chainId, depositTransactions);
-            (bool success, bytes memory output) = bridgingPrecompileAddress
+            (bool success, ) = bridgingPrecompileAddress
                 .call(data);
             require(success, "Deposits failed!");
             emit L1TokenDeposit();
@@ -138,7 +136,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bytes32 bankHash,
         bytes memory withdrawalTransaction,
         bytes32 parityHash
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         if (skipVerification) {
             blockReceiptRoots[chainId][blockNumber] = bankHash;
         }
@@ -166,7 +164,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 chainId,
         bytes memory lzPayload,
         bytes memory payloadProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         bytes[] memory lzPayloads = new bytes[](1);
         bytes[] memory payloadProofs = new bytes[](1);
         lzPayloads[0] = lzPayload;
@@ -177,6 +175,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         require(success, "LayerZero verification failed!");
         bytes32 guId = abi.decode(output, (bytes32));
         emit LayerzeroPayload(chainId, guId);
+    }
+
+    function setVkeys(
+        uint256 chainId,
+        bytes32 vKey
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        vKeys[chainId] = vKey;
     }
 
     /// @dev Internal function to send cross domain message.

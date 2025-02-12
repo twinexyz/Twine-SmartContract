@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
@@ -17,7 +17,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     uint64 chainId;
     uint64 depositMessageIndex;
     uint64 withdrawalMessageIndex;
-    uint64 layerZeroMessageIndex;
     address public messenger;
     address public roleManager;
     address public messageQueueProxy;
@@ -147,7 +146,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return executionMessageQueue[_queueIndex];
     }
 
-    function _padAddress(address input) public pure returns (bytes32) {
+    function _padAddress(address input) external pure returns (bytes32) {
         return bytes32(uint256(uint160(input)));
     }
 
@@ -195,7 +194,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     function isNonceInExecutionQueue(
         uint256 _nonce
     ) external view returns (bool) {
-        for (uint256 i = 0; i < executionMessageQueue.length; i++) {
+        uint256 len = executionMessageQueue.length;
+        for (uint256 i = 0; i < len; i++) {
             if (executionMessageQueue[i].nonce == _nonce) {
                 return true;
             }
@@ -204,9 +204,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     function removeExecutionMessage(uint256 nonce) external onlyMessenger {
-        for (uint256 i = 0; i < executionMessageQueue.length; i++) {
+        uint256 len = executionMessageQueue.length;
+        for (uint256 i = 0; i < len; i++) {
             if (executionMessageQueue[i].nonce == nonce) {
-                for (uint256 j = i; j < executionMessageQueue.length - 1; j++) {
+                for (uint256 j = i; j < len - 1; j++) {
                     executionMessageQueue[j] = executionMessageQueue[j + 1];
                 }
                 executionMessageQueue.pop();
@@ -215,41 +216,44 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNDepositElement(uint n) external onlyMessenger {
+    function popFirstNDepositElement(uint256 n) external onlyMessenger {
+        uint256 len = depositMessageQueue.length;
         require(n < nextCrossDomainDepositMessageIndex(), "Invalid index");
         // Shift elements
-        for (uint i = 0; i < depositMessageQueue.length - n; i++) {
+        for (uint256 i = 0; i < len - n; i++) {
             depositMessageQueue[i] = depositMessageQueue[i + n];
         }
 
         // Remove the last n elements by reducing the array length
-        for (uint i = 0; i < n; i++) {
+        for (uint256 i = 0; i < n; i++) {
             depositMessageQueue.pop();
         }
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNWithdrawalElement(uint n) external onlyMessenger {
+    function popFirstNWithdrawalElement(uint256 n) external onlyMessenger {
+        uint256 len = withdrawalMessageQueue.length;
         require(n < nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
         // Shift elements
-        for (uint i = 0; i < withdrawalMessageQueue.length - n; i++) {
+        for (uint256 i = 0; i < len - n; i++) {
             withdrawalMessageQueue[i] = withdrawalMessageQueue[i + n];
         }
 
         // Remove the last n elements by reducing the array length
-        for (uint i = 0; i < n; i++) {
+        for (uint256 i = 0; i < n; i++) {
             withdrawalMessageQueue.pop();
         }
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNLayerZeroElement(uint n) external onlyMessenger {
-        for (uint i = 0; i < layerZeroMessageQueue.length - n; i++) {
+    function popFirstNLayerZeroElement(uint256 n) external onlyMessenger {
+        uint256 len = layerZeroMessageQueue.length;
+        for (uint256 i = 0; i < len - n; i++) {
             layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
         }
 
         // Remove the last n elements by reducing the array length
-        for (uint i = 0; i < n; i++) {
+        for (uint256 i = 0; i < n; i++) {
             layerZeroMessageQueue.pop();
         }
     }

@@ -64,14 +64,16 @@ abstract contract TwineL2MessengerBase is
     function setRoleManager(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 
     /// @notice sets the fee vault address
     function setFeeVault(
-        address _freeVault
+        address _feeVault
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        feeVault = _freeVault;
+        require(_feeVault != address(0),"Address can't be zero");
+        feeVault = _feeVault;
     }
 
     /// @notice sets the counter part messenger
@@ -83,9 +85,10 @@ abstract contract TwineL2MessengerBase is
             _chainId.length == _counterpartMessenger.length,
             "length mismatch"
         );
-        for (uint256 i = 0; i < _chainId.length; i++) {
+        uint256 len = _chainId.length;
+        for (uint256 i = 0; i < len; i++) {
             require(
-                _chainId[i] != 0 && _counterpartMessenger[i] != address(0),
+               _counterpartMessenger[i] != address(0),
                 " Value cann't be zero"
             );
             address _oldCounterPart = counterpartMessenger[_chainId[i]];

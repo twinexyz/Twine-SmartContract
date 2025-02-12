@@ -226,8 +226,8 @@ contract L2GatewayRouter is
         address[] memory _gateways
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_tokens.length == _gateways.length, "length mismatch");
-
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        uint256 len = _tokens.length;
+        for (uint256 i = 0; i < len; i++) {
             address _oldGateway = ERC20Gateway[_tokens[i]];
             ERC20Gateway[_tokens[i]] = _gateways[i];
 
@@ -238,6 +238,7 @@ contract L2GatewayRouter is
     function setRoleManagerAddress(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 
