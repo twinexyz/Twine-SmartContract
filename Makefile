@@ -1,3 +1,21 @@
+
+# ******************************************************* 
+# *					Available commands					*
+# *******************************************************
+
+help:
+	@echo "Available targets:"
+	@echo "  help                 	     - Show this help message"
+	@echo "  updateDefaultValues        - update private key and rpc url"
+	@echo "  deployEveryL1Contracts     - deploy L1 contracts"
+	@echo "  depositETH                 - deposit ETH in L1"
+	@echo "  forcedWithdrawETH          - initiates Ethwithdraw from L1"
+	@echo "  depositERC20               - deposit ERC20 in L1"
+	@echo "  forcedWithdrawERC20        - initiates ERC20 withdraw from L1"
+	@echo "  setupEveryL1Contracts      - setup every l1 contracts"
+	@echo "  deployEveryL2Contracts     - deploy L2 Contracts"
+	@echo "  WithdrawERC20FromL2 	     - ERC20 withdraw from L2"
+	@echo "  setupEveryL2Contracts      - setup every l1 contracts"
 # ******************************************************* 
 # *						Utility Scripts					*
 # *******************************************************
@@ -209,6 +227,7 @@ deployEveryL2Contracts:
 
 
 #withdraw ERC20
+WithdrawERC20FromL2:
 	bash script/shell/actions/L2actions/erc20withdraw.sh
 
 
