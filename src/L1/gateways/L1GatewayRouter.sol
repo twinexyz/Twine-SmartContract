@@ -133,7 +133,7 @@ contract L1GatewayRouter is
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable nonReentrant override {
+    ) external payable override {
         depositERC20AndCall(_token, _to, _amount, _gasLimit, new bytes(0));
     }
 
@@ -144,7 +144,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) public payable override nonReentrant onlyNotInContext {
+    ) public payable override  onlyNotInContext {
         address _gateway = getERC20Gateway(_token);
         require(_gateway != address(0), "no gateway available");
 
@@ -202,7 +202,7 @@ contract L1GatewayRouter is
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable nonReentrant override {
+    ) external payable override {
         depositETHAndCall(_to, _amount, _gasLimit, new bytes(0));
     }
 
@@ -212,7 +212,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) public payable override nonReentrant onlyNotInContext {
+    ) public payable override  onlyNotInContext {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
 

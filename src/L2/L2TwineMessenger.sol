@@ -92,6 +92,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         external
         payable
         override
+        nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
         _sendMessage(
