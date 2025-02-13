@@ -25,7 +25,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
      ***************/
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
+     constructor(){
         _disableInitializers();
     }
 
@@ -93,7 +93,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) internal virtual override nonReentrant {
+    ) internal virtual override  {
         require(_amount > 0, "Amount can not be zero");
         require(msg.value > 0, "Amount for gas is needed");
         require(msg.value >= _gasLimit, "Not efficient gas value");

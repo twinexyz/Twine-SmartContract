@@ -21,23 +21,23 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
-        address _token,
+        address _l1Token,
         address _to,
         uint256 _amount,
         uint256 _gasLimit
-    ) external payable override nonReentrant{
-        _deposit(_token, _to, _amount, _gasLimit, new bytes(0));
+    ) external payable override  {
+        _deposit(_l1Token, _to, _amount, _gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20AndCall(
-        address _token,
+        address _l1Token,
         address _to,
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) external payable override nonReentrant{
-        _deposit(_token, _to, _amount, _gasLimit, _data);
+    ) external payable override {
+        _deposit(_l1Token, _to, _amount, _gasLimit, _data);
     }
 
     /// @inheritdoc IL1ERC20Gateway

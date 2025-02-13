@@ -91,6 +91,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         external
         payable
         override
+        nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
         _sendMessage(_type, from, to, l1Token, l2Token, amount);
