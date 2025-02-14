@@ -6,8 +6,8 @@ DEFAULT_FORK_URL="http://127.0.0.1:8545"
 
 
 # Prompt for commitment data
-read -p "Chain Id: " CHAIN_ID
-read -p "Batch Number: " BATCH_NUMBER
+read -p "Chain ID: " CHAIN_ID
+read -p "Batch ID: " BATCH_NUMBER
 read -p "Nonce: " NONCE
 read -p "Is Forced: " IS_FORCED
 read -p "Receipt Root: " RECEIPT_ROOT

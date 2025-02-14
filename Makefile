@@ -64,9 +64,13 @@ forcedWithdrawERC20:
 
 #<-------------TWINE CHAIN ACTIONS------------->
 
-# commit and finalize a batch
-commitAndFinalizeBatch:
-	bash script/shell/actions/L1actions/commitAndFinalize.sh
+# commit batch
+commitBatch:
+	bash script/shell/actions/L1actions/commitBatch.sh
+
+# finalize batch
+finalizeBatch:
+	bash script/shell/actions/L1actions/finalizeBatch.sh
 
 # commit and finalize transaction for a batch
 commitAndFinalizeTransaction:
@@ -75,6 +79,14 @@ commitAndFinalizeTransaction:
 # finalize a withdrawal
 finalizeWithdrawal:
 	bash script/shell/actions/L1actions/finalizeWithdrawal.sh
+
+#<-------------ROLE MANAGER ACTIONS------------->
+grantRole:
+	bash script/shell/actions/L1actions/grantRole.sh
+
+revokeRole:
+	bash script/shell/actions/L1actions/revokeRole.sh
+
 
 
 # *******************
@@ -223,7 +235,7 @@ deployEveryL2Contracts:
 # *******************
 
 #withdraw ETH
-	bash script/shell/actions/L2actions/ethwithdraw.sh
+#	bash script/shell/actions/L2actions/ethwithdraw.sh
 
 
 #withdraw ERC20

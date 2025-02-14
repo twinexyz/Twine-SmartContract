@@ -12,6 +12,7 @@ import {ITwineChain} from "../../../src/L1/rollup/ITwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
 import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
@@ -209,19 +210,13 @@ contract ForcedWithdrawERC20 is Script {
 
 }
 
-contract CommitAndFinalizeBatch is Script {
+contract CommitBatch is Script {
     TwineChain twineChain;
     address twineChainAddress;
 
     // Data required for commitment:
-    uint64 batchNumber;
-    bytes32 batchHash;
-    bytes32 previousStateRoot;
-    bytes32 stateRoot;
-    bytes32 transactionRoot;
-    bytes32 receiptRoot;
-
-    bytes executionProof;
+    uint64 startBlock;
+    uint64 endBlock;
 
     function setUp() public {
         string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
@@ -229,36 +224,83 @@ contract CommitAndFinalizeBatch is Script {
         twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
         twineChain = TwineChain(twineChainAddress);
 
-        // Read parameters dynamically
-        batchNumber = uint64(vm.envUint("BATCH_NUMBER"));
-        batchHash = vm.envBytes32("BATCH_HASH");
-        previousStateRoot = vm.envBytes32("PREVIOUS_STATE_ROOT");
-        stateRoot = vm.envBytes32("STATE_ROOT");
-        transactionRoot = vm.envBytes32("TRANSACTION_ROOT");
-        receiptRoot = vm.envBytes32("RECEIPT_ROOT");
+        // Read environment variables
+        startBlock = uint64(vm.envUint("START_BLOCK"));
+        endBlock = uint64(vm.envUint("END_BLOCK"));
+        
+    }
+    
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
 
+
+        // Extract JSON file
+        string memory commitmentJson = vm.readFile("./script/utils/commitInfo.json");
+        
+        // Get CommitBlockInfo array length
+        uint256 length = 0;
+        while(true) {
+            string memory indexStr = string.concat(".CommitBlockInfo[", vm.toString(length),"].blockNumber");
+            try vm.parseJsonUint(commitmentJson, indexStr) returns (uint256) {
+                length ++;
+            } catch {
+                break;
+            }
+        }
+
+        // Initialize array of CommitBlockInfo
+        ITwineChain.CommitBlockInfo[] memory newcommitBlockInfo = new ITwineChain.CommitBlockInfo[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            string memory indexStr = string.concat(".CommitBlockInfo[", vm.toString(i), "]");
+
+            newcommitBlockInfo[i] = ITwineChain.CommitBlockInfo({
+                blockNumber: uint64(vm.parseJsonUint(commitmentJson, string.concat(indexStr, ".blockNumber"))),
+                blockHash: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".blockHash")),
+                transactionRoot: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".transactionRoot")),
+                receiptRoot: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".receiptRoot"))
+            });
+        }
+
+        vm.startBroadcast(deployerPrivateKey);
+        console.log("Last finalize batch before commitment:", twineChain.lastCommittedBlockNumber());
+        
+        twineChain.commitBatch(startBlock, endBlock, newcommitBlockInfo);
+        
+        console.log("Last finalize batch after commitment:", twineChain.lastCommittedBlockNumber());
+        vm.stopBroadcast();
+    }
+}
+
+contract FinalizeBatch is Script {
+    TwineChain twineChain;
+    address twineChainAddress;
+
+    bytes publicInputForExecution;
+    bytes executionProof;
+    
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
+        twineChain = TwineChain(twineChainAddress);
+
+        // Read environment variables
+        publicInputForExecution =vm.envBytes("PUBLIC_INPUT_FOR_EXECUTION");
         executionProof = vm.envBytes("EXECUTION_PROOF");
     }
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address admin = vm.addr(deployerPrivateKey);
-        // Prepare Input
-        // ITwineChain.StoredBatchInfo memory  commitInfo = ITwineChain.StoredBatchInfo({
-        //     batchNumber: batchNumber,
-        //     batchHash: batchHash,
-        //     previousStateRoot: previousStateRoot,
-        //     stateRoot: stateRoot,
-        //     transactionRoot: transactionRoot,
-        //     receiptRoot: receiptRoot
-        // });
-
+        
         vm.startBroadcast(deployerPrivateKey);
-        // console.log("Last finalize batch before commitment:", twineChain.lastFinalizedBatchNumber());
-
-        // twineChain.commitAndFinalizeBatch(commitInfo, executionProof);
-
-        // console.log("Last finalize batch after commitment:", twineChain.lastFinalizedBatchNumber());
+        console.log("Last finalize batch before finalization:", twineChain.lastFinalizedBlockNumber());
+        
+        twineChain.FinalizeBatch(publicInputForExecution, executionProof);
+        
+        console.log("Last finalize batch after finalization:", twineChain.lastFinalizedBlockNumber());
         vm.stopBroadcast();
     }
 }
@@ -366,6 +408,69 @@ contract finalizeWithdrawal is Script {
         twineChain.finalizeWithdrawal(withdrawalInput);
         
         console.log("Admin Balance after deposit", admin.balance);
+        vm.stopBroadcast();
+    }
+}
+
+contract GrantRole is Script {
+    RoleManager roleManager;
+    address roleManagerAddress;
+
+    string role;
+    address account;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1RoleManager");
+        roleManager = RoleManager(roleManagerAddress);
+
+        // Read parameters dynamically
+        role = vm.envString("ROLE");
+        account = vm.envAddress("Account");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
+        bytes32 encodedRole = keccak256(abi.encodePacked(role));
+       
+        vm.startBroadcast(deployerPrivateKey);
+
+        roleManager.grantRole(encodedRole, account);
+        roleManager.checkRole(encodedRole, account);
+
+        vm.stopBroadcast();
+    }
+}
+
+contract RevokeRole is Script {
+    RoleManager roleManager;
+    address roleManagerAddress;
+
+    string role;
+    address account;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1RoleManager");
+        roleManager = RoleManager(roleManagerAddress);
+
+        // Read parameters dynamically
+        role = vm.envString("ROLE");
+        account = vm.envAddress("Account");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
+        bytes32 encodedRole = keccak256(abi.encodePacked(role));
+       
+        vm.startBroadcast(deployerPrivateKey);
+
+        roleManager.revokeRole(encodedRole, account);
+        
         vm.stopBroadcast();
     }
 }
