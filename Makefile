@@ -1,4 +1,4 @@
-
+MARKER_FILE = marker
 # ******************************************************* 
 # *					Available commands					*
 # *******************************************************
@@ -6,7 +6,9 @@
 help:
 	@echo "Available targets:"
 	@echo "  help                 	     - Show this help message"
-	@echo "  updateDefaultValues        - update private key and rpc url"
+	@echo "  updateSp1Version           - update sp1 library version to build file"
+	@echo "  updateL1DefaultValues      - update private key and rpc url of L1"
+	@echo "  updateL2DefaultValues      - update private key and rpc url of L2"
 	@echo "  deployEveryL1Contracts     - deploy L1 contracts"
 	@echo "  depositETH                 - deposit ETH in L1"
 	@echo "  forcedWithdrawETH          - initiates Ethwithdraw from L1"
@@ -16,14 +18,25 @@ help:
 	@echo "  deployEveryL2Contracts     - deploy L2 Contracts"
 	@echo "  WithdrawERC20FromL2 	     - ERC20 withdraw from L2"
 	@echo "  setupEveryL2Contracts      - setup every l1 contracts"
+
+# ******************************************************* 
+# *						Update sp1 Version			*
+# *******************************************************
+
+
 # ******************************************************* 
 # *						Utility Scripts					*
 # *******************************************************
+updateSp1Version:
+	bash script/updateSp1Version.sh
 
-# Update the default value of PrivateKey and ForkURL in every file
-updateDefaultValues:
-	bash script/shell/updateDefaultValues.sh
+# Update the default value of PrivateKey and ForkURL in every L1 file
+updateL1DefaultValues:
+	bash script/shell/updateL1DefaultValues.sh
+# Update the default value of PrivateKey and ForkURL in every L2 file
 
+updateL2DefaultValues:
+	bash script/shell/updateL2DefaultValues.sh
 
 # *************************************************** 
 # *						L1 Scripts					*
@@ -251,5 +264,11 @@ WithdrawERC20FromL2:
 setupEveryL2Contracts:
 	bash script/shell/setups/L2setups/setupEveryL2Contracts.sh
 
+# **************************************
+# *		Config L1 and L1     *
+# **************************************
+setupEveryContracts:
+	if [ -d marker ]; then rm -rf marker; fi
+	bash script/configure.sh
 
 	

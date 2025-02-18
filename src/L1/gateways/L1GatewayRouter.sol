@@ -183,7 +183,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) external payable virtual nonReentrant override {
+    ) external payable virtual  override {
         address _gateway = getERC20Gateway(_l1Token);
         require(_gateway != address(0), "no gateway available");
         bytes memory _routerData = abi.encode(_msgSender(), _data);
@@ -233,7 +233,7 @@ contract L1GatewayRouter is
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) external payable virtual nonReentrant override {
+    ) external payable virtual  override {
         address _gateway = ethGateway;
         require(_gateway != address(0), "eth gateway available");
         bytes memory _routerData = abi.encode(_msgSender(), _data);

@@ -122,7 +122,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         uint256 _amount,
         uint256 _gasLimit,
         bytes memory _data
-    ) internal virtual override nonReentrant {
+    ) internal virtual override  {
         require(_amount > 0, "withdrawing zero amount not allowd");
         // Extract real sender if this call is from L1GatewayRouter
         address _from;
