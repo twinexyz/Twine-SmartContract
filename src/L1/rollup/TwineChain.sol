@@ -24,6 +24,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ///@notice The chai ID for the L1 where this contract is deployed
     uint256 public chainId;
 
+    ///@notice current start block
+    uint256 currentStartBlock;
+
+    ///@notice current end block
+    uint256 currentEndBlock;
+
     /// @notice The id of Last Batch Committed
     uint256 public override lastCommittedBlockNumber;
 
@@ -73,7 +79,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     mapping(bytes32 => bool) public finalizedBatchStatus;
     /// @inheritdoc ITwineChain
     mapping(bytes32 => bytes32) public override finalizedStateRoots;
-    
+
     /// @notice Mapping of executed withdraw hash to a boolean value
     mapping(bytes32 => bool) public isWithdrawExecuted;
 
@@ -208,7 +214,17 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             );
         }
         bytes32 batchId = getBatchId(startBlock, endBlock);
-        bytes32 previousBlockHash = lastCommittedEndBlockHash;
+        uint256 expectedBlocks = endBlock - startBlock + 1;
+        // Get the current count of blocks already committed for this batch.
+        uint256 currentCount = commitedBlockInfo[batchId].length;
+        require(
+            currentCount + commitBlockInfo.length <= expectedBlocks,
+            "Exceeds total expected blocks for this batch"
+        );
+        bytes32 previousBlockHash = currentCount == 0
+            ? lastCommittedEndBlockHash
+            : commitedBlockInfo[batchId][currentCount - 1].blockHash;
+
         uint256 len = commitBlockInfo.length;
         for (uint64 i; i < len; i++) {
             StoredBlockInfo memory blockInfo = StoredBlockInfo({
@@ -221,17 +237,18 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             commitedBlockInfo[batchId].push(blockInfo);
         }
 
-        lastCommittedEndBlockHash = previousBlockHash;
-        bytes32 batchHash = _calculateBatchHash(batchId);
-
-        StoredBatchInfo memory batchInfo = StoredBatchInfo({
-            startBlock: startBlock,
-            endBlock: endBlock,
-            batchHash: batchHash
-        });
-        committedBatches[batchId] = batchInfo;
-        lastCommittedBlockNumber = endBlock;
-        commitedBatchStatus[batchId] = true;
+        if (commitedBlockInfo[batchId].length == expectedBlocks) {
+            lastCommittedEndBlockHash = previousBlockHash;
+            bytes32 batchHash = _calculateBatchHash(batchId);
+            StoredBatchInfo memory batchInfo = StoredBatchInfo({
+                startBlock: startBlock,
+                endBlock: endBlock,
+                batchHash: batchHash
+            });
+            committedBatches[batchId] = batchInfo;
+            lastCommittedBlockNumber = endBlock;
+            commitedBatchStatus[batchId] = true;
+        }
     }
 
     function FinalizeBatch(
@@ -253,7 +270,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         );
         lastFinalizedBlockNumber = batchInfo.endBlock;
         finalizedBatchStatus[batchId] = true;
-        
     }
 
     /// @inheritdoc ITwineChain
@@ -300,7 +316,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         ChainCommitment memory chain_data = _decodeChainCommitment(
             chainDataBytes
         );
-        
+
         require(
             chain_data.depositCount <=
                 IL1MessageQueue(messageQueue)
@@ -420,7 +436,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.publicInput.l2TokenAddress,
             withdrawalInputs.publicInput.amount
         );
-        require(!isWithdrawExecuted[keccak256(replacedPublicInput)],"Withdrawal already executed");
+        require(
+            !isWithdrawExecuted[keccak256(replacedPublicInput)],
+            "Withdrawal already executed"
+        );
         // bytes memory withdrawalProofWithSelector = prependBytes(
         //     withdrawalInputs.inclusionProof
         // );
@@ -457,7 +476,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             );
         }
 
-        isWithdrawExecuted [keccak256(replacedPublicInput)] = true;
+        isWithdrawExecuted[keccak256(replacedPublicInput)] = true;
     }
 
     /**********************
@@ -582,7 +601,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
         uint256 len = selectedMessages.length;
         for (uint64 i = 0; i < len; i++) {
-
             calculatedRollingHash = abi.encodePacked(
                 calculatedRollingHash,
                 abi.encodePacked(
