@@ -77,6 +77,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     mapping(bytes32 => bool) public commitedBatchStatus;
     /// @notice The mapping of batchNumber => bool
     mapping(bytes32 => bool) public finalizedBatchStatus;
+    /// @notice The mapping of batchNumber => receiptRoot
+    mapping(bytes32 => bytes32) public finalizedCombinedReceiptRoot;
     /// @notice Mapping of executed withdraw hash to a boolean value
     mapping(bytes32 => bool) public isWithdrawExecuted;
 
@@ -125,13 +127,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function isBatchCommitted(bytes32 batchId) public view returns (bool) {
         return commitedBatchStatus[batchId];
     }
-
-    // function getReceiptRoot(
-    //     uint256 _batchNumber
-    // ) public view returns (bytes32) {
-    //     require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
-    //     return committedBatches[_batchNumber].receiptRoot;
-    // }
 
     /*****************************
      * Public Mutating Functions *
@@ -245,6 +240,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             committedBatches[batchId] = batchInfo;
             lastCommittedBlockNumber = endBlock;
             commitedBatchStatus[batchId] = true;
+            finalizedCombinedReceiptRoot[batchId] = getCombinedReceiptRoot(
+                startBlock,
+                endBlock
+            );
             emit CommitBatch(
                 batchInfo.startBlock,
                 batchInfo.endBlock,
@@ -298,11 +297,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             transactionDataBytes
         );
 
-        transaction_data.receiptRoot = getCombinedReceiptRoot(
-            transaction_data.startBlock,
-            transaction_data.endBlock
+        require(
+            lastCommittedBlockNumber >= transaction_data.endBlock,
+            "The required block has not yet been committed"
         );
-
         bytes32 batchId = getBatchId(
             transaction_data.startBlock,
             transaction_data.endBlock
@@ -313,11 +311,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             "Batch needs to be finalized first."
         );
 
-        // require(
-        //     transaction_data.transactionRoot ==
-        //         committedBatches[transaction_data.batchNumber].transactionRoot,
-        //     "Invalid transaction data"
-        // );
+        transaction_data.receiptRoot = finalizedCombinedReceiptRoot[batchId];
 
         // Decode the next 120 bytes for transaction information for ethererum
         bytes memory chainDataBytes = new bytes(120);
@@ -427,12 +421,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             "Batch needs to be finalized first."
         );
 
-        StoredBatchInfo memory committedTransaction = committedBatches[
-            withdrawalInputs.publicInput.batchId
-        ];
-
-        // withdrawalInputs.publicInput.receiptRoot = committedTransaction
-        //     .receiptRoot;
+        require(
+            finalizedCombinedReceiptRoot[
+                withdrawalInputs.publicInput.batchId
+            ] == withdrawalInputs.publicInput.receiptRoot,
+            "Receipt roots must be equal."
+        );
 
         if (withdrawalInputs.publicInput.isForced == 1) {
             require(
@@ -682,7 +676,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes memory transaction_info,
         ChainCommitment memory chain_data
     ) internal pure returns (bytes memory) {
-        bytes memory prefix = slice(transaction_info, 0, 40); 
+        bytes memory prefix = slice(transaction_info, 0, 40);
         bytes memory suffix = slice(
             transaction_info,
             160,
