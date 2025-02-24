@@ -4,9 +4,9 @@
 ENV_FILE=".env"
 MARKER="marker"
 
-ONE_L1_CHAIN_NAME=holesky
-ONE_L1_RPC=http://127.0.0.1:8550
-ONE_L1_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+ONE_L1_CHAIN_NAME="holesky"
+ONE_L1_RPC="htpp:l1rc"
+ONE_L1_PRIVATE_KEY="0cxfaf"
 ONE_L1_EXECUTION_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
 ONE_L1_TRANSACTION_INCLUSION_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
 ONE_L1_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
@@ -14,8 +14,8 @@ ONE_L1_FAUX_COIN=0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
 ONE_L1_SP1_VERIFIER=0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
 
 TWINE_CHAIN_NAME=twine
-TWINE_RPC=http://127.0.0.1:8545
-TWINE_PRIVATE_KEY=0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e
+TWINE_RPC="htpp:twinerpc"
+TWINE_PRIVATE_KEY="0cxfaf"
 
 ONE_L1_ADDRESSES="script/utils/${ONE_L1_CHAIN_NAME}Addresses.json"
 TWINE_ADDRESSES="script/utils/${TWINE_CHAIN_NAME}Addresses.json"
@@ -107,7 +107,6 @@ jq --arg vkey "$ONE_L1_EXECUTION_VKEY" '.executionVkey = $vkey' "$ONE_L1_ADDRESS
 jq --arg vkey "$ONE_L1_TRANSACTION_INCLUSION_VKEY" '.inclusionVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 jq --arg vkey "$ONE_L1_WITHDRAW_VKEY" '.withdrawalVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 jq --arg vkey "$ONE_L1_SP1_VERIFIER" '.Verifier = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
-jq --arg vkey "$ONE_L1_FAUX_COIN" '.FauxCoin= $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 
 dev_contracts=$(cat "$ONE_L1_ADDRESSES")
 twine_contracts=$(cat "$TWINE_ADDRESSES")

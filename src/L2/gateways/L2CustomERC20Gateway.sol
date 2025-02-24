@@ -15,7 +15,6 @@ import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol
 /// @dev The withdrawn tokens will be burned directly. On finalizing deposit, the corresponding
 /// tokens will be minted and transferred to the recipient.
 contract L2CustomERC20Gateway is L2ERC20Gateway {
-    
     /*************
      * Variables *
      *************/
@@ -62,7 +61,7 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
     /************************
      * Restricted Functions *
      ************************/
-     
+
     function updateTokenMapping(
         uint256 _chainId,
         address _l2Token,
@@ -112,6 +111,14 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             value,
             _chainId,
             _gasLimit
+        );
+        emit WithdrawalInitiated(
+            _from,
+            _l2Token,
+            _to,
+            _l1Token,
+            _amount,
+            _chainId
         );
     }
 }

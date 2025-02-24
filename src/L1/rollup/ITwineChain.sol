@@ -9,9 +9,17 @@ interface ITwineChain {
      **********/
 
     /// @notice Emitted when a new batch is committed
-    /// @param batchNumber The number of the batch
+    /// @param startBlock The starting block
+    /// @param endBlock The end block
+    /// @param batchId The id of the batch
     /// @param batchHash The hash of the batch
-    event CommitBatch(uint256 indexed batchNumber, bytes32 indexed batchHash);
+    event CommitBatch(
+        uint64 indexed startBlock,
+        uint64 indexed endBlock,
+        uint256 blockNumber,
+        bytes32 indexed batchId,
+        bytes32 batchHash
+    );
 
     /// @notice revert a pending batch.
     /// @param batchNumber The number of the batch.
@@ -19,18 +27,30 @@ interface ITwineChain {
     event RevertBatch(uint256 indexed batchNumber, bytes32 indexed batchHash);
 
     /// @notice Emitted when a batch is finalized
-    /// @param batchNumber The number of the batch
+    /// @param startBlock The starting block
+    /// @param endBlock The end block
+    /// @param batchId The id of the batch
     /// @param batchHash The hash of the batch
-    /// @param stateRoot The state Root on layer 2 after this batch
-    /// @param withdrawRoot The merkle root on layer2 after this batch
     event FinalizedBatch(
-        uint256 indexed batchNumber,
-        bytes32 indexed batchHash,
-        bytes32 stateRoot,
-        bytes32 withdrawRoot
+        uint64 indexed startBlock,
+        uint64 indexed endBlock,
+        uint256 blockNumber,
+        bytes32 indexed batchId,
+        bytes32 batchHash
     );
 
-     /// @notice Emitted when vkeys are set
+    /// @notice Emitted when transactions of a batch is finalized
+    /// @param startBlock The starting block
+    /// @param endBlock The end block
+    /// @param batchId The id of the batch
+    event FinalizedTransaction(
+        uint64 indexed startBlock,
+        uint64 indexed endBlock,
+        uint256 blockNumber,
+        bytes32 indexed batchId
+    );
+
+    /// @notice Emitted when vkeys are set
     event setProgramVkey(
         bytes32 executionVKey,
         bytes32 inclusionVKey,
@@ -88,11 +108,11 @@ interface ITwineChain {
     /// @notice First 40 bytes of the transaction data commitment
     /// @param startBlock first block of the batch
     /// @param endBlock   last block of the batch
-    /// @param transactionRoot Transaction root of the batch
+    /// @param receiptRoot receipt root of the batch
     struct TransactionInfo {
         uint64 startBlock;
         uint64 endBlock;
-        bytes32 transactionRoot;
+        bytes32 receiptRoot;
     }
 
     /// @notice Chain Specific data from the corresponding 120 bytes of transaction data commitment
@@ -150,12 +170,6 @@ interface ITwineChain {
 
     /// @return The latest committed finalized batch number.
     function lastCommittedBlockNumber() external view returns (uint256);
-
-    /// @param batchId The id of the batch.
-    /// @return stateRoot state root of the provided batch
-    function finalizedStateRoots(
-        bytes32 batchId
-    ) external view returns (bytes32);
 
     /// @param batchId The id of the batch.
     /// @return IsFinalized weather the provided batch is finalized or not

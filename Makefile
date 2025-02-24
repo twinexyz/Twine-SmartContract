@@ -4,31 +4,78 @@ MARKER_FILE = marker
 # *******************************************************
 
 help:
-	@echo "Available targets:"
-	@echo "  help                 	     - Show this help message"
-	@echo "  updateSp1Version           - update sp1 library version to build file"
-	@echo "  updateL1DefaultValues      - update private key and rpc url of L1"
-	@echo "  updateL2DefaultValues      - update private key and rpc url of L2"
-	@echo "  deployEveryL1Contracts     - deploy L1 contracts"
-	@echo "  depositETH                 - deposit ETH in L1"
-	@echo "  forcedWithdrawETH          - initiates Ethwithdraw from L1"
-	@echo "  depositERC20               - deposit ERC20 in L1"
-	@echo "  forcedWithdrawERC20        - initiates ERC20 withdraw from L1"
-	@echo "  setupEveryL1Contracts      - setup every l1 contracts"
-	@echo "  deployEveryL2Contracts     - deploy L2 Contracts"
-	@echo "  WithdrawERC20FromL2 	     - ERC20 withdraw from L2"
-	@echo "  setupEveryL2Contracts      - setup every l1 contracts"
+	@echo "========================================================="
+	@echo "               Available Targets Help                    "
+	@echo "========================================================="
+	@echo "help                            - Show this help message"
+	@echo "build  				- Build contracts "
+	@echo "clean                     	- Remove build artifacts"
+	@echo "updateSp1Version                - Update sp1 library version in build file"
+	@echo "updateL1DefaultValues           - Update private key and RPC URL for L1"
+	@echo "updateL2DefaultValues           - Update private key and RPC URL for L2"
+	@echo "deployEveryL1Contracts          - Deploy all L1 contracts"
+	@echo "depositETH                      - Deposit ETH on L1"
+	@echo "forcedWithdrawETH               - Initiate forced ETH withdrawal from L1"
+	@echo "depositERC20                    - Deposit ERC20 tokens on L1"
+	@echo "forcedWithdrawERC20             - Initiate forced ERC20 withdrawal from L1"
+	@echo "setupEveryL1Contracts           - Set up every L1 contract"
+	@echo "deployEveryL2Contracts          - Deploy all L2 contracts"
+	@echo "WithdrawERC20FromL2             - Withdraw ERC20 tokens from L2"
+	@echo "setupEveryL2Contracts           - Set up every L2 contract"
+	@echo "commitBatch                     - Commit batch transactions"
+	@echo "finalizeBatch                   - Finalize batch transactions"
+	@echo "commitAndFinalizeTransaction    - Commit and finalize transaction"
+	@echo "finalizeWithdrawal              - Finalize a  withdrawal"
+	@echo "grantRole                       - Grant a role to an entity"
+	@echo "revokeRole                      - Revoke a role from an entity"
+	@echo "setupRoleManagerTwineChain      - Configure role manager for Twine Chain"
+	@echo "setupChainIdTwineChain          - Configure chain ID for Twine Chain"
+	@echo "setupMessageQueueTwineChain     - Configure message queue for Twine Chain"
+	@echo "setupVerifierTwineChain         - Set up verifier for Twine Chain"
+	@echo "setupVkeysTwineChain            - Configure program V keys for Twine Chain"
+	@echo "setupGatewayTwineChain          - Configure gateway for Twine Chain"
+	@echo "setupRoleManagerL1ETHGateway    - Configure role manager for L1 ETH Gateway"
+	@echo "setGatewayRouterL1ETHGateway    - Set up gateway router for L1 ETH Gateway"
+	@echo "setTwineMessengerL1ETHGateway   - Set up Twine messenger for L1 ETH Gateway"
+	@echo "setL2TokenL1ETHGateway          - Configure L2 token address for L1 ETH Gateway"
+	@echo "setRoleManagerMQ                - Configure role manager for Message Queue"
+	@echo "setChainIdMQ                    - Configure chain ID for Message Queue"
+	@echo "setTwineMessengerMQ             - Set up Twine messenger for Message Queue"
+	@echo "setMessageProxyMQ               - Set up message proxy for Message Queue"
+	@echo "setRoleManagerGR                - Configure role manager for Gateway Router"
+	@echo "setETHGatewayGR                 - Set up ETH Gateway in Gateway Router"
+	@echo "setDefaultERC20GatewayGR        - Set up default ERC20 Gateway in Gateway Router"
+	@echo "setERC20GatewayGR               - Set up ERC20 Gateway in Gateway Router"
+	@echo "setRoleManagerMS                - Configure role manager for Messenger"
+	@echo "setRollupMS                     - Set up rollup for Messenger"
+	@echo "setMessageQueueMS               - Set up message queue for Messenger"
+	@echo "setCounterpartMessengerMS       - Set up counterpart messenger"
+	@echo "setRoleManagerCG                - Configure role manager for Custom ERC20"
+	@echo "setGatewayRouterCG              - Set up gateway router for Custom ERC20"
+	@echo "setTwineMessengerCG             - Set up Twine messenger for Custom ERC20"
+	@echo "updateTokenMappingCG            - Update token mapping for Custom ERC20"
+	@echo "setupEveryContracts             - Setup of both l1 and l2"
 
+
+# ******************************************************* 
+# *						build and clean			*
+# *******************************************************
+build:
+	@echo "Starting contract compilation..."
+	@forge build
+
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf out cache
 # ******************************************************* 
 # *						Update sp1 Version			*
 # *******************************************************
-
+updateSp1Version:
+	bash script/updateSp1Version.sh
 
 # ******************************************************* 
 # *						Utility Scripts					*
 # *******************************************************
-updateSp1Version:
-	bash script/updateSp1Version.sh
 
 # Update the default value of PrivateKey and ForkURL in every L1 file
 updateL1DefaultValues:
@@ -268,6 +315,7 @@ setupEveryL2Contracts:
 # *		Config L1 and L1     *
 # **************************************
 setupEveryContracts:
+	bash script/shell/updateL1L2Configuration.sh
 	if [ -d marker ]; then rm -rf marker; fi
 	bash script/configure.sh
 

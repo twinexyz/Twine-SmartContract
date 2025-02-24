@@ -30,10 +30,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ///@notice current end block
     uint256 currentEndBlock;
 
-    /// @notice The id of Last Batch Committed
+    /// @notice The latest committed block number
     uint256 public override lastCommittedBlockNumber;
 
-    /// @notice The id of Last Batch Finalized
+    /// @notice The latest finalized block number
     uint256 public override lastFinalizedBlockNumber;
 
     /// @notice The verification key for inclusion proof
@@ -45,11 +45,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The verification key for execution proof.
     bytes32 public executionVKey;
 
-    //@notice The previous batch hash
-    bytes32 public lastFinalizedBatchHash;
-
-    //@notice The hash of the previous end block hash
+    //@notice The hash of the last committed block hash
     bytes32 public lastCommittedEndBlockHash;
+
+    //@notice The last finalize batch hash
+    bytes32 public lastFinalizedBatchHash;
 
     //gateway address of eth
     address public ethGateway;
@@ -77,9 +77,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     mapping(bytes32 => bool) public commitedBatchStatus;
     /// @notice The mapping of batchNumber => bool
     mapping(bytes32 => bool) public finalizedBatchStatus;
-    /// @inheritdoc ITwineChain
-    mapping(bytes32 => bytes32) public override finalizedStateRoots;
-
     /// @notice Mapping of executed withdraw hash to a boolean value
     mapping(bytes32 => bool) public isWithdrawExecuted;
 
@@ -248,6 +245,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             committedBatches[batchId] = batchInfo;
             lastCommittedBlockNumber = endBlock;
             commitedBatchStatus[batchId] = true;
+            emit CommitBatch(
+                batchInfo.startBlock,
+                batchInfo.endBlock,
+                block.number,
+                batchId,
+                batchInfo.batchHash
+            );
         }
     }
 
@@ -270,6 +274,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         );
         lastFinalizedBlockNumber = batchInfo.endBlock;
         finalizedBatchStatus[batchId] = true;
+
+        emit FinalizedBatch(
+            batchInfo.startBlock,
+            batchInfo.endBlock,
+            block.number,
+            batchId,
+            batchInfo.batchHash
+        );
     }
 
     /// @inheritdoc ITwineChain
@@ -286,7 +298,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             transactionDataBytes
         );
 
-        transaction_data.transactionRoot = getCombinedTxRoot(
+        transaction_data.receiptRoot = getCombinedReceiptRoot(
             transaction_data.startBlock,
             transaction_data.endBlock
         );
@@ -399,6 +411,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // remove deposits, and withdrawals  messages from queue
         IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
+        emit FinalizedTransaction(
+            transaction_data.startBlock,
+            transaction_data.endBlock,
+            block.number,
+            batchId
+        );
     }
 
     function finalizeWithdrawal(
@@ -488,19 +506,19 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) internal pure returns (TransactionInfo memory) {
         uint64 startBlock;
         uint64 endBlock;
-        bytes32 transactionRoot;
+        bytes32 receiptRoot;
 
         assembly {
             startBlock := mload(add(transactionDataBytes, 8))
             endBlock := mload(add(transactionDataBytes, 16))
-            transactionRoot := mload(add(transactionDataBytes, 48))
+            receiptRoot := mload(add(transactionDataBytes, 48))
         }
 
         return
             TransactionInfo({
                 startBlock: startBlock,
                 endBlock: endBlock,
-                transactionRoot: transactionRoot
+                receiptRoot: receiptRoot
             });
     }
 
@@ -642,34 +660,34 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return keccak256(batchId);
     }
 
-    function getCombinedTxRoot(
+    function getCombinedReceiptRoot(
         uint64 _startBlock,
         uint64 _endBlock
     ) internal view returns (bytes32) {
         bytes32 batchId = getBatchId(_startBlock, _endBlock);
-        bytes memory combinedTxRoot;
+        bytes memory combinedReceiptRoot;
         StoredBlockInfo[] memory blockInfo = commitedBlockInfo[batchId];
         uint256 len = blockInfo.length;
         for (uint256 i; i < len; i++) {
-            combinedTxRoot = abi.encodePacked(
-                combinedTxRoot,
-                abi.encodePacked(blockInfo[i].transactionRoot)
+            combinedReceiptRoot = abi.encodePacked(
+                combinedReceiptRoot,
+                abi.encodePacked(blockInfo[i].receiptRoot)
             );
         }
 
-        return keccak256(combinedTxRoot);
+        return keccak256(combinedReceiptRoot);
     }
 
     function _calculatePublicInputForInclusion(
         bytes memory transaction_info,
         ChainCommitment memory chain_data
     ) internal pure returns (bytes memory) {
-        bytes memory prefix = slice(transaction_info, 0, 40); // First 40 bytes
+        bytes memory prefix = slice(transaction_info, 0, 40); 
         bytes memory suffix = slice(
             transaction_info,
             160,
             transaction_info.length - 160
-        ); // After 160 bytes
+        );
 
         bytes memory replacement = abi.encodePacked(
             chain_data.depositCount,

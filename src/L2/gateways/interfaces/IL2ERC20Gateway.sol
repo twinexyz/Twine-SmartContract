@@ -8,7 +8,7 @@ interface IL2ERC20Gateway {
      **********/
 
     /// @notice Emitted when token mapping for ERC20 token is updated.
-    /// @param l2Token The address of corresponding ERC20 token in layer 2.
+    /// @param l2Token The address of corresponding ERC20 token in Twine.
     /// @param oldL1Token The address of the old corresponding ERC20 token in layer 1.
     /// @param newL1Token The address of the new corresponding ERC20 token in layer 1.
     event TokenMappingUpdated(
@@ -16,6 +16,26 @@ interface IL2ERC20Gateway {
         address indexed l2Token,
         string indexed oldL1Token,
         string newL1Token
+    );
+
+    /**
+     * @notice Emitted when a withdrawal is initiated.
+     * @dev This event is logged after burning tokens on L2 and before sending a message to L1.
+     * @param from The address initiating the withdrawal.
+     * @param l2Token The address of the token on Twine.
+     * @param to The recipient's identifier on Layer 1, represented as a string.
+     * @param l1Token The corresponding token address on Layer 1, stored as a string.
+     * @param amount The amount of tokens withdrawn.
+     * @param chainId The identifier of the L1 chain.
+     */
+
+    event WithdrawalInitiated(
+        address indexed from,
+        address indexed l2Token,
+        string to,
+        string l1Token,
+        uint256 amount,
+        uint256 chainId
     );
 
     /*************************
