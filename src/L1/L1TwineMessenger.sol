@@ -81,7 +81,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
-        TransactionType _type,
+        TransactionType txnType,
         address from,
         address to,
         address l1Token,
@@ -94,7 +94,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
-        _sendMessage(_type, from, to, l1Token, l2Token, amount);
+        _sendMessage(txnType, from, to, l1Token, l2Token, amount);
     }
 
     /**********************
@@ -102,7 +102,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
      **********************/
 
     function _sendMessage(
-        TransactionType _type,
+        TransactionType txnType,
         address from,
         address to,
         address l1Token,
@@ -110,7 +110,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         uint256 amount
     ) internal {
         // If transaction type is Deposit
-        if (_type == TransactionType.deposit) {
+        if (txnType == TransactionType.deposit) {
             // require(msg.value >= _value, "Insufficient msg.value");
 
             // append message to L1 depositMessageQueue

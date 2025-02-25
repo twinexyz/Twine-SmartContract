@@ -142,8 +142,8 @@ interface IL1MessageQueue {
     function setRoleManager(address _roleManager) external;
 
     /// @notice set the proxy Address of MessageQueue
-    /// @param proxyAddress message queue proxy address to set
-    function setMessageQueueProxy(address proxyAddress) external;
+    /// @param _proxyAddress message queue proxy address to set
+    function setMessageQueueProxy(address _proxyAddress) external;
 
     /// @notice Removes the first N message from the Deposit Queue
     /// @param n number of deposit message to pop
@@ -159,52 +159,54 @@ interface IL1MessageQueue {
 
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on Twine
-    /// @param l1_token address of token to deposit on L1
-    /// @param l2_token address of token to be received on L2
+    /// @param l1Token address of token to deposit on L1
+    /// @param l2Token address of token to be received on L2
     /// @param amount amount of token to deposit
     function appendCrossDomainDepositMessage(
         address from,
         address to,
-        address l1_token,
-        address l2_token,
+        address l1Token,
+        address l2Token,
         uint256 amount
     ) external;
 
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on L1
-    /// @param l1_token address of token to receive on L1
-    /// @param l2_token address of token to be withdrawan from L2
+    /// @param l1Token address of token to receive on L1
+    /// @param l2Token address of token to be withdrawan from L2
     /// @param amount amount of token to withdraw
     function appendCrossDomainWithdrawalMessage(
         address from,
         address to,
-        address l1_token,
-        address l2_token,
+        address l1Token,
+        address l2Token,
         uint256 amount
     ) external;
 
     /// @notice Append message that are ready for execution
-    /// @param _nonce the nonce of the message
-    /// @param _chainId chain Id of L1
-    /// @param _blockNumber L2 block number in which this transaction was present
-    /// @param _from the sender address
-    /// @param _to the receiver address
-    /// @param _l1Token adress of token to be received on l1
-    /// @param _l2Token adress of token withdrawan from Twine
-    /// @param _amount amount to be received on L1
+    /// @param nonce the nonce of the message
+    /// @param chainId chain Id of L1
+    /// @param blockNumber L2 block number in which this transaction was present
+    /// @param from the sender address
+    /// @param to the receiver address
+    /// @param l1Token adress of token to be received on l1
+    /// @param l2Token adress of token withdrawan from Twine
+    /// @param amount amount to be received on L1
     function appendExecutionMessage(
-        uint64 _nonce,
-        uint64 _chainId,
-        uint64 _blockNumber,
-        string memory _from,
-        string memory _to,
-        string memory _l1Token,
-        string memory _l2Token,
-        string memory _amount
+        uint64 nonce,
+        uint64 chainId,
+        uint64 blockNumber,
+        string memory from,
+        string memory to,
+        string memory l1Token,
+        string memory l2Token,
+        string memory amount
     ) external;
 
+    /// @notice Checks if the nonce provided is present in execution message queue or not
+    /// @param nonce Nonce to check
     function isNonceInExecutionQueue(
-        uint256 _nonce
+        uint256 nonce
     ) external view returns (bool);
 
     /// @notice Remove message with the given nonce from the execution message queue

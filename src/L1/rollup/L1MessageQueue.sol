@@ -108,45 +108,45 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     /// @inheritdoc IL1MessageQueue
     function getCrossDomainDepositMessage(
-        uint256 _queueIndex
+        uint256 queueIndex
     ) external view returns (MessageData memory) {
         require(
-            nextCrossDomainDepositMessageIndex() > _queueIndex,
+            nextCrossDomainDepositMessageIndex() > queueIndex,
             "Invalid index"
         );
-        return depositMessageQueue[_queueIndex];
+        return depositMessageQueue[queueIndex];
     }
 
     /// @inheritdoc IL1MessageQueue
     function getCrossDomainWithdrawalMessage(
-        uint256 _queueIndex
+        uint256 queueIndex
     ) external view returns (MessageData memory) {
         require(
-            nextCrossDomainWithdrawalMessageIndex() > _queueIndex,
+            nextCrossDomainWithdrawalMessageIndex() > queueIndex,
             "Invalid index"
         );
-        return withdrawalMessageQueue[_queueIndex];
+        return withdrawalMessageQueue[queueIndex];
     }
 
     /// @inheritdoc IL1MessageQueue
     function getCrossDomainLayerZeroMessage(
-        uint256 _queueIndex
+        uint256 queueIndex
     ) external view returns (MessageData memory) {
-        return layerZeroMessageQueue[_queueIndex];
+        return layerZeroMessageQueue[queueIndex];
     }
 
     /// @inheritdoc IL1MessageQueue
     function getExecutionMessage(
-        uint256 _queueIndex
+        uint256 queueIndex
     ) external view returns (MessageData memory) {
         require(
-            nextCrossDomainExecutionMessageIndex() > _queueIndex,
+            nextCrossDomainExecutionMessageIndex() > queueIndex,
             "Invalid index"
         );
-        return executionMessageQueue[_queueIndex];
+        return executionMessageQueue[queueIndex];
     }
 
-    function _padAddress(address input) external pure returns (bytes32) {
+    function padAddress(address input) external pure returns (bytes32) {
         return bytes32(uint256(uint160(input)));
     }
 
@@ -192,11 +192,11 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     function isNonceInExecutionQueue(
-        uint256 _nonce
+        uint256 nonce
     ) external view returns (bool) {
         uint256 len = executionMessageQueue.length;
         for (uint256 i = 0; i < len; i++) {
-            if (executionMessageQueue[i].nonce == _nonce) {
+            if (executionMessageQueue[i].nonce == nonce) {
                 return true;
             }
         }
@@ -282,24 +282,24 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     /// @inheritdoc IL1MessageQueue
     function appendExecutionMessage(
-        uint64 _nonce,
-        uint64 _chainId,
-        uint64 _blockNumber,
-        string memory _from,
-        string memory _to,
-        string memory _l1Token,
-        string memory _l2Token,
-        string memory _amount
+        uint64 nonce,
+        uint64 chainId,
+        uint64 blockNumber,
+        string memory from,
+        string memory to,
+        string memory l1Token,
+        string memory l2Token,
+        string memory amount
     ) external override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         _queueExecutionTransaction(
-            _nonce,
-            _chainId,
-            _blockNumber,
-            _from,
-            _to,
-            _l1Token,
-            _l2Token,
-            _amount
+            nonce,
+            chainId,
+            blockNumber,
+            from,
+            to,
+            l1Token,
+            l2Token,
+            amount
         );
     }
 
@@ -308,11 +308,11 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
      **********************/
 
     function _queueDepositTransaction(
-        address _from,
-        address _to,
-        address _l1Token,
-        address _l2Token,
-        uint256 _amount
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
     ) internal {
         ++depositMessageIndex;
 
@@ -320,11 +320,11 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             nonce: depositMessageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
-            fromAddress: _from.addressToString(),
-            toAddress: _to.addressToString(),
-            l1Token: _l1Token.addressToString(),
-            l2Token: _l2Token.addressToString(),
-            amount: uintToString(_amount)
+            fromAddress: from.addressToString(),
+            toAddress: to.addressToString(),
+            l1Token: l1Token.addressToString(),
+            l2Token: l2Token.addressToString(),
+            amount: uintToString(amount)
         });
 
         depositMessageQueue.push(depositMessageData);
@@ -334,20 +334,20 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             depositMessageIndex,
             chainId,
             uint64(block.number),
-            _l1Token,
-            _l2Token,
-            _from,
-            _to,
-            _amount
+            l1Token,
+            l2Token,
+            from,
+            to,
+            amount
         );
     }
 
     function _queueWithdrawalTransaction(
-        address _from,
-        address _to,
-        address _l1Token,
-        address _l2Token,
-        uint256 _amount
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
     ) internal {
         ++withdrawalMessageIndex;
 
@@ -355,11 +355,11 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             nonce: depositMessageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
-            fromAddress: _from.addressToString(),
-            toAddress: _to.addressToString(),
-            l1Token: _l1Token.addressToString(),
-            l2Token: _l2Token.addressToString(),
-            amount: uintToString(_amount)
+            fromAddress: from.addressToString(),
+            toAddress: to.addressToString(),
+            l1Token: l1Token.addressToString(),
+            l2Token: l2Token.addressToString(),
+            amount: uintToString(amount)
         });
 
         withdrawalMessageQueue.push(withdrawMessageData);
@@ -369,58 +369,58 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             withdrawalMessageIndex,
             chainId,
             uint64(block.number),
-            _l1Token,
-            _l2Token,
-            _from,
-            _to,
-            _amount
+            l1Token,
+            l2Token,
+            from,
+            to,
+            amount
         );
     }
 
     function _queueExecutionTransaction(
-        uint64 _nonce,
-        uint64 _chainId,
-        uint64 _blockNumber,
-        string memory _from,
-        string memory _to,
-        string memory _l1Token,
-        string memory _l2Token,
-        string memory _amount
+        uint64 nonce,
+        uint64 chainId,
+        uint64 blockNumber,
+        string memory from,
+        string memory to,
+        string memory l1Token,
+        string memory l2Token,
+        string memory amount
     ) internal {
         MessageData memory executionMessageData = MessageData({
-            nonce: _nonce,
-            chainId: _chainId,
-            blockNumber: _blockNumber,
-            fromAddress: _from,
-            toAddress: _to,
-            l1Token: _l1Token,
-            l2Token: _l2Token,
-            amount: _amount
+            nonce: nonce,
+            chainId: chainId,
+            blockNumber: blockNumber,
+            fromAddress: from,
+            toAddress: to,
+            l1Token: l1Token,
+            l2Token: l2Token,
+            amount: amount
         });
 
         executionMessageQueue.push(executionMessageData);
     }
 
     /// @notice Converts a uint256 to its string representation
-    /// @param _value The uint256 value to convert
+    /// @param value The uint256 value to convert
     /// @return The string representation of the input value
     function uintToString(
-        uint256 _value
+        uint256 value
     ) internal pure returns (string memory) {
-        if (_value == 0) {
+        if (value == 0) {
             return "0";
         }
-        uint256 temp = _value;
+        uint256 temp = value;
         uint256 digits;
         while (temp != 0) {
             digits++;
             temp /= 10;
         }
         bytes memory buffer = new bytes(digits);
-        while (_value != 0) {
+        while (value != 0) {
             digits -= 1;
-            buffer[digits] = bytes1(uint8(48 + uint256(_value % 10)));
-            _value /= 10;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
         }
         return string(buffer);
     }

@@ -51,7 +51,7 @@ interface ITwineChain {
     );
 
     /// @notice Emitted when vkeys are set
-    event setProgramVkey(
+    event SetProgramVkey(
         bytes32 executionVKey,
         bytes32 inclusionVKey,
         bytes32 withdrawalVKey
@@ -168,7 +168,7 @@ interface ITwineChain {
     /// @return lastFinalizedBatchNumber batch number of latest finalized batch
     function lastFinalizedBlockNumber() external view returns (uint256);
 
-    /// @return The latest committed finalized batch number.
+    /// @return BlockNumber The latest committed finalized batch number.
     function lastCommittedBlockNumber() external view returns (uint256);
 
     /// @param batchId The id of the batch.
@@ -211,7 +211,7 @@ interface ITwineChain {
         bytes32 _withdrawalVKey
     ) external;
 
-    ///@notice sets the gateway addresses
+    /// @notice sets the gateway addresses
     /// @param _ethGateway ETHGateway address to set
     /// @param _ERC20Gateway ERC2OGateway address to set
     function setGatewayAddress(
@@ -219,20 +219,30 @@ interface ITwineChain {
         address _ERC20Gateway
     ) external;
 
-    /// @notice Commit and finalize a batch on Layer 1.
-    /// @param commit_info The struct containing the batch's information
-    /// @param execution_proof The execution proof for that batch
-    // function commitAndFinalizeBatch(
-    //     StoredBatchInfo memory commit_info,
-    //     bytes memory execution_proof
-    // ) external;
+    /// @notice Commits a batch
+    /// @param startBlock the start block number of that batch
+    /// @param endBlock the end block number of that batch
+    /// @param commitBlockInfo The block infos 
+    function commitBatch(
+        uint64 startBlock,
+        uint64 endBlock,
+        CommitBlockInfo[] memory commitBlockInfo
+    ) external;
+
+    /// @notice Finalizes a batch
+    /// @param publicInputForExecution public inputs for exection proof
+    /// @param executionProof the execution proof
+    function finalizeBatch(
+        bytes memory publicInputForExecution,
+        bytes memory executionProof
+    ) external;
 
     /// @notice Finalize transaction data for a batch
-    /// @param transaction_info The sturct containing batch's transaction information
-    /// @param inclusion_proof The inclusion proof for that batch of transaction
+    /// @param transactionInfo The sturct containing batch's transaction information
+    /// @param inclusionProof The inclusion proof for that batch of transaction
     function commitAndFinalizeTransactions(
-        bytes memory transaction_info,
-        bytes memory inclusion_proof
+        bytes memory transactionInfo,
+        bytes memory inclusionProof
     ) external;
 
     /// @notice Finalizes both l2 initiated and forced withdrawal of different tokens
