@@ -135,7 +135,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             .call(output);
         require(txnSuccess, "Failed executing transactions");
 
-        emit solanaTransactionsHandled(txnOutput);
+        emit SolanaTransactionsHandled(txnOutput);
     }
 
     function handleEthereumProofAndTransactions(
@@ -158,7 +158,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 bytes memory txnOutput
             ) = bridgingPrecompileAddress.call(data);
             require(txnSuccess, "Ethereum Transactions failed!");
-            emit ethereumTransactionsHandled(txnOutput);
+            emit EthereumTransactionsHandled(txnOutput);
         }
     }
 
@@ -237,7 +237,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             sp1Params.publicValue,
             sp1Params.proof
         );
-        emit consensusVerified(consensusProof);
+        emit ConsensusVerified(consensusProof);
     }
 
     /// @notice decode the withdraw details
