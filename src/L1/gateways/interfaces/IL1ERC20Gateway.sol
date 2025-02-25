@@ -40,7 +40,7 @@ interface IL1ERC20Gateway {
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
     /// @param amount The amount of token that will be deposited from L1 to L2.
-    event forcedWithdrawalERC20Initated(
+    event ForcedWithdrawalERC20Initated(
         address indexed from,
         address to,
         address indexed l1Token,
@@ -73,63 +73,61 @@ interface IL1ERC20Gateway {
     );
 
     /// @notice get address of corressponding L2 Token
-    /// @param _l1Token The address of the token in L1.
-    function getL2ERC20Address(
-        address _l1Token
-    ) external view returns (address);
+    /// @param l1Token The address of the token in L1.
+    function getL2ERC20Address(address l1Token) external view returns (address);
 
     /// @notice Deposit some token to a recipient's account on L2.
     /// @dev Make this function payable to send relayer fee in Ether.
-    /// @param _token The address of token in L1.
-    /// @param _to The address of recipient's account on L2.
-    /// @param _amount The amount of token to transfer.
-    /// @param _gasLimit Gas limit required to complete the deposit on L2.
+    /// @param token The address of token in L1.
+    /// @param to The address of recipient's account on L2.
+    /// @param amount The amount of token to transfer.
+    /// @param gasLimit Gas limit required to complete the deposit on L2.
     function depositERC20(
-        address _token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit
+        address token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit
     ) external payable;
 
     /// @notice Deposit some token to a recipient's account on L2 and call.
     /// @dev Make this function payable to send relayer fee in Ether.
-    /// @param _token The address of token in L1.
-    /// @param _to The address of recipient's account on L2.
-    /// @param _amount The amount of token to transfer.
-    /// @param _data Optional data to forward to recipient's account.
-    /// @param _gasLimit Gas limit required to complete the deposit on L2.
+    /// @param token The address of token in L1.
+    /// @param to The address of recipient's account on L2.
+    /// @param amount The amount of token to transfer.
+    /// @param data Optional data to forward to recipient's account.
+    /// @param gasLimit Gas limit required to complete the deposit on L2.
     function depositERC20AndCall(
-        address _token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
+        address token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
     ) external payable;
 
     /// @notice Withdraw ERC20 form the user account in L2
-    /// @param _l1Token The address of corresponding L1 token.
-    /// @param _l2Token The address of corresponding L2 token.
-    /// @param _to The address of recipient in L1 to receive the token.
-    /// @param _amount The amount of the token to withdraw.
-    /// @param _gasLimit Gas limit required to complete the withdrawal.
+    /// @param l1Token The address of corresponding L1 token.
+    /// @param l2Token The address of corresponding L2 token.
+    /// @param to The address of recipient in L1 to receive the token.
+    /// @param amount The amount of the token to withdraw.
+    /// @param gasLimit Gas limit required to complete the withdrawal.
     function forcedWithdrawalERC20(
-        address _l1Token,
-        address _l2Token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
+        address l1Token,
+        address l2Token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
         bytes memory data
     ) external payable;
 
     /// @notice Complete ERC20 withdraw from L2 to L1 and send fund to recipient's account in L1.
-    /// @param _l1Token The address of corresponding L1 token.
-    /// @param _l2Token The address of corresponding L2 token.
-    /// @param _to The address of recipient in L1 to receive the token.
-    /// @param _amount The amount of the token to withdraw.
+    /// @param l1Token The address of corresponding L1 token.
+    /// @param l2Token The address of corresponding L2 token.
+    /// @param to The address of recipient in L1 to receive the token.
+    /// @param amount The amount of the token to withdraw.
     function finalizeTokenWithdrawal(
-        string memory _l1Token,
-        string memory _l2Token,
-        string memory _to,
-        string memory _amount
+        string memory l1Token,
+        string memory l2Token,
+        string memory to,
+        string memory amount
     ) external payable;
 }

@@ -44,14 +44,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function initialize(
-        uint256 _ethChaindId,
-        address _ethCounterpart,
-        address _roleManager
+        uint256 ethChaindId,
+        address ethCounterpart,
+        address roleManager
     ) external initializer {
         TwineL2MessengerBase.__TwineMessengerBase_init(
-            _ethChaindId,
-            _ethCounterpart,
-            _roleManager
+            ethChaindId,
+            ethCounterpart,
+            roleManager
         );
         consensusPrecompileAddress = address(0x16);
         bridgingPrecompileAddress = address(0x15);
@@ -73,21 +73,21 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function setSp1VerifierAddress(
-        address _sp1VerifierAddress
+        address sp1VerifierAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        sp1Verifier = _sp1VerifierAddress;
+        sp1Verifier = sp1VerifierAddress;
     }
 
     /// @inheritdoc ITwineL2MessengerBase
     function sendMessage(
-        address _from,
-        address _l2Token,
-        string memory _to,
-        string memory _l1Token,
-        uint256 _amount,
-        uint256 _value,
-        uint256 _chainId,
-        uint256 _gasLimit
+        address from,
+        address l2Token,
+        string memory to,
+        string memory l1Token,
+        uint256 amount,
+        uint256 value,
+        uint256 chainId,
+        uint256 gasLimit
     )
         external
         payable
@@ -96,14 +96,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
         _sendMessage(
-            _from,
-            _l2Token,
-            _to,
-            _l1Token,
-            _amount,
-            _value,
-            _chainId,
-            _gasLimit
+            from,
+            l2Token,
+            to,
+            l1Token,
+            amount,
+            value,
+            chainId,
+            gasLimit
         );
     }
 
@@ -192,30 +192,30 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     /// @dev Internal function to send cross domain message.
-    /// @param _to The address of the contract to call.
-    /// @param _value The amount of native token
-    /// @param _gasLimit Optional gas limit to complete the message relay on corresponding chain.
+    /// @param to The address of the contract to call.
+    /// @param value The amount of native token
+    /// @param gasLimit Optional gas limit to complete the message relay on corresponding chain.
     function _sendMessage(
-        address _from,
-        address _l2Token,
-        string memory _to,
-        string memory _l1Token,
-        uint256 _amount,
-        uint256 _value,
-        uint256 _chainId,
-        uint256 _gasLimit
+        address from,
+        address l2Token,
+        string memory to,
+        string memory l1Token,
+        uint256 amount,
+        uint256 value,
+        uint256 chainId,
+        uint256 gasLimit
     ) internal {
         emit SentMessage(
-            _from,
-            _l2Token,
-            _to,
-            _l1Token,
-            _amount,
-            _value,
+            from,
+            l2Token,
+            to,
+            l1Token,
+            amount,
+            value,
             messageCount++,
-            _chainId,
+            chainId,
             block.number,
-            _gasLimit
+            gasLimit
         );
     }
 

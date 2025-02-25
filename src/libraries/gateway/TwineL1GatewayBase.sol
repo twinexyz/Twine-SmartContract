@@ -40,12 +40,12 @@ abstract contract TwineL1GatewayBase is
     }
 
     function _initialize(
-        address _router,
+        address _gatewayRouter,
         address _messenger,
         address _roleManager
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        gatewayRouter = _router;
+        gatewayRouter = _gatewayRouter;
         messenger = _messenger;
         roleManager = _roleManager;
     }

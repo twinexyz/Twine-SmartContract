@@ -21,67 +21,61 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
-        address _l1Token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) external payable override  {
-        _deposit(_l1Token, _to, _amount, _gasLimit, new bytes(0));
+        address l1Token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit
+    ) external payable override {
+        _deposit(l1Token, to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20AndCall(
-        address _l1Token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
+        address l1Token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
     ) external payable override {
-        _deposit(_l1Token, _to, _amount, _gasLimit, _data);
+        _deposit(l1Token, to, amount, gasLimit, data);
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function forcedWithdrawalERC20(
-        address _l1Token,
-        address _l2Token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
+        address l1Token,
+        address l2Token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
         bytes memory data
     ) external payable override nonReentrant {
-        _forcedWithdrawalERC20(
-            _l1Token,
-            _l2Token,
-            _to,
-            _amount,
-            _gasLimit,
-            data
-        );
+        _forcedWithdrawalERC20(l1Token, l2Token, to, amount, gasLimit, data);
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function finalizeTokenWithdrawal(
-        string memory _l1Token,
-        string memory _l2Token,
-        string memory _to,
-        string memory _amount
-    ) external payable virtual override nonReentrant onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        require(_amount.stringToUint() > 0, "Amout must be greater than zero");
+        string memory l1Token,
+        string memory l2Token,
+        string memory to,
+        string memory amount
+    )
+        external
+        payable
+        virtual
+        override
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
+    {
+        require(amount.stringToUint() > 0, "Amout must be greater than zero");
         _beforeFinalizeWithdrawERC20(
-            _l1Token.stringToAddress(),
-            _l2Token.stringToAddress()
+            l1Token.stringToAddress(),
+            l2Token.stringToAddress()
         );
-        IERC20(_l1Token.stringToAddress()).safeTransfer(
-            _to.stringToAddress(),
-            _amount.stringToUint()
+        IERC20(l1Token.stringToAddress()).safeTransfer(
+            to.stringToAddress(),
+            amount.stringToUint()
         );
-        emit FinalizeWithdrawERC20(
-            _l1Token,
-            _l2Token,
-            _to,
-            _amount,
-            block.number
-        );
+        emit FinalizeWithdrawERC20(l1Token, l2Token, to, amount, block.number);
     }
 
     /**********************
@@ -89,80 +83,76 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
      **********************/
 
     /// @dev Internal function hook to perform checks and actions before finalizing the withdrawal.
-    /// @param _l1Token The address of corresponding L1 token in L1.
-    /// @param _l2Token The address of corresponding L2 token in L2.
+    /// @param l1Token The address of corresponding L1 token in L1.
+    /// @param l2Token The address of corresponding L2 token in L2.
     function _beforeFinalizeWithdrawERC20(
-        address _l1Token,
-        address _l2Token
+        address l1Token,
+        address l2Token
     ) internal virtual;
 
     /// @dev Internal function to transfer ERC20 token to this contract.
-    /// @param _token The address of token to transfer.
-    /// @param _amount The amount of token to transfer.
-    /// @param _data The data passed by caller.
+    /// @param token The address of token to transfer.
+    /// @param amount The amount of token to transfer.
+    /// @param data The data passed by caller.
     function _transferERC20In(
-        address _token,
-        uint256 _amount,
-        bytes memory _data
+        address token,
+        uint256 amount,
+        bytes memory data
     ) internal nonReentrant returns (address, uint256, bytes memory) {
-        address _sender = _msgSender();
-        address _from = _sender;
-        if (gatewayRouter == _sender) {
+        address sender = _msgSender();
+        address from = sender;
+        if (gatewayRouter == sender) {
             // Extract real sender if this call is from L1GatewayRouter.
-            (_from, _data) = abi.decode(_data, (address, bytes));
-            _amount = IL1GatewayRouter(_sender).requestERC20(
-                _from,
-                _token,
-                _amount
-            );
+            (from, data) = abi.decode(data, (address, bytes));
+            amount = IL1GatewayRouter(sender).requestERC20(from, token, amount);
         } else {
             // common practice to handle fee on transfer token.
-            uint256 _before = IERC20(_token).balanceOf(address(this));
-            IERC20(_token).safeTransferFrom(_from, address(this), _amount);
-            uint256 _after = IERC20(_token).balanceOf(address(this));
+            uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+            IERC20(token).safeTransferFrom(from, address(this), amount);
+            uint256 balanceAfter = IERC20(token).balanceOf(address(this));
             // no unchecked here, since some weird token may return arbitrary balance.
-            _amount = _after - _before;
+            amount = balanceAfter - balanceBefore;
         }
         // ignore weird fee on transfer token
-        require(_amount > 0, "deposit amount is zero");
-        return (_from, _amount, _data);
+        require(amount > 0, "deposit amount is zero");
+        return (from, amount, data);
     }
 
     /// @dev Internal function to get the real sender.
-    /// @param _data The data passed by caller.
+    /// @param data The data passed by caller.
     function _getRealSender(
-        bytes memory _data
+        bytes memory data
     ) internal view returns (address, bytes memory) {
-        address _sender = _msgSender();
-        address _from = _sender;
-        if (gatewayRouter == _sender) {
+        address sender = _msgSender();
+        address from = sender;
+        if (gatewayRouter == sender) {
             // Extract real sender if this call is from L1GatewayRouter.
-            (_from, _data) = abi.decode(_data, (address, bytes));
+            (from, data) = abi.decode(data, (address, bytes));
         }
-        return (_from, _data);
+        return (from, data);
     }
 
     /// @dev Internal function to do all the deposit operations.
     ///
-    /// @param _token The token to deposit.
-    /// @param _to The recipient address to recieve the token in L2.
-    /// @param _amount The amount of token to deposit.
-    /// @param _data Optional data to forward to recipient's account.
-    /// @param _gasLimit Gas limit required to complete the deposit on L2.
+    /// @param token The token to deposit.
+    /// @param to The recipient address to recieve the token in L2.
+    /// @param amount The amount of token to deposit.
+    /// @param data Optional data to forward to recipient's account.
+    /// @param gasLimit Gas limit required to complete the deposit on L2.
     function _deposit(
-        address _token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
+        address token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
     ) internal virtual;
 
     function _forcedWithdrawalERC20(
-        address _l1Token,
-        address _l2Token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
+        address l1Token,
+        address l2Token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
         bytes memory data
     ) internal virtual;
 }

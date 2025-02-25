@@ -7,7 +7,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
@@ -94,72 +93,72 @@ contract L1GatewayRouter is
 
     /// @inheritdoc IL1ERC20Gateway
     function getL2ERC20Address(
-        address _l1Address
+        address l1Address
     ) external view returns (address) {
-        address _gateway = getERC20Gateway(_l1Address);
-        if (_gateway == address(0)) {
+        address gateway = getERC20Gateway(l1Address);
+        if (gateway == address(0)) {
             return address(0);
         }
 
-        return IL1ERC20Gateway(_gateway).getL2ERC20Address(_l1Address);
+        return IL1ERC20Gateway(gateway).getL2ERC20Address(l1Address);
     }
 
     /// @inheritdoc IL1GatewayRouter
-    function getERC20Gateway(address _token) public view returns (address) {
-        address _gateway = ERC20Gateway[_token];
-        if (_gateway == address(0)) {
-            _gateway = defaultERC20Gateway;
+    function getERC20Gateway(address token) public view returns (address) {
+        address gateway = ERC20Gateway[token];
+        if (gateway == address(0)) {
+            gateway = defaultERC20Gateway;
         }
-        return _gateway;
+        return gateway;
     }
 
     /// @inheritdoc IL1GatewayRouter
     /// @dev All the gateways should have reentrancy guard to prevent potential attack though this function.
     function requestERC20(
-        address _sender,
-        address _token,
-        uint256 _amount
+        address sender,
+        address token,
+        uint256 amount
     ) external onlyInContext returns (uint256) {
-        address _caller = _msgSender();
-        uint256 _balance = IERC20(_token).balanceOf(_caller);
-        IERC20(_token).safeTransferFrom(_sender, _caller, _amount);
-        _amount = IERC20(_token).balanceOf(_caller) - _balance;
-        return _amount;
+        address caller = _msgSender();
+        uint256 balance = IERC20(token).balanceOf(caller);
+        IERC20(token).safeTransferFrom(sender, caller, amount);
+        amount = IERC20(token).balanceOf(caller) - balance;
+        return amount;
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
-        address _token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit
+        address token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit
     ) external payable override {
-        depositERC20AndCall(_token, _to, _amount, _gasLimit, new bytes(0));
+        depositERC20AndCall(token, to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20AndCall(
-        address _token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
-    ) public payable override  onlyNotInContext {
-        address _gateway = getERC20Gateway(_token);
-        require(_gateway != address(0), "no gateway available");
+        address token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) public payable override onlyNotInContext {
+        address gateway = getERC20Gateway(token);
+        require(gateway != address(0), "no gateway available");
 
         // enter deposit context
-        gatewayInContext = _gateway;
+        gatewayInContext = gateway;
 
-        // encode msg.sender with _data
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
+        // encode msg.sender with data
+        bytes memory routerData = abi.encode(_msgSender(), data);
 
-        IL1ERC20Gateway(_gateway).depositERC20AndCall{value: msg.value}(
-            _token,
-            _to,
-            _amount,
-            _gasLimit,
-            _routerData
+        IL1ERC20Gateway(gateway).depositERC20AndCall{value: msg.value}(
+            token,
+            to,
+            amount,
+            gasLimit,
+            routerData
         );
 
         // leave deposit context
@@ -177,109 +176,114 @@ contract L1GatewayRouter is
 
     /// @inheritdoc IL1ERC20Gateway
     function forcedWithdrawalERC20(
-        address _l1Token,
-        address _l2Token,
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
-    ) external payable virtual  override {
-        address _gateway = getERC20Gateway(_l1Token);
-        require(_gateway != address(0), "no gateway available");
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
-        IL1ERC20Gateway(_gateway).forcedWithdrawalERC20(
-            _l1Token,
-            _l2Token,
-            _to,
-            _amount,
-            _gasLimit,
-            _routerData
+        address l1Token,
+        address l2Token,
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) external payable virtual override {
+        address gateway = getERC20Gateway(l1Token);
+        require(gateway != address(0), "no gateway available");
+        bytes memory routerData = abi.encode(_msgSender(), data);
+        IL1ERC20Gateway(gateway).forcedWithdrawalERC20(
+            l1Token,
+            l2Token,
+            to,
+            amount,
+            gasLimit,
+            routerData
         );
     }
 
     /// @inheritdoc IL1ETHGateway
     function depositETH(
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit
+        address to,
+        uint256 amount,
+        uint256 gasLimit
     ) external payable override {
-        depositETHAndCall(_to, _amount, _gasLimit, new bytes(0));
+        depositETHAndCall(to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ETHGateway
     function depositETHAndCall(
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
-    ) public payable override  onlyNotInContext {
-        address _gateway = ethGateway;
-        require(_gateway != address(0), "eth gateway available");
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) public payable override onlyNotInContext {
+        address gateway = ethGateway;
+        require(gateway != address(0), "eth gateway available");
 
-        // encode msg.sender with _data
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
+        // encode msg.sender with data
+        bytes memory routerData = abi.encode(_msgSender(), data);
 
-        IL1ETHGateway(_gateway).depositETHAndCall{value: msg.value}(
-            _to,
-            _amount,
-            _gasLimit,
-            _routerData
+        IL1ETHGateway(gateway).depositETHAndCall{value: msg.value}(
+            to,
+            amount,
+            gasLimit,
+            routerData
         );
     }
 
     /// @inheritdoc IL1ETHGateway
     function forcedWithdrawalETH(
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit,
-        bytes memory _data
-    ) external payable virtual  override {
-        address _gateway = ethGateway;
-        require(_gateway != address(0), "eth gateway available");
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
-        IL1ETHGateway(_gateway).forcedWithdrawalETH(_to, _amount, _gasLimit,_routerData);
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) external payable virtual override {
+        address gateway = ethGateway;
+        require(gateway != address(0), "eth gateway available");
+        bytes memory routerData = abi.encode(_msgSender(), data);
+        IL1ETHGateway(gateway).forcedWithdrawalETH(
+            to,
+            amount,
+            gasLimit,
+            routerData
+        );
     }
 
-    function setRoleManagerAddress(address _roleManagerAddress) external {
-        require(_roleManagerAddress != address(0),"value cann't be zero");
-        roleManager = _roleManagerAddress;
+    function setRoleManagerAddress(address roleManagerAddress) external {
+        require(roleManagerAddress != address(0), "value cann't be zero");
+        roleManager = roleManagerAddress;
     }
 
     function setETHGateway(
-        address _newEthGateway
+        address newEthGateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        address _oldETHGateway = ethGateway;
-        ethGateway = _newEthGateway;
+        address oldETHGateway = ethGateway;
+        ethGateway = newEthGateway;
 
-        emit SetETHGateway(_oldETHGateway, _newEthGateway);
+        emit SetETHGateway(oldETHGateway, newEthGateway);
     }
 
     /// @inheritdoc IL1GatewayRouter
     function setDefaultERC20Gateway(
-        address _newDefaultERC20Gateway
+        address newDefaultERC20Gateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        address _oldDefaultERC20Gateway = defaultERC20Gateway;
-        defaultERC20Gateway = _newDefaultERC20Gateway;
+        address oldDefaultERC20Gateway = defaultERC20Gateway;
+        defaultERC20Gateway = newDefaultERC20Gateway;
 
         emit SetDefaultERC20Gateway(
-            _oldDefaultERC20Gateway,
-            _newDefaultERC20Gateway
+            oldDefaultERC20Gateway,
+            newDefaultERC20Gateway
         );
     }
 
     /// @inheritdoc IL1GatewayRouter
     function setERC20Gateway(
-        address[] memory _tokens,
-        address[] memory _gateways
+        address[] memory tokens,
+        address[] memory gateways
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_tokens.length == _gateways.length, "length mismatch");
-        uint256 len = _tokens.length;
+        require(tokens.length == gateways.length, "length mismatch");
+        uint256 len = tokens.length;
         for (uint256 i = 0; i < len; i++) {
-            require(_tokens[i] != address(0), " Value cann't be zero");
-            require(_gateways[i] != address(0), " Value cann't be zero");
-            address _oldGateway = ERC20Gateway[_tokens[i]];
-            ERC20Gateway[_tokens[i]] = _gateways[i];
-            emit SetERC20Gateway(_tokens[i], _oldGateway, _gateways[i]);
+            require(tokens[i] != address(0), " Value cann't be zero");
+            require(gateways[i] != address(0), " Value cann't be zero");
+            address oldGateway = ERC20Gateway[tokens[i]];
+            ERC20Gateway[tokens[i]] = gateways[i];
+            emit SetERC20Gateway(tokens[i], oldGateway, gateways[i]);
         }
     }
 }

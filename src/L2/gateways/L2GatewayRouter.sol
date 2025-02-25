@@ -77,26 +77,25 @@ contract L2GatewayRouter is
 
     /// @inheritdoc IL2ERC20Gateway
     function getL1ERC20Address(
-        uint256 _chainId,
-        address _l2Address
+        uint256 chainId,
+        address l2Address
     ) external view returns (string memory) {
-        address _gateway = getERC20Gateway(_l2Address);
-        if (_gateway == address(0)) {
+        address gateway = getERC20Gateway(l2Address);
+        if (gateway == address(0)) {
             return address(0).addressToString();
         }
 
-        return
-            IL2ERC20Gateway(_gateway).getL1ERC20Address(_chainId, _l2Address);
+        return IL2ERC20Gateway(gateway).getL1ERC20Address(chainId, l2Address);
     }
 
     /// @notice Return the corresponding gateway address for given token address.
-    /// @param _token The address of token to query.
-    function getERC20Gateway(address _token) public view returns (address) {
-        address _gateway = ERC20Gateway[_token];
-        if (_gateway == address(0)) {
-            _gateway = defaultERC20Gateway;
+    /// @param token The address of token to query.
+    function getERC20Gateway(address token) public view returns (address) {
+        address gateway = ERC20Gateway[token];
+        if (gateway == address(0)) {
+            gateway = defaultERC20Gateway;
         }
-        return _gateway;
+        return gateway;
     }
 
     /*****************************
@@ -105,91 +104,91 @@ contract L2GatewayRouter is
 
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit
+        address token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit
     ) external payable {
         withdrawERC20AndCall(
-            _token,
-            _to,
-            _amount,
-            _chainId,
-            _gasLimit,
+            token,
+            to,
+            amount,
+            chainId,
+            gasLimit,
             new bytes(0)
         );
     }
 
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20AndCall(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit,
-        bytes memory _data
+        address token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit,
+        bytes memory data
     ) public payable nonReentrant {
-        address _gateway = getERC20Gateway(_token);
-        require(_gateway != address(0), "no gateway available");
+        address gateway = getERC20Gateway(token);
+        require(gateway != address(0), "no gateway available");
 
-        // encode msg.sender with _data
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
+        // encode msg.sender with data
+        bytes memory routerData = abi.encode(_msgSender(), data);
 
-        IL2ERC20Gateway(_gateway).withdrawERC20AndCall{value: msg.value}(
-            _token,
-            _to,
-            _amount,
-            _chainId,
-            _gasLimit,
-            _routerData
+        IL2ERC20Gateway(gateway).withdrawERC20AndCall{value: msg.value}(
+            token,
+            to,
+            amount,
+            chainId,
+            gasLimit,
+            routerData
         );
     }
 
     /// @inheritdoc IL2ETHGateway
     function withdrawETH(
-        address _l2Token,
-        string memory _l1Token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit
+        address l2Token,
+        string memory l1Token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit
     ) external payable override {
         withdrawETHAndCall(
-            _l2Token,
-            _l1Token,
-            _to,
-            _amount,
-            _chainId,
-            _gasLimit,
+            l2Token,
+            l1Token,
+            to,
+            amount,
+            chainId,
+            gasLimit,
             new bytes(0)
         );
     }
 
     /// @inheritdoc IL2ETHGateway
     function withdrawETHAndCall(
-        address _l2Token,
-        string memory _l1Token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit,
-        bytes memory _data
+        address l2Token,
+        string memory l1Token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit,
+        bytes memory data
     ) public payable override {
-        address _gateway = ethGateway;
-        require(_gateway != address(0), "eth gateway available");
+        address gateway = ethGateway;
+        require(gateway != address(0), "eth gateway available");
 
-        // encode msg.sender with _data
-        bytes memory _routerData = abi.encode(_msgSender(), _data);
+        // encode msg.sender with data
+        bytes memory routerData = abi.encode(_msgSender(), data);
 
-        IL2ETHGateway(_gateway).withdrawETHAndCall{value: msg.value}(
-            _l2Token,
-            _l1Token,
-            _to,
-            _amount,
-            _chainId,
-            _gasLimit,
-            _routerData
+        IL2ETHGateway(gateway).withdrawETHAndCall{value: msg.value}(
+            l2Token,
+            l1Token,
+            to,
+            amount,
+            chainId,
+            gasLimit,
+            routerData
         );
     }
 
@@ -199,47 +198,47 @@ contract L2GatewayRouter is
 
     /// @inheritdoc IL2GatewayRouter
     function setETHGateway(
-        address _newEthGateway
+        address newEthGateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        address _oldEthGateway = ethGateway;
-        ethGateway = _newEthGateway;
+        address oldEthGateway = ethGateway;
+        ethGateway = newEthGateway;
 
-        emit SetETHGateway(_oldEthGateway, _newEthGateway);
+        emit SetETHGateway(oldEthGateway, newEthGateway);
     }
 
     /// @inheritdoc IL2GatewayRouter
     function setDefaultERC20Gateway(
-        address _newDefaultERC20Gateway
+        address newDefaultERC20Gateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        address _oldDefaultERC20Gateway = defaultERC20Gateway;
-        defaultERC20Gateway = _newDefaultERC20Gateway;
+        address oldDefaultERC20Gateway = defaultERC20Gateway;
+        defaultERC20Gateway = newDefaultERC20Gateway;
 
         emit SetDefaultERC20Gateway(
-            _oldDefaultERC20Gateway,
-            _newDefaultERC20Gateway
+            oldDefaultERC20Gateway,
+            newDefaultERC20Gateway
         );
     }
 
     /// @inheritdoc IL2GatewayRouter
     function setERC20Gateway(
-        address[] memory _tokens,
-        address[] memory _gateways
+        address[] memory tokens,
+        address[] memory gateways
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_tokens.length == _gateways.length, "length mismatch");
-        uint256 len = _tokens.length;
+        require(tokens.length == gateways.length, "length mismatch");
+        uint256 len = tokens.length;
         for (uint256 i = 0; i < len; i++) {
-            address _oldGateway = ERC20Gateway[_tokens[i]];
-            ERC20Gateway[_tokens[i]] = _gateways[i];
+            address oldGateway = ERC20Gateway[tokens[i]];
+            ERC20Gateway[tokens[i]] = gateways[i];
 
-            emit SetERC20Gateway(_tokens[i], _oldGateway, _gateways[i]);
+            emit SetERC20Gateway(tokens[i], oldGateway, gateways[i]);
         }
     }
 
     function setRoleManagerAddress(
-        address _roleManagerAddress
+        address roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_roleManagerAddress != address(0),"value cann't be zero");
-        roleManager = _roleManagerAddress;
+        require(roleManagerAddress != address(0), "value cann't be zero");
+        roleManager = roleManagerAddress;
     }
 
     function updateTokenMapping(

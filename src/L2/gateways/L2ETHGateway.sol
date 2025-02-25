@@ -23,14 +23,15 @@ contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
     }
 
     /// @notice Initialize the storage of L2ETHGateway.
-    /// @param _router The address of L2GatewayRouter in L2.
+    /// @param _gatewayRouter The address of L2GatewayRouter in L2.
     /// @param _messenger The address of L2TwineMessenger in L2.
+    /// @param _roleManager The address of Role manager contract.
     function initialize(
-        address _router,
+        address _gatewayRouter,
         address _messenger,
         address _roleManager
     ) external initializer {
-        TwineL2GatewayBase._initialize(_router, _messenger, _roleManager);
+        TwineL2GatewayBase._initialize(_gatewayRouter, _messenger, _roleManager);
     }
 
     /*****************************

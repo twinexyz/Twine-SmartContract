@@ -95,11 +95,11 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     }
 
     /// @notice set the precompile address.
-    /// @param _consensusPrecompileAddress The address of the consensus precompile.
-    /// @param _bridgingPrecompileAddress The address of the bridging Precompile.
+    /// @param consensusPrecompileAddress The address of the consensus precompile.
+    /// @param bridgingPrecompileAddress The address of the bridging Precompile.
     function setPrecompileAddress(
-        address _consensusPrecompileAddress,
-        address _bridgingPrecompileAddress
+        address consensusPrecompileAddress,
+        address bridgingPrecompileAddress
     ) external;
 
     /// @notice handle the solana transactions

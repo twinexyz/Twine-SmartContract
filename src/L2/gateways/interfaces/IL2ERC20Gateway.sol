@@ -56,13 +56,13 @@ interface IL2ERC20Gateway {
 
     /// @notice Update layer 2 to layer 1 token mapping.
     /// @dev To make the token mapping consistent with L1, this should be called from L1.
-    /// @param _l2Token The address of corresponding token on layer 2.
-    /// @param _l1Token The address of token on layer 1.
-    ///@param _chainId The chain Id of l1 Token.
+    /// @param l2Token The address of corresponding token on layer 2.
+    /// @param l1Token The address of token on layer 1.
+    ///@param chainId The chain Id of l1 Token.
     function updateTokenMapping(
-        uint256 _chainId,
-        address _l2Token,
-        string memory _l1Token
+        uint256 chainId,
+        address l2Token,
+        string memory l1Token
     ) external;
 
     /*****************************
