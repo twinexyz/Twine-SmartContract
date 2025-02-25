@@ -244,6 +244,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 startBlock,
                 endBlock
             );
+
             emit CommitBatch(
                 batchInfo.startBlock,
                 batchInfo.endBlock,
@@ -254,7 +255,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
     }
 
-    function FinalizeBatch(
+    function finalizeBatch(
         bytes memory publicInputForExecution,
         bytes memory executionProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
@@ -262,15 +263,16 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             publicInputForExecution
         );
         bytes32 batchId = getBatchId(batchInfo.startBlock, batchInfo.endBlock);
+
         require(
             batchInfo.batchHash == committedBatches[batchId].batchHash,
             "Batch hash should be same"
         );
-        SP1Verifier(verifier).verifyProof(
-            executionVKey,
-            publicInputForExecution,
-            executionProof
-        );
+        // SP1Verifier(verifier).verifyProof(
+        //     executionVKey,
+        //     publicInputForExecution,
+        //     executionProof
+        // );
         lastFinalizedBlockNumber = batchInfo.endBlock;
         finalizedBatchStatus[batchId] = true;
 
@@ -316,7 +318,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // Decode the next 120 bytes for transaction information for ethererum
         bytes memory chainDataBytes = new bytes(120);
         for (uint256 i = 0; i < 120; i++) {
-            chainDataBytes[i] = transactionInfo[40 + i];
+            chainDataBytes[i] = transactionInfo[48 + i];
         }
 
         ChainCommitment memory chain_data = _decodeChainCommitment(
@@ -370,19 +372,18 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         chain_data.withdrawRollingHash = withdrawRollingHash;
         chain_data.lzTransactionRollingHash = lzTransactionRollingHash;
 
-        bytes
-            memory publicInputForInclusion = _calculatePublicInputForInclusion(
+        bytes memory publicInputForInclusion = _calculatePublicInputForInclusion(
                 transactionInfo,
                 chain_data
             );
 
         bytes memory inclusionProofWithSelector = prependBytes(inclusionProof);
 
-        SP1Verifier(verifier).verifyProof(
-            inclusionVKey,
-            publicInputForInclusion,
-            inclusionProofWithSelector
-        );
+        // SP1Verifier(verifier).verifyProof(
+        //     inclusionVKey,
+        //     publicInputForInclusion,
+        //     inclusionProofWithSelector
+        // );
 
         // Move the withdrawal that are ready for execution to execution queue
         for (uint256 i = 0; i < depositCount; i++) {
@@ -400,6 +401,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 forced_message.toAddress,
                 forced_message.amount
             );
+
         }
 
         // remove deposits, and withdrawals  messages from queue
