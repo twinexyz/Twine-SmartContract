@@ -203,7 +203,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return false;
     }
 
-    function removeExecutionMessage(uint256 nonce) external onlyMessenger {
+    function removeExecutionMessage(uint256 nonce) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = executionMessageQueue.length;
         for (uint256 i = 0; i < len; i++) {
             if (executionMessageQueue[i].nonce == nonce) {
@@ -216,9 +216,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNDepositElement(uint256 n) external onlyMessenger {
+    function popFirstNDepositElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = depositMessageQueue.length;
-        require(n < nextCrossDomainDepositMessageIndex(), "Invalid index");
+        require(n <= nextCrossDomainDepositMessageIndex(), "Invalid index");
         // Shift elements
         for (uint256 i = 0; i < len - n; i++) {
             depositMessageQueue[i] = depositMessageQueue[i + n];
@@ -231,9 +231,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNWithdrawalElement(uint256 n) external onlyMessenger {
+    function popFirstNWithdrawalElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = withdrawalMessageQueue.length;
-        require(n < nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
+        require(n <= nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
         // Shift elements
         for (uint256 i = 0; i < len - n; i++) {
             withdrawalMessageQueue[i] = withdrawalMessageQueue[i + n];
@@ -246,7 +246,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNLayerZeroElement(uint256 n) external onlyMessenger {
+    function popFirstNLayerZeroElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = layerZeroMessageQueue.length;
         for (uint256 i = 0; i < len - n; i++) {
             layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];

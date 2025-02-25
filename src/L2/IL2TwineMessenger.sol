@@ -36,13 +36,13 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     );
 
     /// @notice Emitted when consenus  verification and transaction of solana are executed successfully
-    event solanaTransactionsHandled(bytes transactionOutput);
+    event SolanaTransactionsHandled(bytes transactionOutput);
 
     /// @notice Emitted when consenus  verification and transaction of ethereum are executed successfully
-    event ethereumTransactionsHandled(bytes transactionOutput);
+    event EthereumTransactionsHandled(bytes transactionOutput);
 
     /// @notice Emitted when consensus verificiation is successful
-    event consensusVerified(bytes consensusProof);
+    event ConsensusVerified(bytes consensusProof);
 
     /// @notice Emitted when L1 Token is deposited in L2
     event L1TokenDeposit();

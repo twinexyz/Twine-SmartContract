@@ -298,7 +298,7 @@ contract FinalizeBatch is Script {
         vm.startBroadcast(deployerPrivateKey);
         console.log("Last finalize batch before finalization:", twineChain.lastFinalizedBlockNumber());
         
-        twineChain.FinalizeBatch(publicInputForExecution, executionProof);
+        twineChain.finalizeBatch(publicInputForExecution, executionProof);
         
         console.log("Last finalize batch after finalization:", twineChain.lastFinalizedBlockNumber());
         vm.stopBroadcast();
