@@ -195,17 +195,26 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @inheritdoc ITwineChain
+    function commitGenesisBlocks(
+        bytes32 genesisBlockHash
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(currentStartBlock == 0, "Not at genesis");
+        require(lastCommittedBlockNumber == 0, "Not at genesis");
+
+        lastCommittedEndBlockHash = genesisBlockHash;
+    }
+
+    /// @inheritdoc ITwineChain
     function commitBatch(
         uint64 startBlock,
         uint64 endBlock,
         CommitBlockInfo[] memory commitBlockInfo
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (startBlock != 0) {
-            require(
-                startBlock == lastCommittedBlockNumber + 1,
-                "Invalid start block"
-            );
-        }
+        require(
+            startBlock == lastCommittedBlockNumber + 1,
+            "Invalid start block"
+        );
+        
         bytes32 batchId = getBatchId(startBlock, endBlock);
         uint256 expectedBlocks = endBlock - startBlock + 1;
         // Get the current count of blocks already committed for this batch.

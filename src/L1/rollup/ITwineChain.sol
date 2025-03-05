@@ -219,6 +219,12 @@ interface ITwineChain {
         address _ERC20Gateway
     ) external;
 
+    /// @notice Sets block hash of the genesis block
+    /// @param genesisBlockHash The hash of the genesis block
+    function commitGenesisBlocks(
+        bytes32 genesisBlockHash
+    ) external;
+
     /// @notice Commits a batch
     /// @param startBlock the start block number of that batch
     /// @param endBlock the end block number of that batch
