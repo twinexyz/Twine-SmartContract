@@ -214,7 +214,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             startBlock == lastCommittedBlockNumber + 1,
             "Invalid start block"
         );
-        
+
         bytes32 batchId = getBatchId(startBlock, endBlock);
         uint256 expectedBlocks = endBlock - startBlock + 1;
         // Get the current count of blocks already committed for this batch.
@@ -273,8 +273,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         StoredBatchInfo memory batchInfo = _decodeBatchInfo(
             publicInputForExecution
         );
+        require(
+            batchInfo.startBlock == lastFinalizedBlockNumber + 1,
+            "Batch finalization must be sequential"
+        );
+        
         bytes32 batchId = getBatchId(batchInfo.startBlock, batchInfo.endBlock);
-
         require(
             batchInfo.batchHash == committedBatches[batchId].batchHash,
             "Batch hash should be same"
@@ -383,7 +387,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         chainData.withdrawRollingHash = withdrawRollingHash;
         chainData.lzTransactionRollingHash = lzTransactionRollingHash;
 
-        bytes memory publicInputForInclusion = _calculatePublicInputForInclusion(
+        bytes
+            memory publicInputForInclusion = _calculatePublicInputForInclusion(
                 transactionInfo,
                 chainData
             );
@@ -412,7 +417,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 forcedMessage.toAddress,
                 forcedMessage.amount
             );
-
         }
 
         // remove deposits, and withdrawals  messages from queue
