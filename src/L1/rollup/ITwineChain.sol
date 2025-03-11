@@ -175,11 +175,10 @@ interface ITwineChain {
     /// @return IsFinalized weather the provided batch is finalized or not
     function isBatchFinalized(bytes32 batchId) external view returns (bool);
 
-    /// @param batchNumber The number of the batch.
-    /// @return receiptRoot receiptRoot of the provided batch
-    // function getReceiptRoot(
-    //     uint256 batchNumber
-    // ) external view returns (bytes32);
+    /// @notice provides the status of the batch Finalization based on block number
+    /// @param startBlock The starting block number.
+    /// @param endBlock The ending block number.
+    function checkBatchFinalization(uint64 startBlock, uint64 endBlock) external view returns(bool);
 
     /*****************************
      * Public Mutating Functions *

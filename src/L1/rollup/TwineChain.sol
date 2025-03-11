@@ -128,6 +128,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return commitedBatchStatus[batchId];
     }
 
+    function checkBatchFinalization(uint64 startBlock, uint64 endBlock) public view override returns(bool)
+    {
+        bytes32 batchId = getBatchId(startBlock, endBlock);
+        return finalizedBatchStatus[batchId];
+    }
+
     /*****************************
      * Public Mutating Functions *
      *****************************/
@@ -277,7 +283,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             batchInfo.startBlock == lastFinalizedBlockNumber + 1,
             "Batch finalization must be sequential"
         );
-        
+
         bytes32 batchId = getBatchId(batchInfo.startBlock, batchInfo.endBlock);
         require(
             batchInfo.batchHash == committedBatches[batchId].batchHash,
