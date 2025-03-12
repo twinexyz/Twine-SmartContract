@@ -408,7 +408,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // );
 
         // Move the withdrawal that are ready for execution to execution queue
-        for (uint256 i = 0; i < depositCount; i++) {
+        for (uint256 i = 0; i < withdrawCount; i++) {
             IL1MessageQueue.MessageData memory forcedMessage = IL1MessageQueue(
                 messageQueue
             ).getCrossDomainWithdrawalMessage(i);

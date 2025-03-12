@@ -352,7 +352,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         ++withdrawalMessageIndex;
 
         MessageData memory withdrawMessageData = MessageData({
-            nonce: depositMessageIndex,
+            nonce: withdrawalMessageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
             fromAddress: from.addressToString(),
