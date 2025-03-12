@@ -51,4 +51,16 @@ Twine Chain is a multi-chain settlement network designed to aggregate chains and
 - **Forced Withdrawal**
     - make forcedWithdrawERC20 
 
+### 4. Steps to interact with deployed contracts
+ - List Available Commands:
+- Update contract addresses in deployedContracts.json
+- Set L1 and L2 private key and rpc
+    - make updateL1DefaultValues 
+    - make updateL2DefaultValues
+
+- Use make command to interact with contracts
+     -  make help
+
+
+
 
