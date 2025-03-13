@@ -118,7 +118,8 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             to,
             l1Token,
             amount,
-            chainId
+            chainId,
+            block.number
         );
     }
 }

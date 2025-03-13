@@ -75,7 +75,6 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             to.stringToAddress(),
             amount.stringToUint()
         );
-        emit FinalizeWithdrawERC20(l1Token, l2Token, to, amount, block.number);
     }
 
     /**********************

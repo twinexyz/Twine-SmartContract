@@ -56,6 +56,16 @@ interface ITwineChain {
         bytes32 inclusionVKey,
         bytes32 withdrawalVKey
     );
+    /// @notice Emitted when Token Withdrawal is finalized
+    event FinalizeTokenWithdrawal(
+        string indexed l1Token,
+        string indexed l2Token,
+        string to,
+        string amount,
+        uint64 nonce,
+        uint64 chainId,
+        uint256 blockNumber
+    );
 
     /**********
      * Errors *
@@ -220,7 +230,7 @@ interface ITwineChain {
 
     /// @notice Sets block hash of the genesis block
     /// @param genesisBlockHash The hash of the genesis block
-    function commitGenesisBlocks(
+    function commitGenesisBlock(
         bytes32 genesisBlockHash
     ) external;
 

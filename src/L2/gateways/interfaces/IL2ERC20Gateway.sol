@@ -35,7 +35,8 @@ interface IL2ERC20Gateway {
         string to,
         string l1Token,
         uint256 amount,
-        uint256 chainId
+        uint256 chainId,
+        uint256 blockNumber
     );
 
     /*************************

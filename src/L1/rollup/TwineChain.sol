@@ -66,6 +66,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice Address of the rolemanager contract
     address roleManager;
 
+    /// @notice status of genesis block
+    bool isGenesisBlockCommitted;
+
     /*************
      * Mappings  *
      *************/
@@ -128,8 +131,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return commitedBatchStatus[batchId];
     }
 
-    function checkBatchFinalization(uint64 startBlock, uint64 endBlock) public view override returns(bool)
-    {
+    function checkBatchFinalization(
+        uint64 startBlock,
+        uint64 endBlock
+    ) public view override returns (bool) {
         bytes32 batchId = getBatchId(startBlock, endBlock);
         return finalizedBatchStatus[batchId];
     }
@@ -201,13 +206,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @inheritdoc ITwineChain
-    function commitGenesisBlocks(
+    function commitGenesisBlock(
         bytes32 genesisBlockHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(!isGenesisBlockCommitted, "Genesis Block already committed");
         require(currentStartBlock == 0, "Not at genesis");
         require(lastCommittedBlockNumber == 0, "Not at genesis");
-
         lastCommittedEndBlockHash = genesisBlockHash;
+        isGenesisBlockCommitted = true;
     }
 
     /// @inheritdoc ITwineChain
@@ -216,9 +222,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         uint64 endBlock,
         CommitBlockInfo[] memory commitBlockInfo
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(isGenesisBlockCommitted, "Genesis Block not` committed");
+
         require(
             startBlock == lastCommittedBlockNumber + 1,
             "Invalid start block"
+        );
+        require(
+            commitBlockInfo[0].blockNumber == startBlock,
+            "Invalid Block Data"
         );
 
         bytes32 batchId = getBatchId(startBlock, endBlock);
@@ -475,9 +487,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             !isWithdrawExecuted[keccak256(replacedPublicInput)],
             "Withdrawal already executed"
         );
-        // bytes memory withdrawalProofWithSelector = prependBytes(
-        //     withdrawalInputs.inclusionProof
-        // );
+        bytes memory withdrawalProofWithSelector = prependBytes(
+            withdrawalInputs.inclusionProof
+        );
 
         // SP1Verifier(verifier).verifyProof(
         //     withdrawalVKey,
@@ -512,6 +524,16 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
 
         isWithdrawExecuted[keccak256(replacedPublicInput)] = true;
+
+        emit FinalizeTokenWithdrawal(
+            withdrawalInputs.publicInput.l1TokenAddress,
+            withdrawalInputs.publicInput.l2TokenAddress,
+            withdrawalInputs.publicInput.l1ReceiverAddress,
+            withdrawalInputs.publicInput.amount,
+            withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.chainId,
+            block.number
+        );
     }
 
     /**********************
