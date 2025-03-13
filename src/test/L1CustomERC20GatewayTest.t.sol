@@ -101,7 +101,7 @@ contract L1CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L1CustomERC20Gateway.initialize,
-                (address(router), address(l1Messenger),address(roleManager))
+                (address(router), address(l1Messenger),address(roleManager),1700)
             )
         );
 
@@ -150,12 +150,13 @@ contract L1CustomERC20GatewayTest is Test {
             addressToString(address(l1Token)),
             addressToString(address(l2Token)),
             addressToString(initialOwner),
-            "10"
+            "10",
+            1
         );
         assertEq(l1Token.balanceOf(initialOwner),100000);
     }
 
-     function addressToString(
+     function addressToString(  
         address _address
     ) public pure returns (string memory) {
         bytes32 _bytes = bytes32(uint256(uint160(_address)));

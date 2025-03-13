@@ -39,7 +39,7 @@ contract DeployL1Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L1CustomERC20Gateway.initialize,
-                (address(0), address(0), roleManagerAddress)
+                (address(0), address(0), roleManagerAddress,0)
             )
         );
 
@@ -49,7 +49,7 @@ contract DeployL1Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L1ETHGateway.initialize,
-                (address(0), address(0), roleManagerAddress)
+                (address(0), address(0), roleManagerAddress,0)
             )
         );
 

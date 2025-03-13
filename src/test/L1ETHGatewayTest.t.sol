@@ -115,7 +115,8 @@ contract L1ETHGatewayTest is Test {
                 (
                     address(router),
                     address(l1TwineMessenger),
-                    address(roleManager)
+                    address(roleManager),
+                    1700
                 )
             )
         );

@@ -30,18 +30,21 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function initialize(
         address _gatewayrouter,
         address _messenger,
-        address _roleManager
+        address _roleManager,
+        uint64 _chainId
     ) external initializer {
         TwineL1GatewayBase._initialize(
             _gatewayrouter,
             _messenger,
-            _roleManager
+            _roleManager,
+            _chainId
         );
     }
 
     /*****************************
      * Public Mutating Functions *
      *****************************/
+   
 
     /// @inheritdoc IL1ETHGateway
     function depositETH(
@@ -77,7 +80,8 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         string memory l1Token,
         string memory l2Token,
         string memory to,
-        string memory amount
+        string memory amount,
+        uint64 nonce
     )
         external
         payable
@@ -86,14 +90,20 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
     {
         require(amount.stringToUint() > 0, "Amout must be greater than zero");
-        _beforeFinalizeWithdrawETH(
-            l1Token.stringToAddress(),
-            l2Token.stringToAddress()
-        );
         (bool _success, ) = to.stringToAddress().call{
             value: amount.stringToUint()
         }("");
         require(_success, "ETH transfer failed");
+
+        emit FinalizeWithdrawETH(
+            l1Token,
+            l2Token,
+            to,
+            amount,
+            nonce,
+            chainId,
+            block.number
+        );
     }
 
     /// @notice Set the _l2TokenAddress
@@ -103,16 +113,6 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         require(_l2TokenAddress != address(0), "value cann't be zero");
         l2TokenAddress = _l2TokenAddress;
         emit L2TokenSET(l2TokenAddress);
-    }
-
-    function _beforeFinalizeWithdrawETH(
-        address l1Token,
-        address l2Token
-    ) internal virtual {
-        require(msg.value == 0, "nonzero msg.value");
-        require(l1Token == address(0), "L1 token address must be 0");
-        require(l2Token != address(0), "L2 token address cannot be 0");
-        require(l2Token == l2TokenAddress, "l2 token mismatch");
     }
 
     /// @dev The internal ETH deposit implementation.

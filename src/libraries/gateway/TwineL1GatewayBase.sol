@@ -19,6 +19,7 @@ abstract contract TwineL1GatewayBase is
      * Constants *
      *************/
 
+    uint64 chainId;
     /// @inheritdoc ITwineL1Gateway
     address public override gatewayRouter;
 
@@ -42,12 +43,14 @@ abstract contract TwineL1GatewayBase is
     function _initialize(
         address _gatewayRouter,
         address _messenger,
-        address _roleManager
+        address _roleManager,
+        uint64 _chainId
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         gatewayRouter = _gatewayRouter;
         messenger = _messenger;
         roleManager = _roleManager;
+        chainId = _chainId;
     }
 
     /// @notice sets the rolemanager contract address
@@ -72,5 +75,12 @@ abstract contract TwineL1GatewayBase is
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(_messenger != address(0),"value cann't be zero");
         messenger = _messenger;
+    }
+
+    /// @notice sets the chainId
+     function setChainId(
+        uint64 _chainId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        chainId = _chainId;
     }
 }

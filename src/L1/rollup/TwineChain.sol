@@ -505,7 +505,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 withdrawalInputs.publicInput.l1TokenAddress,
                 withdrawalInputs.publicInput.l2TokenAddress,
                 withdrawalInputs.publicInput.l1ReceiverAddress,
-                withdrawalInputs.publicInput.amount
+                withdrawalInputs.publicInput.amount,
+                withdrawalInputs.publicInput.nonce
             );
         } else {
             // ERC20 withdrawal
@@ -513,7 +514,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 withdrawalInputs.publicInput.l1TokenAddress,
                 withdrawalInputs.publicInput.l2TokenAddress,
                 withdrawalInputs.publicInput.l1ReceiverAddress,
-                withdrawalInputs.publicInput.amount
+                withdrawalInputs.publicInput.amount,
+                withdrawalInputs.publicInput.nonce
             );
         }
 
@@ -524,16 +526,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
 
         isWithdrawExecuted[keccak256(replacedPublicInput)] = true;
-
-        emit FinalizeTokenWithdrawal(
-            withdrawalInputs.publicInput.l1TokenAddress,
-            withdrawalInputs.publicInput.l2TokenAddress,
-            withdrawalInputs.publicInput.l1ReceiverAddress,
-            withdrawalInputs.publicInput.amount,
-            withdrawalInputs.publicInput.nonce,
-            withdrawalInputs.publicInput.chainId,
-            block.number
-        );
     }
 
     /**********************

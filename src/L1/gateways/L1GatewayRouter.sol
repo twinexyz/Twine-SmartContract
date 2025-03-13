@@ -169,7 +169,8 @@ contract L1GatewayRouter is
         string memory,
         string memory,
         string memory,
-        string memory
+        string memory,
+        uint64 
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
         revert("Not accessible from router contract");
     }

@@ -18,7 +18,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     using SafeERC20 for IERC20;
     using TypeConversionLib for string;
     using TypeConversionLib for address;
-
+    
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address l1Token,
@@ -57,7 +57,8 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         string memory l1Token,
         string memory l2Token,
         string memory to,
-        string memory amount
+        string memory amount,
+        uint64 nonce
     )
         external
         payable
@@ -75,6 +76,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             to.stringToAddress(),
             amount.stringToUint()
         );
+        emit FinalizeWithdrawERC20(l1Token, l2Token, to, amount,nonce,chainId,block.number);
     }
 
     /**********************

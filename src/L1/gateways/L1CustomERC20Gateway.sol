@@ -36,12 +36,14 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     function initialize(
         address _gatewayrouter,
         address _messenger,
-        address _roleManager
+        address _roleManager,
+        uint64 _chainId
     ) external initializer {
         TwineL1GatewayBase._initialize(
             _gatewayrouter,
             _messenger,
-            _roleManager
+            _roleManager,
+            _chainId
         );
     }
 

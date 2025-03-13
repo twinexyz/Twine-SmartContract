@@ -49,6 +49,21 @@ interface IL1ERC20Gateway {
         uint256 blockNumber
     );
 
+    /// @notice Emitted when ERC20 token withdrawal is finalized
+    /// @param l1Token The address of the token in L1.
+    /// @param l2Token The address of the token in L2.
+    /// @param to The address of recipient in L1.
+    /// @param amount The amount of token withdrawn from L2 to L1.
+    event FinalizeWithdrawERC20(
+        string indexed l1Token,
+        string indexed l2Token,
+        string to,
+        string amount,
+        uint64 nonce,
+        uint64 chainId,
+        uint256 blockNumber
+    );
+
     /// @notice Emitted when some ERC20 token is refunded.
     /// @param token The address of the token in L1.
     /// @param recipient The address of receiver in L1.
@@ -115,6 +130,7 @@ interface IL1ERC20Gateway {
         string memory l1Token,
         string memory l2Token,
         string memory to,
-        string memory amount
+        string memory amount,
+        uint64 nonce
     ) external payable;
 }
