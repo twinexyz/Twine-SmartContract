@@ -38,6 +38,7 @@ help:
 	@echo "setGatewayRouterL1ETHGateway    - Set up gateway router for L1 ETH Gateway"
 	@echo "setTwineMessengerL1ETHGateway   - Set up Twine messenger for L1 ETH Gateway"
 	@echo "setL2TokenL1ETHGateway          - Configure L2 token address for L1 ETH Gateway"
+	@echo "setChainIdL1ETHGateway          - Set Chain Id for Custom ERC20 "
 	@echo "setRoleManagerMQ                - Configure role manager for Message Queue"
 	@echo "setChainIdMQ                    - Configure chain ID for Message Queue"
 	@echo "setTwineMessengerMQ             - Set up Twine messenger for Message Queue"
@@ -51,6 +52,7 @@ help:
 	@echo "setMessageQueueMS               - Set up message queue for Messenger"
 	@echo "setCounterpartMessengerMS       - Set up counterpart messenger"
 	@echo "setRoleManagerCG                - Configure role manager for Custom ERC20"
+	@echo "setChainIdCG                    - Set Chain Id for Custom ERC20 "
 	@echo "setGatewayRouterCG              - Set up gateway router for Custom ERC20"
 	@echo "setTwineMessengerCG             - Set up Twine messenger for Custom ERC20"
 	@echo "updateTokenMappingCG            - Update token mapping for Custom ERC20"
@@ -141,11 +143,17 @@ finalizeWithdrawal:
 	bash script/shell/actions/L1actions/finalizeWithdrawal.sh
 
 #<-------------ROLE MANAGER ACTIONS------------->
-grantRole:
+grantRoleL1:
 	bash script/shell/actions/L1actions/grantRole.sh
 
-revokeRole:
+revokeRoleL1:
 	bash script/shell/actions/L1actions/revokeRole.sh
+
+grantRoleL2:
+	bash script/shell/actions/L2actions/grantRole.sh
+
+revokeRoleL2:
+	bash script/shell/actions/L2actions/revokeRole.sh
 
 
 
@@ -202,6 +210,9 @@ setTwineMessengerL1ETHGateway:
 #setup L2 Token Address
 setL2TokenL1ETHGateway:
 	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setL2TokenETH.sh
+
+setChainIdL1ETHGateway:
+	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setChainId.sh
 
 #<-------------L1 MESSAGE QUEUE SETUP------------->
 
@@ -276,6 +287,10 @@ setTwineMessengerCG:
 #update token mapping
 updateTokenMappingCG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/updateTokenMappingCG.sh
+
+#update and set chain Id
+setChainIdCG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setChainId.sh
 
 
 # *************************************************** 

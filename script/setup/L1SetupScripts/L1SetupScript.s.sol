@@ -178,6 +178,7 @@ contract L1SetupScript is Script {
         l1ETHGateway.setGatewayRouter(l1GatewayRouterAddress);
         l1ETHGateway.setTwineMessenger(l1TwineMessengerAddress);
         l1ETHGateway.setL2TokenAddress(l2ETHTokenAddress);
+        l1ETHGateway.setChainId(chainId);
 
         //L1MessageQueue setup
         l1MessageQueue.setRoleManager(roleManagerAddress);
@@ -210,6 +211,7 @@ contract L1SetupScript is Script {
             l1ERC20TokenAddress,
             l2ERC20TokenAddress
         );
+        l1CustomERC20Gateway.setChainId(chainId);
 
         console.logBytes32(twineChain.executionVKey());
 

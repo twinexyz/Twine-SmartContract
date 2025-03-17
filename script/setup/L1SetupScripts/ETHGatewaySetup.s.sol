@@ -90,3 +90,30 @@ contract setL2TokenAddress is Script {
         vm.stopBroadcast();
     }
 }
+
+contract SetChainId is Script {
+    L1ETHGateway l1EthGateway;
+    address l1EthGatewayAddress;
+
+    uint256 chainId;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        
+        l1EthGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        l1EthGateway = L1ETHGateway(l1EthGatewayAddress);
+
+        // Read parameters dynamically
+        chainId = vm.envUint("CHAIN_ID");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+       
+        vm.startBroadcast(deployerPrivateKey);
+
+        l1EthGateway.setChainId(uint64(chainId));
+        
+        vm.stopBroadcast();
+    }
+}
