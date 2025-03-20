@@ -634,7 +634,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         TransactionType transactionType,
         uint64 count
     ) internal view returns (bytes32) {
-        bytes32 defaultRollingHash = bytes32(0);
         bytes memory calculatedRollingHash;
 
         IL1MessageQueue.MessageData[]
@@ -657,10 +656,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             }
         }
         uint256 len = selectedMessages.length;
-
-        if(len == 0) {
-            return keccak256(abi.encodePacked(defaultRollingHash));
-        }
 
         for (uint64 i = 0; i < len; i++) {
             calculatedRollingHash = abi.encodePacked(
