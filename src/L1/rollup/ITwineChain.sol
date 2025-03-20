@@ -164,11 +164,14 @@ interface ITwineChain {
      * Public View Functions *
      *************************/
 
-    /// @return lastFinalizedBatchNumber batch number of latest finalized batch
+    /// @return BlockNumber The block number of latest finalized batch
     function lastFinalizedBlockNumber() external view returns (uint256);
 
-    /// @return BlockNumber The latest committed finalized batch number.
+    /// @return BlockNumber The block number of latest committed batch
     function lastCommittedBlockNumber() external view returns (uint256);
+
+    /// @return BlockNumber The block number of lastest block whose transactions are finalzied
+    function lastFinalizedTransactionsBlockNumber() external view returns (uint256); 
 
     /// @param batchId The id of the batch.
     /// @return IsFinalized weather the provided batch is finalized or not

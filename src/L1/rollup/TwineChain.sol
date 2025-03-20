@@ -36,6 +36,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The latest finalized block number
     uint256 public override lastFinalizedBlockNumber;
 
+    /// @notice The latest block number with finalized transactions
+    uint256 public override lastFinalizedTransactionsBlockNumber;
+
     /// @notice The verification key for inclusion proof
     bytes32 public inclusionVKey;
 
@@ -440,6 +443,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         // remove deposits, and withdrawals  messages from queue
         IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
+
+        lastFinalizedTransactionsBlockNumber = transactionData.endBlock;
+        
         emit FinalizedTransaction(
             transactionData.startBlock,
             transactionData.endBlock,
