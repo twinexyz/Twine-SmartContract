@@ -283,7 +283,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @inheritdoc IL1MessageQueue
     function appendExecutionMessage(
         uint64 nonce,
-        uint64 chainId,
+        uint64 chainId_,
         uint64 blockNumber,
         string memory from,
         string memory to,
@@ -293,7 +293,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     ) external override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         _queueExecutionTransaction(
             nonce,
-            chainId,
+            chainId_,
             blockNumber,
             from,
             to,
@@ -379,7 +379,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     function _queueExecutionTransaction(
         uint64 nonce,
-        uint64 chainId,
+        uint64 chainId_,
         uint64 blockNumber,
         string memory from,
         string memory to,
@@ -389,7 +389,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     ) internal {
         MessageData memory executionMessageData = MessageData({
             nonce: nonce,
-            chainId: chainId,
+            chainId: chainId_,
             blockNumber: blockNumber,
             fromAddress: from,
             toAddress: to,

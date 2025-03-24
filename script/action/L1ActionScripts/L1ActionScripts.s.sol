@@ -83,7 +83,6 @@ contract ForcedWithdrawETH is Script {
 
      function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
 
         console.log("Withdraw Message Queue Before withdrawal", l1MessageQueue.nextCrossDomainWithdrawalMessageIndex());
         vm.startBroadcast(deployerPrivateKey);
@@ -188,7 +187,6 @@ contract ForcedWithdrawERC20 is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerPrivateKey);
         
@@ -232,9 +230,7 @@ contract CommitBatch is Script {
     
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
-
-
+    
         // Extract JSON file
         string memory commitmentJson = vm.readFile("./script/utils/commitInfo.json");
         
@@ -293,8 +289,8 @@ contract FinalizeBatch is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
-        
+    
+ 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Last finalize batch before finalization:", twineChain.lastFinalizedBlockNumber());
         
@@ -332,7 +328,6 @@ contract commitAndFinalizeTransaction is Script {
 
      function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Deposit Message Queue Before Finalization: ", l1MessageQueue.nextCrossDomainDepositMessageIndex());
@@ -432,7 +427,6 @@ contract GrantRole is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
        
         vm.startBroadcast(deployerPrivateKey);
@@ -464,7 +458,7 @@ contract RevokeRole is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
+
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
        
         vm.startBroadcast(deployerPrivateKey);
