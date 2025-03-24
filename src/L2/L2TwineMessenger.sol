@@ -31,7 +31,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @notice SP1 Verifier Address
     address public sp1Verifier;
 
-    /// @notice Skip Verification For Testing
+    /// @notice Skip zk Verification
     bool public skipVerification;
 
     /***************
@@ -66,7 +66,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
 
-    function setZkVerifyStatus(
+    function setZkVerifcationStatus(
         bool status
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         skipVerification = status;
@@ -125,11 +125,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             (SolanaVerifierPrecompileOutput)
         );
 
-        ISP1Verifier(sp1Verifier).verifyProof(
-            vKeys[chainId],
-            verifierOutput.publicValue,
-            verifierOutput.proof
-        );
+        if (!skipVerification) {
+            ISP1Verifier(sp1Verifier).verifyProof(
+                vKeys[chainId],
+                verifierOutput.publicValue,
+                verifierOutput.proof
+            );
+        }
 
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(output);
@@ -161,7 +163,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             emit EthereumTransactionsHandled(txnOutput);
         }
     }
-
 
     function verifyLayerZeroPayload(
         uint256 chainId,
@@ -232,11 +233,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             output,
             (EthereumVerifierPrecompileOutput)
         );
-        ISP1Verifier(sp1Verifier).verifyProof(
-            vKeys[chainId],
-            sp1Params.publicValue,
-            sp1Params.proof
-        );
+        if (!skipVerification) {
+            ISP1Verifier(sp1Verifier).verifyProof(
+                vKeys[chainId],
+                sp1Params.publicValue,
+                sp1Params.proof
+            );
+        }
         emit ConsensusVerified(consensusProof);
     }
 

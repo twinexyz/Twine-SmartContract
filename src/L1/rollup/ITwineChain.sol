@@ -171,7 +171,10 @@ interface ITwineChain {
     function lastCommittedBlockNumber() external view returns (uint256);
 
     /// @return BlockNumber The block number of lastest block whose transactions are finalzied
-    function lastFinalizedTransactionsBlockNumber() external view returns (uint256); 
+    function lastFinalizedTransactionsBlockNumber()
+        external
+        view
+        returns (uint256);
 
     /// @param batchId The id of the batch.
     /// @return IsFinalized weather the provided batch is finalized or not
@@ -180,7 +183,10 @@ interface ITwineChain {
     /// @notice provides the status of the batch Finalization based on block number
     /// @param startBlock The starting block number.
     /// @param endBlock The ending block number.
-    function checkBatchFinalization(uint64 startBlock, uint64 endBlock) external view returns(bool);
+    function checkBatchFinalization(
+        uint64 startBlock,
+        uint64 endBlock
+    ) external view returns (bool);
 
     /*****************************
      * Public Mutating Functions *
@@ -220,16 +226,17 @@ interface ITwineChain {
         address _ERC20Gateway
     ) external;
 
+    /// @notice sets the zk verfication status
+    function setZkVerifcationStatus(bool status) external;
+
     /// @notice Sets block hash of the genesis block
     /// @param genesisBlockHash The hash of the genesis block
-    function commitGenesisBlock(
-        bytes32 genesisBlockHash
-    ) external;
+    function commitGenesisBlock(bytes32 genesisBlockHash) external;
 
     /// @notice Commits a batch
     /// @param startBlock the start block number of that batch
     /// @param endBlock the end block number of that batch
-    /// @param commitBlockInfo The block infos 
+    /// @param commitBlockInfo The block infos
     function commitBatch(
         uint64 startBlock,
         uint64 endBlock,

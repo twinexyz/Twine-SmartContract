@@ -72,6 +72,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice status of genesis block
     bool isGenesisBlockCommitted;
 
+    /// @notice Skip zk Verification
+    bool public skipVerification;
+
     /*************
      * Mappings  *
      *************/
@@ -209,6 +212,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @inheritdoc ITwineChain
+    function setZkVerifcationStatus(
+        bool status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        skipVerification = status;
+    }
+
+    /// @inheritdoc ITwineChain
     function commitGenesisBlock(
         bytes32 genesisBlockHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
@@ -231,10 +241,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             startBlock == lastCommittedBlockNumber + 1,
             "Invalid start block"
         );
-        require(
-            commitBlockInfo[0].blockNumber == startBlock,
-            "Invalid Block Data"
-        );
+
+        if (startBlock == lastCommittedBlockNumber + 1) {
+            require(
+                commitBlockInfo[0].blockNumber == startBlock,
+                "Invalid Block Data"
+            );
+        }
 
         bytes32 batchId = getBatchId(startBlock, endBlock);
         uint256 expectedBlocks = endBlock - startBlock + 1;
@@ -249,6 +262,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             : commitedBlockInfo[batchId][currentCount - 1].blockHash;
 
         uint256 len = commitBlockInfo.length;
+        uint64 lastBlockNumber = 0;
         for (uint64 i; i < len; i++) {
             StoredBlockInfo memory blockInfo = StoredBlockInfo({
                 previousHash: previousBlockHash,
@@ -258,7 +272,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             });
             previousBlockHash = commitBlockInfo[i].blockHash;
             commitedBlockInfo[batchId].push(blockInfo);
+            lastBlockNumber = commitBlockInfo[i].blockNumber;
         }
+        require(lastBlockNumber <= endBlock, "Invalid Block Number");
 
         if (commitedBlockInfo[batchId].length == expectedBlocks) {
             lastCommittedEndBlockHash = previousBlockHash;
@@ -304,11 +320,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             batchInfo.batchHash == committedBatches[batchId].batchHash,
             "Batch hash should be same"
         );
-        // SP1Verifier(verifier).verifyProof(
-        //     executionVKey,
-        //     publicInputForExecution,
-        //     executionProof
-        // );
+
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                executionVKey,
+                publicInputForExecution,
+                executionProof
+            );
+        }
+
         lastFinalizedBlockNumber = batchInfo.endBlock;
         finalizedBatchStatus[batchId] = true;
 
@@ -416,11 +436,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         bytes memory inclusionProofWithSelector = prependBytes(inclusionProof);
 
-        // SP1Verifier(verifier).verifyProof(
-        //     inclusionVKey,
-        //     publicInputForInclusion,
-        //     inclusionProofWithSelector
-        // );
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                inclusionVKey,
+                publicInputForInclusion,
+                inclusionProofWithSelector
+            );
+        }
 
         // Move the withdrawal that are ready for execution to execution queue
         for (uint256 i = 0; i < withdrawCount; i++) {
@@ -445,7 +467,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
 
         lastFinalizedTransactionsBlockNumber = transactionData.endBlock;
-        
+
         emit FinalizedTransaction(
             transactionData.startBlock,
             transactionData.endBlock,
@@ -497,11 +519,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawalInputs.inclusionProof
         );
 
-        // SP1Verifier(verifier).verifyProof(
-        //     withdrawalVKey,
-        //     replacedPublicInput,
-        //     withdrawalProofWithSelector
-        // );
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                withdrawalVKey,
+                replacedPublicInput,
+                withdrawalProofWithSelector
+            );
+        }
 
         if (
             withdrawalInputs.publicInput.l1TokenAddress.stringToAddress() ==
