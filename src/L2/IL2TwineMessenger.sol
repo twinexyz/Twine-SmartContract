@@ -111,6 +111,8 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @notice handle the ethereum  transactions
     function handleEthereumProofAndTransactions(
         uint256 chainId,
+        uint256 height,
+        bytes32 receiptRoot,
         bytes memory consensusProof,
         bytes memory ethereumTransactions
     ) external;

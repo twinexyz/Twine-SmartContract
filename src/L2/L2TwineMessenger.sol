@@ -142,6 +142,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function handleEthereumProofAndTransactions(
         uint256 chainId,
+        uint256 height,
+        bytes32 receiptRoot,
         bytes memory consensusProof,
         bytes memory ethereumTransactions
     )
@@ -149,6 +151,10 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
+        // For testing purposes only. TODO: Remove before deploying to production.
+        if (skipVerification) {
+            blockReceiptRoots[chainId][height] = receiptRoot;
+        }
         if (consensusProof.length > 0) {
             _verifyConsensusProof(chainId, consensusProof);
         }
