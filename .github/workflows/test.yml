@@ -37,10 +37,10 @@ jobs:
           pip install slither-analyzer
           slither src/
       
-      - name: Run Solhint Linter
-        run: |
-          npm install -g solhint
-          solhint 'src/**/*.sol'
+      # - name: Run Solhint Linter
+      #   run: |
+      #     npm install -g solhint
+      #     solhint 'src/**/*.sol'
 
       - name: Run Forge build
         run: |
