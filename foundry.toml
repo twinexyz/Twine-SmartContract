@@ -7,6 +7,8 @@ build_info = true
 extra_output = ["storageLayout"]
 ffi = true
 ast = true
+optimizer = true
+optimizer_runs = 20_000
 gas_reports = ["*"]
 
 
