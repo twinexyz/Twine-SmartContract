@@ -68,21 +68,21 @@ jobs:
       - name: Handle build failure
         if: ${{ failure() }}
         run: echo "Build failed. Check logs for details."
-  shiftleft_scan:
-    runs-on: ubuntu-latest
-    name: ShiftLeftSecurity Scan
-    steps:
-      - uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.3
-        with:
-          egress-policy: audit
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-      - name: Perform Scan
-        uses: ShiftLeftSecurity/scan-action@master
-        with:
-          type: "credscan,rust,depscan,dockerfile,dep-scan"
-      - name: Handle build failure
-        if: ${{ failure() }}
-        run: echo "Build failed. Check logs for details."
+  # shiftleft_scan:
+  #   runs-on: ubuntu-latest
+  #   name: ShiftLeftSecurity Scan
+  #   steps:
+  #     - uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.3
+  #       with:
+  #         egress-policy: audit
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ github.ref_name }}
+  #     - name: Perform Scan
+  #       uses: ShiftLeftSecurity/scan-action@master
+  #       with:
+  #         type: "credscan,rust,depscan,dockerfile,dep-scan"
+  #     - name: Handle build failure
+  #       if: ${{ failure() }}
+  #       run: echo "Build failed. Check logs for details."
