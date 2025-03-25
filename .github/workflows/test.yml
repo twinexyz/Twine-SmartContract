@@ -1,16 +1,19 @@
 name: Solidity Contracts tests
 
+# on:
+#   pull_request:
+#     branches:
+#       - "**"
+
 on:
-  pull_request:
-    branches:
-      - "**"
+  workflow_call:
 
 env:
   FOUNDRY_PROFILE: ci
 
 defaults:
   run:
-    working-directory: src/
+    working-directory: /
 
 jobs:
   check:
@@ -20,7 +23,7 @@ jobs:
     name: Twine Solidity Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -29,11 +32,21 @@ jobs:
         with:
           version: nightly
 
+      - name: Run Slither Security Analysis
+        run: |
+          pip install slither-analyzer
+          slither src/
+      
+      - name: Run Solhint Linter
+        run: |
+          npm install -g solhint
+          solhint 'src/**/*.sol'
+
       - name: Run Forge build
         run: |
           forge --version
           forge remappings
-          forge build --sizes
+          ./script/updateSp1Version.sh
         id: build
 
       - name: Run Forge tests

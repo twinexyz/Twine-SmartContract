@@ -1,0 +1,88 @@
+name: Secrets and code scan
+
+#on:
+#  push:
+#    branches:
+#      - '**'  # This will trigger on all branches
+#    tags:
+#      - '**'  # This will trigger on all tags
+#  pull_request:
+#  schedule:
+#    - cron: '0 0 * * *'
+
+on:
+  workflow_call:
+
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.ref }}
+#  cancel-in-progress: true
+
+env:
+  # Disable incremental compilation for faster from-scratch builds
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+
+jobs:
+  trivy_scan:
+    name: trivy scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.3
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: 'fs'
+          cache: 'false'
+          scan-ref: '.'
+      - name: Handle build failure
+        if: ${{ failure() }}
+        run: echo "Build failed. Check logs for details."
+  secret_scan:
+    name: secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.3
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --results=verified,unknown
+  anchore_scan:
+    name: anchore scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.3
+        with:
+          egress-policy: audit
+      - name: Scan current project
+        uses: anchore/scan-action@v6
+        with:
+          path: "."
+      - name: Handle build failure
+        if: ${{ failure() }}
+        run: echo "Build failed. Check logs for details."
+  shiftleft_scan:
+    runs-on: ubuntu-latest
+    name: ShiftLeftSecurity Scan
+    steps:
+      - uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.3
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Perform Scan
+        uses: ShiftLeftSecurity/scan-action@master
+        with:
+          type: "credscan,rust,depscan,dockerfile,dep-scan"
+      - name: Handle build failure
+        if: ${{ failure() }}
+        run: echo "Build failed. Check logs for details."

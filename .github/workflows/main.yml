@@ -1,0 +1,27 @@
+name: Pipelines
+
+on:
+  push:
+    branches:
+      - '**'  # This will trigger on all tags
+    tags:
+      - '**'  # This will trigger on all tags
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Disable incremental compilation for faster from-scratch builds
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+  file-scan:
+    needs: ["test"]
+    uses: ./.github/workflows/scan.yml
+    secrets: inherit
