@@ -120,6 +120,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         messageQueue = _messageQueue;
         verifier = _verifier;
         roleManager = _roleManager;
+        skipVerification = true;
     }
 
     /*************************

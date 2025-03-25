@@ -18,9 +18,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @notice The address of bridging Precompile
     address public bridgingPrecompileAddress;
 
-    /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
+    /// @notice mapping of (chainId => (L1TxnType => nonce))
     mapping(uint256 => mapping(L1TxnType => uint256))
-        public isL1MessageExecuted;
+        public l1MessageExecutedCount;
 
     /// @notice Mapping to store the receipt roots for each block number
     mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
@@ -206,6 +206,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 chainId,
         uint256 gasLimit
     ) internal {
+        ++messageCount;
         emit SentMessage(
             from,
             l2Token,
@@ -213,7 +214,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             l1Token,
             amount,
             value,
-            messageCount++,
+            messageCount,
             chainId,
             block.number,
             gasLimit
