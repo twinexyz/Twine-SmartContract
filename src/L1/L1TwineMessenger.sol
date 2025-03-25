@@ -1,28 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import "forge-std/console.sol";
 
-import {ITwineChain} from "./rollup/ITwineChain.sol";
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
 import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
-import {RLPEncodeStruct, Types} from "../libraries/rlp/RLPEncodeStruct.sol";
 import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.sol";
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
-import {MerklePatriciaProofVerifier} from "../libraries/mpt/MerklePatriciaProofVerifier.sol";
 
 contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
-    using MerklePatriciaProofVerifier for bytes;
-    using RLPEncodeStruct for Types.ReceiptObject;
-
-    /// @notice Emitted when a cross domain message is relayed successfully.
-    /// @param messageHash The hash of the message.
-    event RelayedMessage(bytes32 indexed messageHash);
-
-    /// @notice Emitted when a cross domain message is failed to relay.
-    /// @param messageHash The hash of the message.
-    event FailedRelayedMessage(bytes32 indexed messageHash);
-   
+    /*************
+     * Variables *
+     *************/
 
     /// @notice The address of L1MessageQueue contract.
     address public messageQueue;
@@ -30,6 +18,17 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     /// @notice The address of Rollup contract.
     address public rollup;
 
+    //gateway address of eth, can be removed
+    //gateway address of eth, can be removed
+    address public ethGateway;
+
+    //gateway address of erc20 gateway,can be removed
+    //gateway address of erc20 gateway,can be removed
+    address public ERC20Gateway;
+
+    /*************
+     * Mappings  *
+     *************/
     /// @notice Mapping from L2 message hash to a boolean value indicating if the message has been successfully executed.
     mapping(bytes32 => bool) public isL2MessageExecuted;
 
@@ -58,106 +57,79 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         rollup = _rollup;
     }
 
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
+    
     function setMessengerQueueAddress(
         address _messageQueue
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_messageQueue == address(0)) {
+            revert ErrorZeroAddress();
+        }
         messageQueue = _messageQueue;
     }
 
     function setRollupAddress(
         address _rollup
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_rollup == address(0)) {
+            revert ErrorZeroAddress();
+        }
         rollup = _rollup;
     }
 
     /// @inheritdoc ITwineL1MessengerBase
     function sendMessage(
-        TransactionType _type,
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes memory _message
-    ) external payable override {
-        _sendMessage(_type, _from,_to, _value,  _gasLimit, _message);
+        TransactionType txnType,
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
+    )
+        external
+        payable
+        override
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
+    {
+        _sendMessage(txnType, from, to, l1Token, l2Token, amount);
     }
 
-    function relayWithdrawal(
-        uint256 _batchNumber,
-        Types.ReceiptObject memory _receiptObject,
-        bytes memory _mptKey,
-        bytes memory _rlpProof
-    ) external {
-        bytes32 _receiptObjectHash = keccak256(getReceiptObjectRLP(_receiptObject));
-        require(!isL2MessageExecuted[_receiptObjectHash], "Message was already successfully executed");
-        require(ITwineChain(rollup).isBatchFinalized(_batchNumber), "Batch is not Finalized");
-        require(_receiptObject.success == true, "Failed transaction");
-        // MerklePatriciaProofVerification
-        bytes memory receiptObjectRLP = _rlpProof.verifyRLPProof(ITwineChain(rollup).getReceiptRoot(_batchNumber), _mptKey);
-        require(keccak256(receiptObjectRLP) == _receiptObjectHash, "Proof of inclusion failed");
-        
-        // Check if there are any logs in the ReceiptObject
-        require(_receiptObject.logs.length > 0, "No logs available");
-        // Fetch the first log
-          for(uint256 i = 0; i < _receiptObject.logs.length; i++) {
-            // check if the log was emitted form L2TwineMessenger
-            if(_receiptObject.logs[i].logAddress == counterpart) {
-                // Decoding the log data
-                (, address counterpartGateway, , uint256 _value, , , bytes memory message) = abi.decode(
-                    _receiptObject.logs[i].data, 
-                    (address, address, address, uint256, uint256, uint256, bytes)
-                );
-                (bool success, ) = counterpartGateway.call{value: _value}(message);
-
-                if (success) {
-                    isL2MessageExecuted[_receiptObjectHash] = true;
-                    emit RelayedMessage(_receiptObjectHash);
-                } else {
-                    emit FailedRelayedMessage(_receiptObjectHash);
-                }
-            }
-        }   
-       
-    }  
+    /**********************
+     * Internal Functions *
+     **********************/
 
     function _sendMessage(
-        TransactionType _type,
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _gasLimit,
-        bytes memory _message
-        
+        TransactionType txnType,
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
     ) internal {
         // If transaction type is Deposit
-        if (_type == TransactionType.deposit) {
-            require(msg.value >= _value, "Insufficient msg.value");
+        if (txnType == TransactionType.deposit) {
+            // require(msg.value >= _value, "Insufficient msg.value");
 
             // append message to L1 depositMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
-                _from,
-                _to,
-                _value,
-                _gasLimit,
-                _message
+                from,
+                to,
+                l1Token,
+                l2Token,
+                amount
             );
-
         } else {
-
             // append message to L1 withdrawalMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
-                _from,
-                _to,
-                _value,
-                _gasLimit,
-                _message
+                from,
+                to,
+                l1Token,
+                l2Token,
+                amount
             );
         }
-    }
-
-    function getReceiptObjectRLP(
-        Types.ReceiptObject memory _ro
-    ) public pure returns (bytes memory) {
-        return abi.encodePacked(_ro.txType, _ro.encodeReceiptObject());
     }
 }

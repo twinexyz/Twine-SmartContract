@@ -2,11 +2,20 @@
 pragma solidity ^0.8.24;
 
 interface ITwineL1MessengerBase {
+    /*********
+     * Enums *
+     *********/
+    /// @notice Types of transactions to send as message
+    /// @param deposit Deposit Transactions
+    /// @param withdraw Withdraw Transactions
     enum TransactionType {
         deposit,
         withdrawal
     }
 
+    /**********
+     * Errors *
+     **********/
     /// @dev Thrown when the given address is `address(0)`.
     error ErrorZeroAddress();
 
@@ -20,19 +29,18 @@ interface ITwineL1MessengerBase {
     /*****************************
      * Public Mutating Functions *
      *****************************/
-
-    /// @notice Send cross chain message from L1 to L2.
-    /// @param transactionType The type of transaction (deposit or withdrawal).
-    /// @param value The amount of ether passed when call target contract.
-    /// @param message The content of the message.
-    /// @param gasLimit Gas limit required to complete the message relay on corresponding chain.
+    /// @notice Forward the message to be appended to the queue
+    /// @param _type the type of a transaction
+    /// @param l1_token l1 token to deposit/withdraw
+    /// @param l2_token l2 token to receive/withdraw 
+    /// @param amount amount to withdraw/deposit 
     function sendMessage(
-        TransactionType transactionType,
+        TransactionType _type,
         address from,
         address to,
-        uint256 value,
-        uint256 gasLimit,
-        bytes memory message
+        address l1_token,
+        address l2_token,
+        uint256 amount
     ) external payable;
     
 }

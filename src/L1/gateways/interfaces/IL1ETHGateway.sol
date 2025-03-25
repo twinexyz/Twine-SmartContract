@@ -2,19 +2,6 @@
 pragma solidity ^0.8.24;
 
 interface IL1ETHGateway {
-    /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
-    /// @param from The address of sender in L2.
-    /// @param to The address of recipient in L1.
-    /// @param amount The amount of ETH withdrawn from L2 to L1.
-    event FinalizeWithdrawETH(
-        address l1Token,
-        address l2Token,
-        address indexed from,
-        address indexed to,
-        uint256 amount,
-        uint256 blockNumber
-    );
-
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
@@ -30,6 +17,23 @@ interface IL1ETHGateway {
     /// @param recipient The address of receiver in L1.
     /// @param amount The amount of ETH refunded to receiver.
     event RefundETH(address indexed recipient, uint256 amount);
+
+    /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
+    /// @param to The address of recipient in L1.
+    /// @param amount The amount of ETH withdrawn from L2 to L1.
+    event FinalizeWithdrawETH(
+        string l1Token,
+        string l2Token,
+        string indexed to,
+        string amount,
+        uint64 nonce,
+        uint64 chainId,
+        uint256 blockNumber
+    );
+
+    ///@notice Emmitted when L2TokenAddress  is set
+    ///@param l2TokenAddress The L2 address of the token
+    event L2TokenSET(address l2TokenAddress);
 
     /*****************************
      * Public Mutating Functions *
@@ -58,17 +62,14 @@ interface IL1ETHGateway {
     ) external payable;
 
     /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.
-    /// @dev This function should only be called by L1TwineMessenger.
-    /// @param from The address of account who withdraw ETH in L2.
+    /// @dev This function should only be called by Twinechain
     /// @param to The address of recipient in L1 to receive ETH.
-    /// @param amount The amount of ETH to withdraw.
     function finalizeTokenWithdrawal(
-        address l1Token,
-        address l2Token,
-        address from,
-        address to,
-        uint256 amount,
-        bytes calldata data
+        string memory l1Token,
+        string memory l2Token,
+        string memory to,
+        string memory amount,
+        uint64 nonce
     ) external payable;
 
     /// @notice Withdraw ETH form the user account in L2
@@ -78,6 +79,7 @@ interface IL1ETHGateway {
     function forcedWithdrawalETH(
         address to,
         uint256 amount,
-        uint256 gasLimit
+        uint256 gasLimit,
+        bytes memory data
     ) external payable;
 }

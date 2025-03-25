@@ -3,20 +3,7 @@
 pragma solidity ^0.8.24;
 
 interface ITwineL1Gateway {
-    /**********
-     * Errors *
-     **********/
-
-    /// @dev Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-
-    /// @dev Thrown when the caller is not corresponding `L1TwineMessenger` or `L2TwineMessenger`.
-    error ErrorCallerIsNotMessenger();
-
-    /// @dev Thrown when the cross chain sender is not the counterpart gateway contract.
-    error ErrorCallerIsNotCounterpartGateway();
-
-
+    
     /*************************
      * Public View Functions *
      *************************/

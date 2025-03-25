@@ -15,12 +15,6 @@ interface ITwineL2MessengerBase {
         address indexed newCounterpartMessenger
     );
 
-    /// @notice Emitted when the `counterpart gateway`  is updated.
-    /// @param chainId The id of a chain.
-    /// @param oldCounterpartGateway The corresponding address of the old gateway.
-    /// @param newCounterpartGateway The corresponding address of the new gateway.
-    event SetCounterpartGateway(uint256 indexed chainId, address indexed oldCounterpartGateway, address indexed newCounterpartGateway);
-
     /*****************************
      * Public Mutating Functions *
      *****************************/
@@ -28,19 +22,18 @@ interface ITwineL2MessengerBase {
     /// @notice Send cross chain message from L2 to L1.
     /// @param from The address of the sender
     /// @param to The address of the receiver
-    /// @param counterpart The address of counterpart gateway
-    /// @param message The content of the message.
+    /// @param amount The number of token
     /// @param value The amount of native token
     /// @param chainId The chainId of L1
     /// @param gasLimit Gas limit required to complete the message relay on corresponding chain.
-    /// @param from The address who is sending the transaction.
     function sendMessage(
         address from,
+        address l2Token,
         string memory to,
-        address counterpart,
+        string memory l1Token,
+        uint256 amount,
         uint256 value,
         uint256 chainId,
-        uint256 gasLimit,
-        bytes calldata message
+        uint256 gasLimit
     ) external payable;
 }

@@ -1,0 +1,8 @@
+{
+    "remappings": [
+      "@openzeppelin/=path/to/openzeppelin/",
+      "other-library/=path/to/other-library/",
+      "custom-imports/=path/to/custom-imports/"
+    ]
+  }
+  

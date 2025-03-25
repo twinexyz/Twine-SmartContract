@@ -7,7 +7,6 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 
 import {ITwineL2Gateway} from "./ITwineL2Gateway.sol";
 import {IRoleManager} from "../access/IRoleManager.sol";
-import {ITwineGatewayCallback} from "../callbacks/ITwineGatewayCallback.sol";
 
 /// @title TwineGatewayBase
 /// @notice The `TwineGatewayBase` is a base contract for gateway contracts used in both in L1 and L2.
@@ -20,10 +19,6 @@ abstract contract TwineL2GatewayBase is
      * Constants *
      *************/
 
-    /// need to remove this variable as it is not used anymore
-    /// @inheritdoc ITwineL2Gateway
-    address public override counterpart;
-
     /// @inheritdoc ITwineL2Gateway
     address public override router;
 
@@ -31,9 +26,11 @@ abstract contract TwineL2GatewayBase is
     address public override messenger;
 
     address public roleManager;
-    
+
     //chainId=> L1Gateway
-    mapping(uint256=>mapping(address => address)) public override counterpartGateWay;
+    mapping(uint256 => mapping(string => string))
+        public
+        override counterpartGateWay;
 
     /**********************
      * Function Modifiers *
@@ -45,49 +42,35 @@ abstract contract TwineL2GatewayBase is
     }
 
     function _initialize(
-        address _counterpart,
         address _router,
         address _messenger,
         address _roleManager
     ) internal {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        counterpart = _counterpart;
         router = _router;
         messenger = _messenger;
         roleManager = _roleManager;
     }
 
-    function setRoleManagerAddress(address _roleManagerAddress)
-        external 
-    {
+    /// @notice sets the rolemanager contract address
+    function setRoleManagerAddress(address _roleManagerAddress) external {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 
-    function setRouterAddress(address _router)
-        external
-        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    /// @notice sets the router contract address
+    function setRouterAddress(
+        address _router
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         router = _router;
     }
 
-
-    function setMessengerAddress(address _messenger)
-        external
-        onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN())
-    {
+    /// @notice sets the messenger contract address
+    function setMessengerAddress(
+        address _messenger
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         messenger = _messenger;
     }
-
-    function setCounterpartGateway(uint256[] memory _chainId,address[]memory _l1TokenAddress,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_chainId.length == _counterpartGateWay.length && _chainId.length == _l1TokenAddress.length, "length mismatch");
-        for (uint256 i = 0; i < _chainId.length; i++) {
-            require(_counterpartGateWay[i] != address(0)," Value cann't be zero");
-            address _oldCounterPart = counterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
-            counterpartGateWay[_chainId[i]][_l1TokenAddress[i]] = _counterpartGateWay[i];
-            emit SetCounterpartGateway(_chainId[i], _oldCounterPart, _counterpartGateWay[i]);
-        }
-    }
-
 
     /// @dev The storage slots for future usage.
     uint256[46] private __gap;

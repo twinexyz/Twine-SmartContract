@@ -106,11 +106,11 @@ library RLPEncode {
     }
 
     /**
-     * @dev RLP encodes a uint.
-     * @param self The uint to encode.
-     * @return The RLP encoded uint in bytes.
+     * @dev RLP encodes a uint256.
+     * @param self The uint256 to encode.
+     * @return The RLP encoded uint256 in bytes.
      */
-    function encodeUint(uint self) internal pure returns (bytes memory) {
+    function encodeUint(uint256 self) internal pure returns (bytes memory) {
         return encodeBytes(toBinary(self));
     }
 
@@ -120,7 +120,7 @@ library RLPEncode {
      * @return The RLP encoded int in bytes.
      */
     function encodeInt(int self) internal pure returns (bytes memory) {
-        return encodeUint(uint(self));
+        return encodeUint(uint256(self));
     }
 
     /**
@@ -145,16 +145,16 @@ library RLPEncode {
      * @return RLP encoded bytes.
      */
     function encodeLength(
-        uint len,
-        uint offset
+        uint256 len,
+        uint256 offset
     ) private pure returns (bytes memory) {
         bytes memory encoded;
         if (len < 56) {
             encoded = new bytes(1);
             encoded[0] = bytes32(len + offset)[31];
         } else {
-            uint lenLen;
-            uint i = 1;
+            uint256 lenLen;
+            uint256 i = 1;
             while (len / i != 0) {
                 lenLen++;
                 i *= 256;
@@ -175,19 +175,19 @@ library RLPEncode {
      * @param _x The integer to encode.
      * @return RLP encoded bytes.
      */
-    function toBinary(uint _x) private pure returns (bytes memory) {
+    function toBinary(uint256 _x) private pure returns (bytes memory) {
         bytes memory b = new bytes(32);
         assembly {
             mstore(add(b, 32), _x)
         }
-        uint i;
+        uint256 i;
         for (i = 0; i < 32; i++) {
             if (b[i] != 0) {
                 break;
             }
         }
         bytes memory res = new bytes(32 - i);
-        for (uint j = 0; j < res.length; j++) {
+        for (uint256 j = 0; j < res.length; j++) {
             res[j] = b[i++];
         }
         return res;
@@ -200,10 +200,10 @@ library RLPEncode {
      * @param _src Source location.
      * @param _len Length of memory to copy.
      */
-    function memcpy(uint _dest, uint _src, uint _len) private pure {
-        uint dest = _dest;
-        uint src = _src;
-        uint len = _len;
+    function memcpy(uint256 _dest, uint256 _src, uint256 _len) private pure {
+        uint256 dest = _dest;
+        uint256 src = _src;
+        uint256 len = _len;
 
         for (; len >= 32; len -= 32) {
             assembly {
@@ -213,7 +213,7 @@ library RLPEncode {
             src += 32;
         }
 
-        uint mask = 256 ** (32 - len) - 1;
+        uint256 mask = 256 ** (32 - len) - 1;
         assembly {
             let srcpart := and(mload(src), not(mask))
             let destpart := and(mload(dest), mask)
@@ -232,8 +232,8 @@ library RLPEncode {
             return new bytes(0);
         }
 
-        uint len;
-        uint i;
+        uint256 len;
+        uint256 i;
         for (i = 0; i < _list.length; i++) {
             require(
                 _list[i].length > 0,
@@ -243,7 +243,7 @@ library RLPEncode {
         }
 
         bytes memory flattened = new bytes(len);
-        uint flattenedPtr;
+        uint256 flattenedPtr;
         assembly {
             flattenedPtr := add(flattened, 0x20)
         }
@@ -251,7 +251,7 @@ library RLPEncode {
         for (i = 0; i < _list.length; i++) {
             bytes memory item = _list[i];
 
-            uint listPtr;
+            uint256 listPtr;
             assembly {
                 listPtr := add(item, 0x20)
             }
@@ -322,10 +322,10 @@ library RLPEncode {
     }
 
     /**
-     * @dev convert uint to strict bytes.
+     * @dev convert uint256 to strict bytes.
      * @notice only handle to uint128 due to contract code size limit
-     * @param length The uint to convert.
-     * @return The uint in strict bytes without padding.
+     * @param length The uint256 to convert.
+     * @return The uint256 in strict bytes without padding.
      */
     function encodeUintByLength(
         uint256 length

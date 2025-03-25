@@ -1,25 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {SP1Verifier} from "@sp1-contracts/v3.0.0/SP1VerifierGroth16.sol";
+import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {ITwineChain} from "./ITwineChain.sol";
-import {Types} from "../../libraries/rlp/Types.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {RLPDecodeStruct} from "../../libraries/rlp/RLPDecodeStruct.sol";
-import {RLPEncodeStruct, Types} from "../../libraries/rlp/RLPEncodeStruct.sol";
+import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
+import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
 contract TwineChain is ContextUpgradeable, ITwineChain {
-    using RLPEncodeStruct for TransactionObject;
-    using RLPEncodeStruct for Types.ReceiptObject;
-
-    /// @dev Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
+    using TypeConversionLib for string;
 
     /*************
      * Variables *
@@ -28,8 +24,41 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ///@notice The chai ID for the L1 where this contract is deployed
     uint256 public chainId;
 
-    /// @notice The verification key.
-    bytes32 public ProgramVKey;
+    ///@notice current start block
+    uint256 currentStartBlock;
+
+    ///@notice current end block
+    uint256 currentEndBlock;
+
+    /// @notice The latest committed block number
+    uint256 public override lastCommittedBlockNumber;
+
+    /// @notice The latest finalized block number
+    uint256 public override lastFinalizedBlockNumber;
+
+    /// @notice The latest block number with finalized transactions
+    uint256 public override lastFinalizedTransactionsBlockNumber;
+
+    /// @notice The verification key for inclusion proof
+    bytes32 public inclusionVKey;
+
+    /// @notice The verification key for withdrawal proof
+    bytes32 public withdrawalVKey;
+
+    /// @notice The verification key for execution proof.
+    bytes32 public executionVKey;
+
+    //@notice The hash of the last committed block hash
+    bytes32 public lastCommittedEndBlockHash;
+
+    //@notice The last finalize batch hash
+    bytes32 public lastFinalizedBatchHash;
+
+    //gateway address of eth
+    address public ethGateway;
+
+    //gateway address of erc20 gateway
+    address public ERC20Gateway;
 
     /// @notice The address of L1MessageQueue contract.
     address public messageQueue;
@@ -40,37 +69,27 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice Address of the rolemanager contract
     address roleManager;
 
-    /// @notice The Number of Last Batch Committed
-    uint256 public override lastCommittedBatchNumber;
+    /// @notice status of genesis block
+    bool isGenesisBlockCommitted;
 
-    /// @notice The Number of Last Batch Finalized
-    uint256 public override lastFinalizedBatchNumber;
-
-    /// @notice The number of deposit Transaction of this L1 that is committed but not finalized.
-    uint256 public depositTransactionsCommitted;
-
-    /// @notice The number of forced Transaction of this L1 that is committed but not finalized
-    uint256 public forcedTransactionsCommitted;
-
-    ///@notice endpointId of the Layerzero v1 as v2Eid = 30000+v1Eid
-    uint32 public eId;
-
-    ///@notice address of this chain DVN
-    address public dvnAddress;
-
-    /// @notice The list of queued cross domain messages.
-    LzPayloadData[] public lzPayloadQueue;
+    /// @notice Skip zk Verification
+    bool public skipVerification;
 
     /*************
      * Mappings  *
      *************/
 
+    mapping(bytes32 => StoredBlockInfo[]) public commitedBlockInfo;
     /// @notice The mapping of batchNumber => CommittedBatches
-    mapping(uint256 => StoredBatchInfo) public committedBatches;
-
-    /// @inheritdoc ITwineChain
-    mapping(uint256 => bytes32) public override finalizedStateRoots;
-    mapping(uint256 => address) public chainsDvn;
+    mapping(bytes32 => StoredBatchInfo) public committedBatches;
+    /// @notice The mapping of batchNumber => bool
+    mapping(bytes32 => bool) public commitedBatchStatus;
+    /// @notice The mapping of batchNumber => bool
+    mapping(bytes32 => bool) public finalizedBatchStatus;
+    /// @notice The mapping of batchNumber => receiptRoot
+    mapping(bytes32 => bytes32) public finalizedCombinedReceiptRoot;
+    /// @notice Mapping of executed withdraw hash to a boolean value
+    mapping(bytes32 => bool) public isWithdrawExecuted;
 
     /**********************
      * Function Modifiers *
@@ -93,10 +112,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice Initialize the storage of TwineChain.
     /// @param _messageQueue The address of `L1MessageQueue` contract.
     /// @param _verifier The address of zkevm verifier contract.
-    function initialize(address _messageQueue, address _verifier,  address _roleManager) external initializer {
+    function initialize(
+        address _messageQueue,
+        address _verifier,
+        address _roleManager
+    ) external initializer {
         messageQueue = _messageQueue;
         verifier = _verifier;
         roleManager = _roleManager;
+        skipVerification = true;
     }
 
     /*************************
@@ -104,319 +128,583 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
      *************************/
 
     /// @inheritdoc ITwineChain
-    function isBatchFinalized( uint256 _batchNumber) public view override returns (bool) {
-        return _batchNumber <= lastFinalizedBatchNumber;
+    function isBatchFinalized(
+        bytes32 batchId
+    ) public view override returns (bool) {
+        return finalizedBatchStatus[batchId];
     }
 
-    function isBatchCommitted(uint256 _batchNumber) public view returns (bool) {
-        return _batchNumber <= lastCommittedBatchNumber;
+    function isBatchCommitted(bytes32 batchId) public view returns (bool) {
+        return commitedBatchStatus[batchId];
     }
 
-    function getReceiptRoot(uint256 _batchNumber) public view returns (bytes32) {
-        require(isBatchCommitted(_batchNumber), "Batch Needs to be commited");
-        return committedBatches[_batchNumber].receiptRoot;
-    }
-
-    function getTransactinObjectRLP( ITwineChain.TransactionObject memory _transactionObject) public pure returns (bytes32 transactionObjectHash) {
-        uint8 transactionType = 2;
-        bytes memory returnedRlp = abi.encodePacked(
-            transactionType,
-            _transactionObject.encodeTransactionObject()
-        );
-        transactionObjectHash = keccak256(returnedRlp);
+    function checkBatchFinalization(
+        uint64 startBlock,
+        uint64 endBlock
+    ) public view override returns (bool) {
+        bytes32 batchId = getBatchId(startBlock, endBlock);
+        return finalizedBatchStatus[batchId];
     }
 
     /*****************************
      * Public Mutating Functions *
      *****************************/
 
-    function setChainId(uint256 _chainId) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    /// @inheritdoc ITwineChain
+    function setChainId(
+        uint256 _chainId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         chainId = _chainId;
     }
 
-    function setRoleManagerAddress(address _roleManagerAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    /// @inheritdoc ITwineChain
+    function setRoleManagerAddress(
+        address _roleManagerAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_roleManagerAddress == address(0)) {
+            revert ErrorZeroAddress();
+        }
         roleManager = _roleManagerAddress;
     }
 
-    function setMessengerQueueAddress( address _messageQueue) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    /// @inheritdoc ITwineChain
+    function setMessengerQueueAddress(
+        address _messageQueue
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_messageQueue == address(0)) {
+            revert ErrorZeroAddress();
+        }
         messageQueue = _messageQueue;
     }
 
-    function setVeriferAddress( address _verifier ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+    /// @inheritdoc ITwineChain
+    function setVeriferAddress(
+        address _verifier
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_verifier == address(0)) {
+            revert ErrorZeroAddress();
+        }
         verifier = _verifier;
     }
 
-    function setProgramVKey( bytes32 _programVKey) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        ProgramVKey = _programVKey;
-    }
+    /// @inheritdoc ITwineChain
+    function setProgramVKey(
+        bytes32 _executionVKey,
+        bytes32 _inclusionVKey,
+        bytes32 _withdrawalVKey
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        executionVKey = _executionVKey;
+        inclusionVKey = _inclusionVKey;
+        withdrawalVKey = _withdrawalVKey;
 
-    /// @notice set the EID of layerzero
-    function setEid( uint32 _eId ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        eId = _eId;
-    }
-
-    function setDvn(address _dvnAddress ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        dvnAddress = _dvnAddress;
-    }
-
-    function setChainsDvn(uint256 _chainId,address _dvnAddress)external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        chainsDvn[_chainId] = _dvnAddress;
+        emit SetProgramVkey(_executionVKey, _inclusionVKey, _withdrawalVKey);
     }
 
     /// @inheritdoc ITwineChain
-    function commitBatch( CommitBatchInfo calldata _newBatchData) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        //require(isBatchFinalized(_newBatchData.batchNumber - 1), "Previous batch must be finalized.");
-        depositTransactionsCommitted = 0;
-        forcedTransactionsCommitted = 0;
-        StoredBatchInfo memory batchToCommit = _commitBatch(_newBatchData);
-        committedBatches[batchToCommit.batchNumber] = batchToCommit;
-        lastCommittedBatchNumber = batchToCommit.batchNumber;
+    function setGatewayAddress(
+        address _ethGateway,
+        address _ERC20Gateway
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_ethGateway == address(0) || _ERC20Gateway == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        ethGateway = _ethGateway;
+        ERC20Gateway = _ERC20Gateway;
     }
 
     /// @inheritdoc ITwineChain
-    function finalizeBatch(uint256 batchNumber,bytes calldata _proofBytes) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    function setZkVerifcationStatus(
+        bool status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        skipVerification = status;
+    }
+
+    /// @inheritdoc ITwineChain
+    function commitGenesisBlock(
+        bytes32 genesisBlockHash
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(!isGenesisBlockCommitted, "Genesis Block already committed");
+        require(currentStartBlock == 0, "Not at genesis");
+        require(lastCommittedBlockNumber == 0, "Not at genesis");
+        lastCommittedEndBlockHash = genesisBlockHash;
+        isGenesisBlockCommitted = true;
+    }
+
+    /// @inheritdoc ITwineChain
+    function commitBatch(
+        uint64 startBlock,
+        uint64 endBlock,
+        CommitBlockInfo[] memory commitBlockInfo
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(isGenesisBlockCommitted, "Genesis Block not` committed");
+
         require(
-            isBatchCommitted(batchNumber),
-            "Batch needs to be committed before finalization"
+            startBlock == lastCommittedBlockNumber + 1,
+            "Invalid start block"
         );
 
-        // require(
-        //     committedBatches[lastFinalizedBatchNumber].stateRoot == committedBatches[batchNumber].previousStateRoot,
-        //     "Only next batch can be finalized."
-        // );
+        if (startBlock == lastCommittedBlockNumber + 1) {
+            require(
+                commitBlockInfo[0].blockNumber == startBlock,
+                "Invalid Block Data"
+            );
+        }
 
-        bytes memory publicValues = committedBatches[batchNumber].publicInput;
+        bytes32 batchId = getBatchId(startBlock, endBlock);
+        uint256 expectedBlocks = endBlock - startBlock + 1;
+        // Get the current count of blocks already committed for this batch.
+        uint256 currentCount = commitedBlockInfo[batchId].length;
+        require(
+            currentCount + commitBlockInfo.length <= expectedBlocks,
+            "Exceeds total expected blocks for this batch"
+        );
+        bytes32 previousBlockHash = currentCount == 0
+            ? lastCommittedEndBlockHash
+            : commitedBlockInfo[batchId][currentCount - 1].blockHash;
 
-        SP1Verifier(verifier).verifyProof( ProgramVKey, publicValues, _proofBytes
+        uint256 len = commitBlockInfo.length;
+        uint64 lastBlockNumber = 0;
+        for (uint64 i; i < len; i++) {
+            StoredBlockInfo memory blockInfo = StoredBlockInfo({
+                previousHash: previousBlockHash,
+                blockHash: commitBlockInfo[i].blockHash,
+                transactionRoot: commitBlockInfo[i].transactionRoot,
+                receiptRoot: commitBlockInfo[i].receiptRoot
+            });
+            previousBlockHash = commitBlockInfo[i].blockHash;
+            commitedBlockInfo[batchId].push(blockInfo);
+            lastBlockNumber = commitBlockInfo[i].blockNumber;
+        }
+        require(lastBlockNumber <= endBlock, "Invalid Block Number");
+
+        if (commitedBlockInfo[batchId].length == expectedBlocks) {
+            lastCommittedEndBlockHash = previousBlockHash;
+            bytes32 batchHash = _calculateBatchHash(batchId);
+            StoredBatchInfo memory batchInfo = StoredBatchInfo({
+                startBlock: startBlock,
+                endBlock: endBlock,
+                batchHash: batchHash
+            });
+            committedBatches[batchId] = batchInfo;
+            lastCommittedBlockNumber = endBlock;
+            commitedBatchStatus[batchId] = true;
+            finalizedCombinedReceiptRoot[batchId] = getCombinedReceiptRoot(
+                startBlock,
+                endBlock
+            );
+
+            emit CommitBatch(
+                batchInfo.startBlock,
+                batchInfo.endBlock,
+                block.number,
+                batchId,
+                batchInfo.batchHash
+            );
+        }
+    }
+
+    /// @inheritdoc ITwineChain
+    function finalizeBatch(
+        bytes memory publicInputForExecution,
+        bytes memory executionProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        StoredBatchInfo memory batchInfo = _decodeBatchInfo(
+            publicInputForExecution
+        );
+        require(
+            batchInfo.startBlock == lastFinalizedBlockNumber + 1,
+            "Batch finalization must be sequential"
         );
 
-        // remove first (depositTransactionsCommitted) elements from depositQueue
-        IL1MessageQueue(messageQueue).popFirstNDepositElement( depositTransactionsCommitted
+        bytes32 batchId = getBatchId(batchInfo.startBlock, batchInfo.endBlock);
+        require(
+            batchInfo.batchHash == committedBatches[batchId].batchHash,
+            "Batch hash should be same"
         );
 
-        // subtract the finalized deposits transactions
-        depositTransactionsCommitted = 0;
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                executionVKey,
+                publicInputForExecution,
+                executionProof
+            );
+        }
 
-        // remove first (forcedTransactionsCommitted) elements from withdrawQueue
-        IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(forcedTransactionsCommitted);
+        lastFinalizedBlockNumber = batchInfo.endBlock;
+        finalizedBatchStatus[batchId] = true;
 
-        // subtract the finalized forced transactions
-        forcedTransactionsCommitted = 0;
+        emit FinalizedBatch(
+            batchInfo.startBlock,
+            batchInfo.endBlock,
+            block.number,
+            batchId,
+            batchInfo.batchHash
+        );
+    }
 
-        finalizedStateRoots[batchNumber] = committedBatches[batchNumber] .stateRoot;
+    /// @inheritdoc ITwineChain
+    function commitAndFinalizeTransactions(
+        bytes memory transactionInfo,
+        bytes memory inclusionProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        // Decode the first 40 bytes for transaction info
+        bytes memory transactionDataBytes = new bytes(48);
+        for (uint256 i = 0; i < 48; i++) {
+            transactionDataBytes[i] = transactionInfo[i];
+        }
+        TransactionInfo memory transactionData = _decodeTransactionInfo(
+            transactionDataBytes
+        );
 
-        lastFinalizedBatchNumber = batchNumber;
+        require(
+            lastCommittedBlockNumber >= transactionData.endBlock,
+            "The required block has not yet been committed"
+        );
+        bytes32 batchId = getBatchId(
+            transactionData.startBlock,
+            transactionData.endBlock
+        );
+
+        require(
+            isBatchFinalized(batchId),
+            "Batch needs to be finalized first."
+        );
+
+        transactionData.receiptRoot = finalizedCombinedReceiptRoot[batchId];
+
+        // Decode the next 120 bytes for transaction information for ethererum
+        bytes memory chainDataBytes = new bytes(120);
+        for (uint256 i = 0; i < 120; i++) {
+            chainDataBytes[i] = transactionInfo[48 + i];
+        }
+
+        ChainCommitment memory chainData = _decodeChainCommitment(
+            chainDataBytes
+        );
+
+        require(
+            chainData.depositCount <=
+                IL1MessageQueue(messageQueue)
+                    .nextCrossDomainDepositMessageIndex(),
+            "Invalid deposit count"
+        );
+        require(
+            chainData.withdrawCount <=
+                IL1MessageQueue(messageQueue)
+                    .nextCrossDomainWithdrawalMessageIndex(),
+            "Invalid withdraw count"
+        );
+
+        //  Calculating deposit and withdraw rolling hash from the data in queue
+        uint64 depositCount = chainData.depositCount;
+        bytes32 depositRollingHash = _calculateRollingHash(
+            TransactionType.deposit,
+            depositCount
+        );
+
+        require(
+            depositRollingHash == chainData.depositRollingHash,
+            "calculated depositRollingHash is not equal with transaction info"
+        );
+
+        uint64 withdrawCount = chainData.withdrawCount;
+        bytes32 withdrawRollingHash = _calculateRollingHash(
+            TransactionType.withdraw,
+            withdrawCount
+        );
+
+        require(
+            withdrawRollingHash == chainData.withdrawRollingHash,
+            "calculated withdrawRollingHash is not equal with transaction info"
+        );
+
+        uint64 lzTransactionCount = chainData.lzTransactionCount;
+        bytes32 lzTransactionRollingHash = _calculateRollingHash(
+            TransactionType.layerZero,
+            lzTransactionCount
+        );
+
+        // Replacing the deposit and withdraw Rolling hash
+        chainData.depositRollingHash = depositRollingHash;
+        chainData.withdrawRollingHash = withdrawRollingHash;
+        chainData.lzTransactionRollingHash = lzTransactionRollingHash;
+
+        bytes
+            memory publicInputForInclusion = _calculatePublicInputForInclusion(
+                transactionInfo,
+                chainData
+            );
+
+        bytes memory inclusionProofWithSelector = prependBytes(inclusionProof);
+
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                inclusionVKey,
+                publicInputForInclusion,
+                inclusionProofWithSelector
+            );
+        }
+
+        // Move the withdrawal that are ready for execution to execution queue
+        for (uint256 i = 0; i < withdrawCount; i++) {
+            IL1MessageQueue.MessageData memory forcedMessage = IL1MessageQueue(
+                messageQueue
+            ).getCrossDomainWithdrawalMessage(i);
+
+            IL1MessageQueue(messageQueue).appendExecutionMessage(
+                forcedMessage.nonce,
+                forcedMessage.chainId,
+                forcedMessage.blockNumber,
+                forcedMessage.l1Token,
+                forcedMessage.l2Token,
+                forcedMessage.fromAddress,
+                forcedMessage.toAddress,
+                forcedMessage.amount
+            );
+        }
+
+        // remove deposits, and withdrawals  messages from queue
+        IL1MessageQueue(messageQueue).popFirstNDepositElement(depositCount);
+        IL1MessageQueue(messageQueue).popFirstNWithdrawalElement(withdrawCount);
+
+        lastFinalizedTransactionsBlockNumber = transactionData.endBlock;
+
+        emit FinalizedTransaction(
+            transactionData.startBlock,
+            transactionData.endBlock,
+            block.number,
+            batchId
+        );
+    }
+
+    function finalizeWithdrawal(
+        FinalizeWithdrawalInput memory withdrawalInputs
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(
+            isBatchFinalized(withdrawalInputs.publicInput.batchId),
+            "Batch needs to be finalized first."
+        );
+
+        require(
+            finalizedCombinedReceiptRoot[
+                withdrawalInputs.publicInput.batchId
+            ] == withdrawalInputs.publicInput.receiptRoot,
+            "Receipt roots must be equal."
+        );
+
+        if (withdrawalInputs.publicInput.isForced == 1) {
+            require(
+                IL1MessageQueue(messageQueue).isNonceInExecutionQueue(
+                    withdrawalInputs.publicInput.nonce
+                ) == true,
+                "Nonce not present in execution message buffer"
+            );
+        }
+
+        bytes memory replacedPublicInput = abi.encodePacked(
+            withdrawalInputs.publicInput.chainId,
+            withdrawalInputs.publicInput.batchId,
+            withdrawalInputs.publicInput.nonce,
+            withdrawalInputs.publicInput.isForced,
+            withdrawalInputs.publicInput.receiptRoot,
+            withdrawalInputs.publicInput.l1ReceiverAddress,
+            withdrawalInputs.publicInput.l1TokenAddress,
+            withdrawalInputs.publicInput.l2TokenAddress,
+            withdrawalInputs.publicInput.amount
+        );
+        require(
+            !isWithdrawExecuted[keccak256(replacedPublicInput)],
+            "Withdrawal already executed"
+        );
+        bytes memory withdrawalProofWithSelector = prependBytes(
+            withdrawalInputs.inclusionProof
+        );
+
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                withdrawalVKey,
+                replacedPublicInput,
+                withdrawalProofWithSelector
+            );
+        }
+
+        if (
+            withdrawalInputs.publicInput.l1TokenAddress.stringToAddress() ==
+            address(0)
+        ) {
+            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+                withdrawalInputs.publicInput.l1TokenAddress,
+                withdrawalInputs.publicInput.l2TokenAddress,
+                withdrawalInputs.publicInput.l1ReceiverAddress,
+                withdrawalInputs.publicInput.amount,
+                withdrawalInputs.publicInput.nonce
+            );
+        } else {
+            // ERC20 withdrawal
+            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
+                withdrawalInputs.publicInput.l1TokenAddress,
+                withdrawalInputs.publicInput.l2TokenAddress,
+                withdrawalInputs.publicInput.l1ReceiverAddress,
+                withdrawalInputs.publicInput.amount,
+                withdrawalInputs.publicInput.nonce
+            );
+        }
+
+        if (withdrawalInputs.publicInput.isForced == 1) {
+            IL1MessageQueue(messageQueue).removeExecutionMessage(
+                withdrawalInputs.publicInput.nonce
+            );
+        }
+
+        isWithdrawExecuted[keccak256(replacedPublicInput)] = true;
     }
 
     /**********************
      * Internal Functions *
      **********************/
 
-    function _commitBatch(
-        CommitBatchInfo calldata _newBatchData
-    ) internal returns (StoredBatchInfo memory) {
-        CommitmentData memory commitmentData = _calculateProofInput( _newBatchData);
+    function _decodeTransactionInfo(
+        bytes memory transactionDataBytes
+    ) internal pure returns (TransactionInfo memory) {
+        uint64 startBlock;
+        uint64 endBlock;
+        bytes32 receiptRoot;
+
+        assembly {
+            startBlock := mload(add(transactionDataBytes, 8))
+            endBlock := mload(add(transactionDataBytes, 16))
+            receiptRoot := mload(add(transactionDataBytes, 48))
+        }
+
         return
-            StoredBatchInfo({
-                batchNumber: _newBatchData.batchNumber,
-                batchHash: _newBatchData.batchHash,
-                previousStateRoot: _newBatchData.previousStateRoot,
-                stateRoot: _newBatchData.stateRoot,
-                transactionRoot: _newBatchData.transactionRoot,
-                receiptRoot: _newBatchData.receiptRoot,
-                depositTransactionHashes: commitmentData ._depositTransactionHash,
-                forcedTransactionHashes: commitmentData._forcedTransactionHash,
-                lzDvnTransactionHashes: commitmentData._lzDvnTransactionHash,
-                otherTransactionHashes: commitmentData._otherTransactionHash,
-                publicInput: commitmentData._proofInput
+            TransactionInfo({
+                startBlock: startBlock,
+                endBlock: endBlock,
+                receiptRoot: receiptRoot
             });
     }
 
-    function _calculateProofInput(CommitBatchInfo memory _newBatchData) internal returns (CommitmentData memory) {
-        bytes memory proofInput;
-        bytes32[] memory depositTransactionHash;
-        bytes32[] memory forcedTransactionHash;
-        bytes32[] memory lzDvnTransactionHash;
-        bytes32[] memory otherTransactionHash;
+    function _decodeChainCommitment(
+        bytes memory chainCommitment
+    ) internal pure returns (ChainCommitment memory) {
+        uint64 depositCount;
+        bytes32 depositRollingHash;
+        uint64 withdrawCount;
+        bytes32 withdrawRollingHash;
+        uint64 lzTransactionCount;
+        bytes32 lzTransactionRollingHash;
 
-        proofInput = abi.encodePacked(
-            _newBatchData.batchNumber,
-            _newBatchData.batchHash,
-            _newBatchData.previousStateRoot,
-            _newBatchData.stateRoot,
-            _newBatchData.transactionRoot,
-            _newBatchData.receiptRoot
-        );
-        if (_newBatchData.depositTransactionObject.length != 0) {
-            depositTransactionHash = _handleDeposit(
-                _newBatchData.depositTransactionObject
-            );
-            proofInput = abi.encodePacked(proofInput, depositTransactionHash);
+        assembly {
+            depositCount := mload(add(chainCommitment, 8))
+            depositRollingHash := mload(add(chainCommitment, 40))
+            withdrawCount := mload(add(chainCommitment, 48))
+            withdrawRollingHash := mload(add(chainCommitment, 80))
+            lzTransactionCount := mload(add(chainCommitment, 88))
+            lzTransactionRollingHash := mload(add(chainCommitment, 120))
         }
-        proofInput = abi.encodePacked(
-            proofInput,
-            uint32(_newBatchData.forcedTransactionObjects.length)
-        );
-        if (_newBatchData.forcedTransactionObjects.length != 0) {
-            forcedTransactionHash = _handleForcedTransaction(
-                _newBatchData.forcedTransactionObjects
+
+        return
+            ChainCommitment({
+                depositCount: depositCount,
+                depositRollingHash: depositRollingHash,
+                withdrawCount: withdrawCount,
+                withdrawRollingHash: withdrawRollingHash,
+                lzTransactionCount: lzTransactionCount,
+                lzTransactionRollingHash: lzTransactionRollingHash
+            });
+    }
+
+    function _decodeBatchInfo(
+        bytes memory batchPublicValues
+    ) internal pure returns (StoredBatchInfo memory) {
+        uint64 startBlock;
+        uint64 endBlock;
+        bytes32 batchHash;
+
+        assembly {
+            startBlock := mload(add(batchPublicValues, 8))
+            endBlock := mload(add(batchPublicValues, 16))
+            batchHash := mload(add(batchPublicValues, 48))
+        }
+
+        return
+            StoredBatchInfo({
+                startBlock: startBlock,
+                endBlock: endBlock,
+                batchHash: batchHash
+            });
+    }
+
+    function _calculateBatchHash(
+        bytes32 batchId
+    ) internal view returns (bytes32) {
+        bytes memory calculatedBatchHash;
+        StoredBlockInfo[] memory blockInfo = commitedBlockInfo[batchId];
+        uint256 len = blockInfo.length;
+        for (uint256 i = 0; i < len; i++) {
+            calculatedBatchHash = abi.encodePacked(
+                calculatedBatchHash,
+                abi.encodePacked(
+                    blockInfo[i].previousHash,
+                    blockInfo[i].blockHash,
+                    blockInfo[i].transactionRoot,
+                    blockInfo[i].receiptRoot
+                )
             );
-            for (uint256 i = 0; i < forcedTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(
-                    proofInput,
-                    forcedTransactionHash[i]
-                );
+        }
+        return keccak256(calculatedBatchHash);
+    }
+
+    function _calculateRollingHash(
+        TransactionType transactionType,
+        uint64 count
+    ) internal view returns (bytes32) {
+        bytes memory calculatedRollingHash;
+
+        IL1MessageQueue.MessageData[]
+            memory selectedMessages = new IL1MessageQueue.MessageData[](count);
+
+        if (transactionType == TransactionType.deposit) {
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainDepositMessage(i);
+            }
+        } else if (transactionType == TransactionType.withdraw) {
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainWithdrawalMessage(i);
+            }
+        } else {
+            for (uint64 i = 0; i < count; i++) {
+                selectedMessages[i] = IL1MessageQueue(messageQueue)
+                    .getCrossDomainLayerZeroMessage(i);
             }
         }
+        uint256 len = selectedMessages.length;
 
-        if (_newBatchData.lzDvnTransactions.length != 0) {
-            lzDvnTransactionHash = _handleLzTransaction(
-                _newBatchData.lzDvnTransactions);
-            for (uint256 i = 0; i < lzDvnTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(
-                    proofInput,
-                    lzDvnTransactionHash[i]
-                );
-            }
-        }
-
-        // Append each `otherTransactionHash` element
-        if (_newBatchData.otherTransactions.length != 0) {
-            otherTransactionHash = _handleOtherTransaction(   _newBatchData.otherTransactions );
-
-            for (uint256 i = 0; i < otherTransactionHash.length; i++) {
-                proofInput = abi.encodePacked(
-                    proofInput,
-                    otherTransactionHash[i]
-                );
-            }
-        }
-
-        CommitmentData memory commitData = CommitmentData({
-            _proofInput: proofInput,
-            _depositTransactionHash: depositTransactionHash,
-            _forcedTransactionHash: forcedTransactionHash,
-            _lzDvnTransactionHash: lzDvnTransactionHash,
-            _otherTransactionHash: otherTransactionHash
-        });
-
-        return (commitData);
-    }
-
-    function _handleDeposit(
-        TransactionObject[] memory _depositTransactionObject
-    ) internal returns (bytes32[] memory) {
-        bytes32[] memory depositTransactionHash = new bytes32[](
-            _depositTransactionObject.length
-        );
-
-        // For individual deposit transaction object
-        for (uint256 i = 0; i < _depositTransactionObject.length; i++) {
-            //             (bytes memory trimmedInput,bytes memory removedInput) = _trimFourBytes(_depositTransactionObject[i].input);
-            //             // Array that contains RLP encoded Receipt Object for Individual deposit object
-            // ( uint _chainId, bytes memory _consensusProof , bytes[] memory encodedReceiptObjects,bytes[] memory proofs) = abi.decode(trimmedInput, (uint, bytes, bytes[], bytes[]));            // Extract the datas from the log
-            // for(uint256 j = 0; j < encodedReceiptObjects.length; j++){
-            //     Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects[j]));
-            //     IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainDepositMessage(depositTransactionsCommitted);
-            //         for(uint256 k = 0; k < decodedReceipt.logs.length; k++){
-            //             if(decodedReceipt.logs[k].logAddress == dataFromQueue.messageQueueAddress) {
-            //                 decodedReceipt.logs[k].topics[1] = dataFromQueue.fromAddressHash;
-            //                 decodedReceipt.logs[k].data =  dataFromQueue.dataValuesByte;
-            //                  ++ depositTransactionsCommitted;
-            //             }
-            //         }
-            //     encodedReceiptObjects[j]= getReceiptObjectRLP(decodedReceipt);
-            // }
-            //             _depositTransactionObject[i].input = prependBytes(removedInput,abi.encode(_chainId,_consensusProof,encodedReceiptObjects,proofs));
-            depositTransactionHash[i] = getTransactinObjectRLP(
-                _depositTransactionObject[i]
+        for (uint64 i = 0; i < len; i++) {
+            calculatedRollingHash = abi.encodePacked(
+                calculatedRollingHash,
+                abi.encodePacked(
+                    selectedMessages[i].nonce,
+                    selectedMessages[i].chainId,
+                    selectedMessages[i].blockNumber,
+                    selectedMessages[i].fromAddress,
+                    selectedMessages[i].toAddress,
+                    selectedMessages[i].l1Token,
+                    selectedMessages[i].l2Token,
+                    selectedMessages[i].amount
+                )
             );
         }
-        return depositTransactionHash;
+        return keccak256(calculatedRollingHash);
     }
 
-    function _handleForcedTransaction(TransactionObject[] memory _forcedTransactionObject ) internal returns (bytes32[] memory) {
-        bytes32[] memory forcedTransactionHash = new bytes32[](
-            _forcedTransactionObject.length
-        );
-        // For individual forced transaction object
-        for (uint256 i = 0; i < _forcedTransactionObject.length; i++) {
-            // Types.ReceiptWithoutTxType memory forcedWithdrawalReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(_forcedTransactionObject[i].input));
-            // IL1MessageQueue.MessageData memory dataFromQueue = IL1MessageQueue(messageQueue).getCrossDomainWithdrawalMessage(forcedTransactionsCommitted);
-            // for (uint256 j=0;j<forcedWithdrawalReceipt.logs.length;j++){
-            //     if(forcedWithdrawalReceipt.logs[j].logAddress == dataFromQueue.messageQueueAddress) {
-            //                 forcedWithdrawalReceipt.logs[j].topics[1] = dataFromQueue.fromAddressHash;
-            //                 forcedWithdrawalReceipt.logs[j].data =  dataFromQueue.dataValuesByte;
-            //                 ++ forcedTransactionsCommitted;
-            //     }
-            // }
-            // _forcedTransactionObject[i].input = getReceiptObjectRLP(forcedWithdrawalReceipt);
-            forcedTransactionHash[i] = getTransactinObjectRLP(
-                (_forcedTransactionObject[i])
-            );
-        }
-        return forcedTransactionHash;
-    }
+    function prependBytes(
+        bytes memory originalData
+    ) public view returns (bytes memory) {
+        bytes4 prefix = bytes4(SP1Verifier(verifier).VERIFIER_HASH());
 
-    function _handleOtherTransaction( TransactionObject[] memory _otherTransactionObject ) internal pure returns (bytes32[] memory) {
-        bytes32[] memory otherTransactionHash = new bytes32[](
-            _otherTransactionObject.length
-        );
-        for (uint256 i = 0; i < _otherTransactionObject.length; i++) {
-            otherTransactionHash[i] = getTransactinObjectRLP(
-                (_otherTransactionObject[i])
-            );
-        }
-        return otherTransactionHash;
-    }
-
-    function _handleLzTransaction(TransactionObject[] memory _lzDvnTransactionObject) internal returns (bytes32[] memory) {
-        bytes32[] memory lzDvnTransactionHash = new bytes32[](_lzDvnTransactionObject.length);
-        for (uint256 i = 0; i < _lzDvnTransactionObject.length; i++) {
-            (
-                bytes memory trimmedInput,
-            ) = _trimFourBytes(_lzDvnTransactionObject[i].input);
-            (uint256 _chainId, bytes memory encodedReceiptObjects, ) = abi.decode(
-                trimmedInput,
-                (uint256, bytes, bytes)
-            );
-                Types.ReceiptWithoutTxType memory decodedReceipt = RLPDecodeStruct.decodeReceiptObject(_trimOneByte(encodedReceiptObjects));
-                for (uint256 j = 0; j < decodedReceipt.logs.length; j++) {
-                    if (decodedReceipt.logs[j].logAddress == chainsDvn[_chainId]) {uint32 endPointId = uint32(uint256(decodedReceipt.logs[j].topics[1]));
-                        if (endPointId == eId) {
-                            LzPayloadData memory payloadData = LzPayloadData({
-                                dstEid: endPointId,
-                                otherData: abi.encode(
-                                    endPointId,
-                                    decodedReceipt.logs[j].data
-                                )
-                            });
-                            lzPayloadQueue.push(payloadData);
-                        }
-                    }
-                }
-            lzDvnTransactionHash[i] = getTransactinObjectRLP(
-                (_lzDvnTransactionObject[i])
-            );
-        }
-        return lzDvnTransactionHash;
-    }
-
-    function verifyPayload(uint256 _batchNumber, uint256 _payLoadQueueIndex ) external {
-        require(isBatchFinalized(_batchNumber), "Batch is not Finalized");
-        require(
-            _payLoadQueueIndex <= lzPayloadQueue.length,
-            "Index out of bounds"
-        );
-        bool success = ITwineDVN(dvnAddress).validatePayload(
-            lzPayloadQueue[_payLoadQueueIndex].otherData
-        );
-        if (success) {
-            deleteSpecificPosition(_payLoadQueueIndex);
-        }
-    }
-    function prependBytes(bytes memory prefix, bytes memory originalData ) public pure returns (bytes memory) {
-        require(prefix.length == 4, "Prefix must be exactly 4 bytes");
         bytes memory result = new bytes(prefix.length + originalData.length);
 
         for (uint256 i = 0; i < prefix.length; i++) {
@@ -428,45 +716,81 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         return result;
     }
 
-    function _trimFourBytes( bytes memory input)
-        internal
-        pure
-        returns (bytes memory trimmedData, bytes memory removedBytes)
-    {
-        removedBytes = new bytes(4);
-        for (uint256 i = 0; i < 4; i++) {
-            removedBytes[i] = input[i];
-        }
-        trimmedData = new bytes(input.length - 4);
-        for (uint256 i = 4; i < input.length; i++) {
-            trimmedData[i - 4] = input[i];
-        }
+    function getBatchId(
+        uint64 startBlock,
+        uint64 endBlock
+    ) internal pure returns (bytes32) {
+        bytes memory batchId = abi.encodePacked(startBlock, endBlock);
+        return keccak256(batchId);
     }
 
-    function _trimOneByte( bytes memory input) internal pure returns (bytes memory) {
-        bytes memory trimmedData = new bytes(input.length - 1);
-        for (uint256 i = 1; i < input.length; i++) {
-            trimmedData[i - 1] = input[i];
+    function getCombinedReceiptRoot(
+        uint64 startBlock,
+        uint64 endBlock
+    ) internal view returns (bytes32) {
+        bytes32 batchId = getBatchId(startBlock, endBlock);
+        bytes memory combinedReceiptRoot;
+        StoredBlockInfo[] memory blockInfo = commitedBlockInfo[batchId];
+        uint256 len = blockInfo.length;
+        for (uint256 i; i < len; i++) {
+            combinedReceiptRoot = abi.encodePacked(
+                combinedReceiptRoot,
+                abi.encodePacked(blockInfo[i].receiptRoot)
+            );
         }
-        return trimmedData;
+
+        return keccak256(combinedReceiptRoot);
     }
 
-    function getReceiptObjectRLP( Types.ReceiptWithoutTxType memory _ro ) public pure returns (bytes memory) {
-        Types.ReceiptObject memory ro = Types.ReceiptObject({
-            txType: Types.TxType.Eip1559,
-            success: _ro.success,
-            cumulativeGasUsed: _ro.cumulativeGasUsed,
-            bloom: _ro.bloom,
-            logs: _ro.logs
-        });
-        return abi.encodePacked(ro.txType, ro.encodeReceiptObject());
+    function _calculatePublicInputForInclusion(
+        bytes memory transactionInfo,
+        ChainCommitment memory chainData
+    ) internal pure returns (bytes memory) {
+        bytes memory prefix = slice(transactionInfo, 0, 40);
+        bytes memory suffix = slice(
+            transactionInfo,
+            160,
+            transactionInfo.length - 160
+        );
+
+        bytes memory replacement = abi.encodePacked(
+            chainData.depositCount,
+            chainData.depositRollingHash,
+            chainData.withdrawCount,
+            chainData.withdrawRollingHash,
+            chainData.lzTransactionCount,
+            chainData.lzTransactionRollingHash
+        );
+
+        // Concatenate prefix + chainData + suffix
+        return abi.encodePacked(prefix, replacement, suffix);
     }
-    function deleteSpecificPosition(uint _index) public {
-        require(lzPayloadQueue.length > 0, "Queue is empty");
-        require(_index < lzPayloadQueue.length, "Index out of bounds");
-        for (uint i = _index; i < lzPayloadQueue.length - 1; i++) {
-            lzPayloadQueue[i] = lzPayloadQueue[i + 1];
+
+    function slice(
+        bytes memory data,
+        uint256 start,
+        uint256 length
+    ) internal pure returns (bytes memory) {
+        require(data.length >= start + length, "Invalid slice range");
+
+        bytes memory result = new bytes(length);
+
+        assembly {
+            // Get the pointer to the result's data
+            let resultPtr := add(result, 0x20)
+            // Get the pointer to the start position in the input data
+            let dataPtr := add(add(data, 0x20), start)
+
+            // Copy the data
+            for {
+                let i := 0
+            } lt(i, length) {
+                i := add(i, 0x20)
+            } {
+                mstore(add(resultPtr, i), mload(add(dataPtr, i)))
+            }
         }
-        lzPayloadQueue.pop();
+
+        return result;
     }
 }

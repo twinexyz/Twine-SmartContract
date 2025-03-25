@@ -7,6 +7,7 @@ build_info = true
 extra_output = ["storageLayout"]
 ffi = true
 ast = true
+gas_reports = ["*"]
 
 
 fs_permissions = [{ access = "read-write", path = "./" },

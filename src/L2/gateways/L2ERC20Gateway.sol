@@ -9,25 +9,25 @@ abstract contract L2ERC20Gateway is TwineL2GatewayBase, IL2ERC20Gateway {
     
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit
+        address l2token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit
     ) external payable override nonReentrant {
-        _withdraw(_token, _to, _amount,_chainId,_gasLimit, new bytes(0));
+        _withdraw(l2token, to, amount,chainId,gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20AndCall(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit,
-        bytes calldata _data
+        address l2Token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit,
+        bytes calldata data
     ) external payable override nonReentrant {
-        _withdraw(_token, _to, _amount,_chainId,_gasLimit, _data);
+        _withdraw(l2Token, to, amount,chainId,gasLimit, data);
     }
 
     /**********************
@@ -35,11 +35,11 @@ abstract contract L2ERC20Gateway is TwineL2GatewayBase, IL2ERC20Gateway {
      **********************/
 
     function _withdraw(
-        address _token,
-        string memory _to,
-        uint256 _amount,
-        uint256 _chainId,
-        uint256 _gasLimit,
-        bytes memory _data
+        address token,
+        string memory to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit,
+        bytes memory data
     ) internal virtual;
 }

@@ -25,9 +25,10 @@ abstract contract TwineL2MessengerBase is
     mapping(uint256 => address) counterpartMessenger;
 
     //chainId=> L1Gateway
-    mapping(uint256=>mapping(address => address)) public  tokenCounterpartGateWay;
-    
-    //count for the messages 
+    mapping(uint256 => mapping(string => string))
+        public tokenCounterpartGateWay;
+
+    //count for the messages
     uint256 public messageCount;
 
     /**********************
@@ -59,18 +60,23 @@ abstract contract TwineL2MessengerBase is
         roleManager = _roleManagerAddress;
     }
 
+    /// @notice sets the rolemanager contract address
     function setRoleManager(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 
+    /// @notice sets the fee vault address
     function setFeeVault(
-        address _freeVault
+        address _feeVault
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        feeVault = _freeVault;
+        require(_feeVault != address(0),"Address can't be zero");
+        feeVault = _feeVault;
     }
 
+    /// @notice sets the counter part messenger
     function setCounterpartMessenger(
         uint256[] memory _chainId,
         address[] memory _counterpartMessenger
@@ -79,9 +85,10 @@ abstract contract TwineL2MessengerBase is
             _chainId.length == _counterpartMessenger.length,
             "length mismatch"
         );
-        for (uint256 i = 0; i < _chainId.length; i++) {
+        uint256 len = _chainId.length;
+        for (uint256 i = 0; i < len; i++) {
             require(
-                _chainId[i] != 0 && _counterpartMessenger[i] != address(0),
+               _counterpartMessenger[i] != address(0),
                 " Value cann't be zero"
             );
             address _oldCounterPart = counterpartMessenger[_chainId[i]];
@@ -91,15 +98,6 @@ abstract contract TwineL2MessengerBase is
                 _oldCounterPart,
                 _counterpartMessenger[i]
             );
-        }
-    }
-    function setCounterpartGateway(uint256[] memory _chainId,address[]memory _l1TokenAddress,address[] memory _counterpartGateWay) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_chainId.length == _counterpartGateWay.length && _chainId.length == _l1TokenAddress.length, "length mismatch");
-        for (uint256 i = 0; i < _chainId.length; i++) {
-            require(_counterpartGateWay[i] != address(0)," Value cann't be zero");
-            address _oldCounterPart = tokenCounterpartGateWay[_chainId[i]][_l1TokenAddress[i]];
-            tokenCounterpartGateWay[_chainId[i]][_l1TokenAddress[i]] = _counterpartGateWay[i];
-            emit SetCounterpartGateway(_chainId[i], _oldCounterPart, _counterpartGateWay[i]);
         }
     }
 

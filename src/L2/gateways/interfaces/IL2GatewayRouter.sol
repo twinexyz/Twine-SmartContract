@@ -4,9 +4,8 @@ pragma solidity ^0.8.24;
 
 import {IL2ETHGateway} from "./IL2ETHGateway.sol";
 import {IL2ERC20Gateway} from "./IL2ERC20Gateway.sol";
-import {IL2XERC20Gateway} from "./IL2XERC20Gateway.sol";
 
-interface IL2GatewayRouter is IL2ETHGateway, IL2ERC20Gateway,IL2XERC20Gateway {
+interface IL2GatewayRouter is IL2ETHGateway, IL2ERC20Gateway {
     /**********
      * Events *
      **********/
@@ -33,17 +32,23 @@ interface IL2GatewayRouter is IL2ETHGateway, IL2ERC20Gateway,IL2XERC20Gateway {
 
     /// @notice Update the address of ETH gateway contract.
     /// @dev This function should only be called by contract owner.
-    /// @param _newEthGateway The address to update.
-    function setETHGateway(address _newEthGateway) external;
+    /// @param newEthGateway The address to update.
+    function setETHGateway(address newEthGateway) external;
 
     /// @notice Update the address of default ERC20 gateway contract.
     /// @dev This function should only be called by contract owner.
-    /// @param _newDefaultERC20Gateway The address to update.
-    function setDefaultERC20Gateway(address _newDefaultERC20Gateway) external;
+    /// @param newDefaultERC20Gateway The address to update.
+    function setDefaultERC20Gateway(address newDefaultERC20Gateway) external;
 
     /// @notice Update the mapping from token address to gateway address.
     /// @dev This function should only be called by contract owner.
-    /// @param _tokens The list of addresses of tokens to update.
-    /// @param _gateways The list of addresses of gateways to update.
-    function setERC20Gateway(address[] calldata _tokens, address[] calldata _gateways) external;
+    /// @param tokens The list of addresses of tokens to update.
+    /// @param gateways The list of addresses of gateways to update.
+    function setERC20Gateway(address[] calldata tokens, address[] calldata gateways) external;
+
+     function updateTokenMapping(
+        uint256 chainId,
+        address l2Token,
+        string memory l1Token
+    ) external override(IL2ETHGateway, IL2ERC20Gateway);
 }
