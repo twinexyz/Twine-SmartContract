@@ -115,17 +115,20 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        (bool success, bytes memory output) = consensusPrecompileAddress.call(
-            precompileInput
-        );
-        require(success, "Consensus verification failed!");
-
-        SolanaVerifierPrecompileOutput memory verifierOutput = abi.decode(
-            output,
-            (SolanaVerifierPrecompileOutput)
-        );
-
+        bytes memory output = precompileInput;
+        bool success;
+        
         if (!skipVerification) {
+            (success, output) = consensusPrecompileAddress.call(
+                precompileInput
+            );
+            require(success, "Consensus verification failed!");
+
+            SolanaVerifierPrecompileOutput memory verifierOutput = abi.decode(
+                output,
+                (SolanaVerifierPrecompileOutput)
+            );
+
             ISP1Verifier(sp1Verifier).verifyProof(
                 vKeys[chainId],
                 verifierOutput.publicValue,
