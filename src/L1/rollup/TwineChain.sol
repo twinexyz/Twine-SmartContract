@@ -481,18 +481,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         FinalizeWithdrawalInput memory withdrawalInputs
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(
-            isBatchFinalized(withdrawalInputs.publicInput.batchId),
+            withdrawalInputs.publicInput.blockNumber <= lastFinalizedBlockNumber,
             "Batch needs to be finalized first."
         );
 
-        require(
-            finalizedCombinedReceiptRoot[
-                withdrawalInputs.publicInput.batchId
-            ] == withdrawalInputs.publicInput.receiptRoot,
-            "Receipt roots must be equal."
-        );
-
-        if (withdrawalInputs.publicInput.isForced == 1) {
+        if (withdrawalInputs.publicInput.isForcedWithdrawal == 1) {
             require(
                 IL1MessageQueue(messageQueue).isNonceInExecutionQueue(
                     withdrawalInputs.publicInput.nonce
@@ -503,13 +496,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         bytes memory replacedPublicInput = abi.encodePacked(
             withdrawalInputs.publicInput.chainId,
-            withdrawalInputs.publicInput.batchId,
+            withdrawalInputs.publicInput.blockNumber,
             withdrawalInputs.publicInput.nonce,
-            withdrawalInputs.publicInput.isForced,
             withdrawalInputs.publicInput.receiptRoot,
             withdrawalInputs.publicInput.l1ReceiverAddress,
             withdrawalInputs.publicInput.l1TokenAddress,
-            withdrawalInputs.publicInput.l2TokenAddress,
             withdrawalInputs.publicInput.amount
         );
         require(
@@ -550,7 +541,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             );
         }
 
-        if (withdrawalInputs.publicInput.isForced == 1) {
+        if (withdrawalInputs.publicInput.isForcedWithdrawal == 1) {
             IL1MessageQueue(messageQueue).removeExecutionMessage(
                 withdrawalInputs.publicInput.nonce
             );

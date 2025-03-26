@@ -7,7 +7,7 @@ DEFAULT_FORK_URL="http://127.0.0.1:8545"
 
 # Prompt for commitment data
 read -p "Chain ID: " CHAIN_ID
-read -p "Batch ID: " BATCH_NUMBER
+read -p "Block Number: (Of Twine) " BLOCK_NUMBER
 read -p "Nonce: " NONCE
 read -p "Is Forced: " IS_FORCED
 read -p "Receipt Root: " RECEIPT_ROOT
@@ -20,7 +20,7 @@ read -p "Inclusion Proof: " INCLUSION_PROOF
 # export env variables:
 export PRIVATE_KEY
 export CHAIN_ID
-export BATCH_NUMBER
+export BLOCK_NUMBER
 export NONCE
 export IS_FORCED
 export RECEIPT_ROOT
@@ -34,7 +34,7 @@ export INCLUSION_PROOF
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:finalizeWithdrawal \
     --fork-url $DEFAULT_FORK_URL  \
     --broadcast \
-    -- --env "CHAIN_ID=$CHAIN_ID" --env "BATCH_NUMBER=$BATCH_NUMBER" --env "NONCE=$NONCE" --env "IS_FORCED=$IS_FORCED" \
+    -- --env "CHAIN_ID=$CHAIN_ID" --env "BATCH_NUMBER=$BLOCK_NUMBER" --env "NONCE=$NONCE" --env "IS_FORCED=$IS_FORCED" \
     --env "RECEIPT_ROOT=$RECEIPT_ROOT" --env "L1_RECEIVER_ADDRESS=$L1_RECEIVER_ADDRESS" --env "L1_TOKEN_ADDRESS=$L1_TOKEN_ADDRESS" \
     --env "L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS" --env "AMOUNT=$AMOUNT"  --env "PRIVATE_KEY=$PRIVATE_KEY" \
     --env "INCLUSION_PROOF=$INCLUSION_PROOF"

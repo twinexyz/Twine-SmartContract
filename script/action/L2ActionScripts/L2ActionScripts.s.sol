@@ -40,7 +40,6 @@ contract WithdrawETH is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(deployerPrivateKey);
         console.log("Messenger balance before deposit", address(l2TwineMessenger).balance);
 
         vm.startBroadcast(deployerPrivateKey);
