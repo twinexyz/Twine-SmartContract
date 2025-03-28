@@ -249,23 +249,4 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         }
         emit ConsensusVerified(consensusProof);
     }
-
-    /// @notice decode the withdraw details
-    function _decodeWithdrawalDetails(
-        bytes memory output
-    ) internal pure returns (WithdrawalDetails memory) {
-        (
-            uint256 l1Nonce,
-            uint256 amount,
-            address l2Token,
-            string memory l1Token,
-            string memory to,
-            string memory from
-        ) = abi.decode(
-                output,
-                (uint256, uint256, address, string, string, string)
-            );
-
-        return WithdrawalDetails(amount, l1Nonce, l2Token, to, l1Token, from);
-    }
 }
