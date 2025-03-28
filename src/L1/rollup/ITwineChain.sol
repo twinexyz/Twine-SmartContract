@@ -16,6 +16,7 @@ interface ITwineChain {
     event CommitBatch(
         uint64 indexed startBlock,
         uint64 indexed endBlock,
+        uint64 chainId,
         uint256 blockNumber,
         bytes32 indexed batchId,
         bytes32 batchHash
@@ -34,6 +35,7 @@ interface ITwineChain {
     event FinalizedBatch(
         uint64 indexed startBlock,
         uint64 indexed endBlock,
+        uint64 chainId,
         uint256 blockNumber,
         bytes32 indexed batchId,
         bytes32 batchHash
@@ -46,6 +48,9 @@ interface ITwineChain {
     event FinalizedTransaction(
         uint64 indexed startBlock,
         uint64 indexed endBlock,
+        uint64 chainId,
+        uint64 depositCount,
+        uint64 withdrawCount,
         uint256 blockNumber,
         bytes32 indexed batchId
     );
@@ -194,7 +199,7 @@ interface ITwineChain {
 
     /// @notice sets the chain id
     /// @param _chainId the chain id to set
-    function setChainId(uint256 _chainId) external;
+    function setChainId(uint64 _chainId) external;
 
     /// @notice sets the role manager address
     /// @param _roleManagerAddress the address of role manager to set
@@ -255,8 +260,8 @@ interface ITwineChain {
     /// @param transactionInfo The sturct containing batch's transaction information
     /// @param inclusionProof The inclusion proof for that batch of transaction
     function commitAndFinalizeTransactions(
-        bytes memory transactionInfo,
-        bytes memory inclusionProof
+        bytes calldata transactionInfo,
+        bytes calldata inclusionProof
     ) external;
 
     /// @notice Finalizes both l2 initiated and forced withdrawal of different tokens

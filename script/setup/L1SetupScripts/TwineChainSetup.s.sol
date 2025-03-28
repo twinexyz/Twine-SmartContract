@@ -49,7 +49,7 @@ contract SetChainId is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
-        twineChain.setChainId(chainId);
+        twineChain.setChainId(uint64(chainId));
         vm.stopBroadcast();
     } 
 }
