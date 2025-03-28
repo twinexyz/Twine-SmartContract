@@ -1,100 +1,185 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
-import {IL2ETHGateway} from "../../L2/gateways/IL2ETHGateway.sol";
-import {IL1ETHGateway} from "./IL1ETHGateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
+import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
-contract L1ETHGateway is IL1ETHGateway{
+contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
+    using TypeConversionLib for string;
+    using TypeConversionLib for address;
 
-    // Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-    
-    // The address of corresponding L1/L2 Gateway contract.
-    address public immutable counterpart;
-    
-    // The address of corresponding L1ScrollMessenger contract.
-    address public immutable messenger;
+    address l2TokenAddress;
 
-     /***************
+    /***************
      * Constructor *
      ***************/
-    constructor(
-        address _counterpart,
-        address _messenger
-    ) {
-        if(_counterpart == address(0) || _messenger == address(0)) {
-            revert ErrorZeroAddress();
-        }
-        counterpart = _counterpart;
-        messenger = _messenger;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
-    
+
+    /// @notice Initialize the storage of L1CustomERC20Gateway.
+    /// @param _gatewayrouter The address of L1GatewayRouter in L1.
+    /// @param _messenger The address of L1TwineMessenger in L1.
+    /// @param _roleManager The address of Role manager contract.
+    function initialize(
+        address _gatewayrouter,
+        address _messenger,
+        address _roleManager,
+        uint64 _chainId
+    ) external initializer {
+        TwineL1GatewayBase._initialize(
+            _gatewayrouter,
+            _messenger,
+            _roleManager,
+            _chainId
+        );
+    }
+
     /*****************************
      * Public Mutating Functions *
      *****************************/
+   
 
     /// @inheritdoc IL1ETHGateway
     function depositETH(
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit
+        address to,
+        uint256 amount,
+        uint256 gasLimit
     ) external payable override {
-        _deposit(_to, _amount, _gasLimit);
-    }
-
-    function onDropMessage(bytes calldata _message) external payable virtual {
-        // _message should start with 0x232e8748  =>  finalizeDepositETH(address,address,uint256,bytes)
-        require(bytes4(_message[0:4]) == IL2ETHGateway.finalizeDepositETH.selector, "invalid selector");
-
-        // decode (receiver, amount)
-        (address _receiver, , uint256 _amount, ) = abi.decode(_message[4:], (address, address, uint256, bytes));
-
-        require(_amount == msg.value, "msg.value mismatch");
-
-        (bool _success, ) = _receiver.call{value: _amount}("");
-        require(_success, "ETH transfer failed");
-
-        emit RefundETH(_receiver, _amount);
-    }
-
-    /// @dev The internal ETH deposit implementation.
-    /// @param _to The address of recipient's account on L2.
-    /// @param _amount The amount of ETH to be deposited.
-    /// @param _gasLimit Gas limit required to complete the deposit on L2.
-    function _deposit(
-        address _to,
-        uint256 _amount,
-        uint256 _gasLimit
-    ) internal virtual {
-        require(_amount > 0, "deposit zero eth");
-
-        // 1. Extract real sender if this call is from L1GatewayRouter.
-        address _from = msg.sender;
-
-        // @note no rate limit here, since ETH is limited in messenger
-
-        // 2. Generate message passed to L1ScrollMessenger.
-        bytes memory _message = abi.encodeCall(IL2ETHGateway.finalizeDepositETH, (_from, _to, _amount));
-
-        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, _amount, _message, _gasLimit, _from);
-
-        emit DepositETH(_from, _to, _amount);
+        _deposit(to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ETHGateway
-    function finalizeWithdrawETH(
-        address _from,
-        address _to,
-        uint256 _amount
+    function depositETHAndCall(
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes calldata data
     ) external payable override {
-        require(msg.value == _amount, "msg.value mismatch");
+        _deposit(to, amount, gasLimit, data);
+    }
 
-        // @note can possible trigger reentrant call to messenger,
-        // but it seems not a big problem.
-        (bool _success, ) = _to.call{value: _amount}("");
+    /// @inheritdoc IL1ETHGateway
+    function forcedWithdrawalETH(
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) external payable override {
+        _forcedWithdrawalEth(to, amount, gasLimit, data);
+    }
+
+    /// @inheritdoc IL1ETHGateway
+    function finalizeTokenWithdrawal(
+        string memory l1Token,
+        string memory l2Token,
+        string memory to,
+        string memory amount,
+        uint64 nonce
+    )
+        external
+        payable
+        override
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
+    {
+        require(amount.stringToUint() > 0, "Amout must be greater than zero");
+        (bool _success, ) = to.stringToAddress().call{
+            value: amount.stringToUint()
+        }("");
         require(_success, "ETH transfer failed");
 
-        emit FinalizeWithdrawETH(_from, _to, _amount);
+        emit FinalizeWithdrawETH(
+            l1Token,
+            l2Token,
+            to,
+            amount,
+            nonce,
+            chainId,
+            block.number
+        );
+    }
+
+    /// @notice Set the _l2TokenAddress
+    function setL2TokenAddress(
+        address _l2TokenAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_l2TokenAddress != address(0), "value cann't be zero");
+        l2TokenAddress = _l2TokenAddress;
+        emit L2TokenSET(l2TokenAddress);
+    }
+
+    /// @dev The internal ETH deposit implementation.
+    /// @param to The address of recipient's account on L2.
+    /// @param amount The amount of ETH to be deposited.
+    /// @param gasLimit Gas limit required to complete the deposit on L2.
+    function _deposit(
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory _data
+    ) internal virtual {
+        require(amount > 0, "Amount can not be zero");
+        require(
+            amount + gasLimit <= msg.value,
+            "Amount and gas limit should not be greater than msg.value"
+        );
+
+        // 1. Extract real sender if this call is from L1GatewayRouter.
+        address from = _msgSender();
+        if (gatewayRouter == from) {
+            (from, _data) = abi.decode(_data, (address, bytes));
+        }
+
+        // 3. Calculate the type of transaction
+        ITwineL1MessengerBase.TransactionType transactionType = ITwineL1MessengerBase
+                .TransactionType
+                .deposit;
+
+        IL1TwineMessenger(messenger).sendMessage{value: gasLimit}(
+            transactionType,
+            from,
+            to,
+            address(0),
+            l2TokenAddress,
+            amount
+        );
+    }
+
+    /// @dev The internal ETH forced withdrawal implementation.
+    /// @param to The address of recipient's account in L1.
+    /// @param amount The amount of ETH to be withdrawn.
+    /// @param gasLimit Gas limit required to complete withdrawal.
+    function _forcedWithdrawalEth(
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) internal virtual {
+        require(amount > 0, "withdrawing zero amount not allowed");
+        // 1. Extract real sender if this call is from L1GatewayRouter
+        address from = _msgSender();
+        if (gatewayRouter == from) {
+            (from, data) = abi.decode(data, (address, bytes));
+        }
+        // 3. Calculate the type of transaction
+        ITwineL1MessengerBase.TransactionType transactionType = ITwineL1MessengerBase
+                .TransactionType
+                .withdrawal;
+
+        IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
+            transactionType,
+            from,
+            to,
+            address(0),
+            l2TokenAddress,
+            amount
+        );
     }
 }

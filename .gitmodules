@@ -10,3 +10,18 @@
 [submodule "lib/sp1-contracts"]
 	path = lib/sp1-contracts
 	url = https://github.com/succinctlabs/sp1-contracts
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/xERC20"]
+	path = lib/xERC20
+	url = https://github.com/defi-wonderland/xERC20
+[submodule "lib/Solidity-RLP"]
+	path = lib/Solidity-RLP
+	url = https://github.com/hamdiallam/Solidity-RLP
+[submodule "lib/devtools"]
+	path = lib/devtools
+	url = https://github.com/LayerZero-Labs/devtools
+[submodule "lib/layerzero-v2"]
+	path = lib/layerzero-v2
+	url = https://github.com/LayerZero-Labs/layerzero-v2

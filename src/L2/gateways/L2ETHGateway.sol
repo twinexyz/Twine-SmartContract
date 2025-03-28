@@ -1,83 +1,122 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
-import {IL1ETHGateway} from "../../L1/gateways/IL1ETHGateway.sol";
-import {IL2ETHGateway} from "./IL2ETHGateway.sol";
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
-
+import {IL2ETHGateway} from "./interfaces/IL2ETHGateway.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 
 /// @title L2ETHGateway
 /// @notice The `L2ETHGateway` contract is used to withdraw ETH token on layer 2 and
-/// finalize deposit ETH from layer 1.
-/// @dev The ETH are not held in the gateway. The ETH will be sent to the `L2ScrollMessenger` contract.
-/// On finalizing deposit, the Ether will be transferred from `L2ScrollMessenger`, then transfer to recipient.
-contract L2ETHGateway is IL2ETHGateway {
-
-    // Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-    
-    // The address of corresponding L1 Gateway contract.
-    address public immutable counterpart;
-    
-    // The address of corresponding L2ScrollMessenger contract.
-    address public immutable messenger;
-
-     /***************
+/// On finalizing deposit, the Ether will be transferred from `L2TwineMessenger`, then transfer to recipient.
+contract L2ETHGateway is TwineL2GatewayBase, IL2ETHGateway {
+    /// @notice Mapping from layer 2 token address to layer 1 token address for ERC20 token.
+    /// chainId=>l2Token=>l1Token
+    mapping(uint256 => mapping(address => string)) public tokenMapping;
+    /***************
      * Constructor *
      ***************/
-    constructor(
-        address _counterpart,
-        address _messenger
-    ) {
-        if(_counterpart == address(0) || _messenger == address(0)) {
-            revert ErrorZeroAddress();
-        }
-        counterpart = _counterpart;
-        messenger = _messenger;
-    }
-    
 
-     /// @inheritdoc IL2ETHGateway
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the storage of L2ETHGateway.
+    /// @param _gatewayRouter The address of L2GatewayRouter in L2.
+    /// @param _messenger The address of L2TwineMessenger in L2.
+    /// @param _roleManager The address of Role manager contract.
+    function initialize(
+        address _gatewayRouter,
+        address _messenger,
+        address _roleManager
+    ) external initializer {
+        TwineL2GatewayBase._initialize(_gatewayRouter, _messenger, _roleManager);
+    }
+
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
+
+    /// @inheritdoc IL2ETHGateway
     function withdrawETH(
-        address _to,
+        address _l2Token,
+        string memory _l1Token,
+        string memory _to,
         uint256 _amount,
+        uint256 _chainId,
         uint256 _gasLimit
-    ) public payable override {
-        _withdraw(_to, _amount, _gasLimit);
+    ) external payable override nonReentrant {
+        _withdraw(
+            _l2Token,
+            _l1Token,
+            _to,
+            _amount,
+            _chainId,
+            _gasLimit,
+            new bytes(0)
+        );
     }
 
     /// @inheritdoc IL2ETHGateway
-    function finalizeDepositETH(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) external payable override {
-        require(msg.value == _amount, "msg.value mismatch");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool _success, ) = _to.call{value: _amount}("");
-        require(_success, "ETH transfer failed");
-
-
-        emit FinalizeDepositETH(_from, _to, _amount);
+    function withdrawETHAndCall(
+        address _l2Token,
+        string memory _l1Token,
+        string memory _to,
+        uint256 _amount,
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
+    ) external payable override nonReentrant {
+        _withdraw(_l2Token, _l1Token, _to, _amount, _chainId, _gasLimit, _data);
     }
+
+
+    function updateTokenMapping(
+        uint256 _chainId,
+        address _l2Token,
+        string memory _l1Token
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(bytes(_l1Token).length > 0, "L1 token address cannot be empty");
+        string memory _oldL1Token = tokenMapping[_chainId][_l2Token];
+        tokenMapping[_chainId][_l2Token] = _l1Token;
+        emit EthTokenMappingUpdated(_chainId, _l2Token, _oldL1Token, _l1Token);
+    }
+
 
     /// @dev The internal ETH withdraw implementation.
     /// @param _to The address of recipient's account on L1.
     /// @param _amount The amount of ETH to be withdrawn.
     /// @param _gasLimit Optional gas limit to complete the deposit on L1.
     function _withdraw(
-        address _to,
+        address _l2Token,
+        string memory _l1Token,
+        string memory _to,
         uint256 _amount,
-        uint256 _gasLimit
+        uint256 _chainId,
+        uint256 _gasLimit,
+        bytes memory _data
     ) internal virtual {
-        require(msg.value > 0, "withdraw zero eth");
+        require(
+            msg.value > 0 && _amount > 0,
+            "Invalid input: msg.value and amount must be greater than zero"
+        );
 
-        address _from = msg.sender;
+        address _from = _msgSender();
 
-        bytes memory _message = abi.encodeCall(IL1ETHGateway.finalizeWithdrawETH, (_from, _to, _amount));
-        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(counterpart, _amount, _message, _gasLimit);
+        if (router == _from) {
+            (_from, _data) = abi.decode(_data, (address, bytes));
+        }
 
-        emit WithdrawETH(_from, _to, _amount);
+        IL2TwineMessenger(messenger).sendMessage{value: msg.value}(
+            _from,
+            _l2Token,
+            _to,
+            _l1Token,
+            _amount,
+            _amount + _gasLimit,
+            _chainId,
+            _gasLimit
+        );
     }
 }

@@ -1,210 +1,428 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
+
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 
-contract L1MessageQueue is IL1MessageQueue {
+contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
+    using TypeConversionLib for string;
+    using TypeConversionLib for address;
+    // using TypeConversionLib for uint256;
+    /*************
+     * Variables *
+     *************/
+    uint64 chainId;
+    uint64 depositMessageIndex;
+    uint64 withdrawalMessageIndex;
+    address public messenger;
+    address public roleManager;
+    address public messageQueueProxy;
 
-    /// @notice The address of L1ScrollMessenger contract.
-    address public immutable messenger;
-
+    /**********
+     * Queues *
+     **********/
     /// @notice The list of queued cross domain messages.
-    bytes32[] public messageQueue;
+    MessageData[] public depositMessageQueue;
 
+    /// @notice The list of queued cross domain Withdrawal messages.
+    MessageData[] public withdrawalMessageQueue;
+
+    /// @notice The list of queued layer zero messages.
+    MessageData[] public layerZeroMessageQueue;
+
+    /// @notice The list of queued transactions that are ready for execution.
+    MessageData[] public executionMessageQueue;
+
+    /**********************
+     * Function Modifiers *
+     **********************/
     modifier onlyMessenger() {
-        require(msg.sender == messenger, "Only callable by the L1ScrollMessenger");
+        require(
+            _msgSender() == messenger,
+            "Only callable by the L1TwineMessenger"
+        );
         _;
     }
 
-    constructor(
+    modifier onlyRoles(bytes32 role) {
+        IRoleManager(roleManager).checkRole(role, _msgSender());
+        _;
+    }
+
+    /***************
+     * Constructor *
+     ***************/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor external-library-linking
+    constructor() {
+        _disableInitializers();
+    }
+
+    // @notice Initialize the storage of L1MessageQueue.
+    /// @param _chainId The chain id of L1.
+    /// @param _messenger The address of L1TwineMessenger in L1.
+    /// @param _roleManager The address of roleManager Contract.
+    function initialize(
+        uint64 _chainId,
+        address _messenger,
+        address _roleManager
+    ) external initializer {
+        messenger = _messenger;
+        chainId = _chainId;
+        roleManager = _roleManager;
+    }
+
+    /*************************
+     * Public View Functions *
+     *************************/
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainDepositMessageIndex()
+        public
+        view
+        returns (uint256)
+    {
+        return depositMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainWithdrawalMessageIndex()
+        public
+        view
+        returns (uint256)
+    {
+        return withdrawalMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function nextCrossDomainExecutionMessageIndex()
+        public
+        view
+        returns (uint256)
+    {
+        return executionMessageQueue.length;
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getCrossDomainDepositMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory) {
+        require(
+            nextCrossDomainDepositMessageIndex() > queueIndex,
+            "Invalid index"
+        );
+        return depositMessageQueue[queueIndex];
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getCrossDomainWithdrawalMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory) {
+        require(
+            nextCrossDomainWithdrawalMessageIndex() > queueIndex,
+            "Invalid index"
+        );
+        return withdrawalMessageQueue[queueIndex];
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getCrossDomainLayerZeroMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory) {
+        return layerZeroMessageQueue[queueIndex];
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getExecutionMessage(
+        uint256 queueIndex
+    ) external view returns (MessageData memory) {
+        require(
+            nextCrossDomainExecutionMessageIndex() > queueIndex,
+            "Invalid index"
+        );
+        return executionMessageQueue[queueIndex];
+    }
+
+    function padAddress(address input) external pure returns (bytes32) {
+        return bytes32(uint256(uint160(input)));
+    }
+
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
+
+    /// @inheritdoc IL1MessageQueue
+    function setMessengerAddress(
         address _messenger
-    ) {
-        if(_messenger == address(0)) {
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_messenger == address(0)) {
             revert ErrorZeroAddress();
         }
         messenger = _messenger;
     }
 
     /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainMessageIndex() external view returns (uint256) {
-        return messageQueue.length;
-    }
-
-    function getCrossDomainMessage(uint256 _queueIndex) external view returns (bytes32) {
-        return messageQueue[_queueIndex];
-    }
-
-   /// @inheritdoc IL1MessageQueue
-    function computeTransactionHash(
-        address _sender,
-        uint256 _queueIndex,
-        uint256 _value,
-        address _target,
-        uint256 _gasLimit,
-        bytes calldata _data
-    ) public pure override returns (bytes32) {
-        // We use EIP-2718 to encode the L1 message, and the encoding of the message is
-        //      `TransactionType || TransactionPayload`
-        // where
-        //  1. `TransactionType` is 0x7E
-        //  2. `TransactionPayload` is `rlp([queueIndex, gasLimit, to, value, data, sender])`
-        //
-        // The spec of rlp: https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/
-        uint256 transactionType = 0x7E;
-        bytes32 hash;
-        assembly {
-            function get_uint_bytes(v) -> len {
-                if eq(v, 0) {
-                    len := 1
-                    leave
-                }
-                for {
-
-                } gt(v, 0) {
-
-                } {
-                    len := add(len, 1)
-                    v := shr(8, v)
-                }
-            }
-
-            // This is used for both store uint and single byte.
-            // Integer zero is special handled by geth to encode as `0x80`
-            function store_uint_or_byte(_ptr, v, is_uint) -> ptr {
-                ptr := _ptr
-                switch lt(v, 128)
-                case 1 {
-                    switch and(iszero(v), is_uint)
-                    case 1 {
-                        // integer 0
-                        mstore8(ptr, 0x80)
-                    }
-                    default {
-                        // single byte in the [0x00, 0x7f]
-                        mstore8(ptr, v)
-                    }
-                    ptr := add(ptr, 1)
-                }
-                default {
-                    // 1-32 bytes long
-                    let len := get_uint_bytes(v)
-                    mstore8(ptr, add(len, 0x80))
-                    ptr := add(ptr, 1)
-                    mstore(ptr, shl(mul(8, sub(32, len)), v))
-                    ptr := add(ptr, len)
-                }
-            }
-
-            function store_address(_ptr, v) -> ptr {
-                ptr := _ptr
-                // 20 bytes long
-                mstore8(ptr, 0x94) // 0x80 + 0x14
-                ptr := add(ptr, 1)
-                mstore(ptr, shl(96, v))
-                ptr := add(ptr, 0x14)
-            }
-
-            // 1 byte for TransactionType
-            // 4 byte for list payload length
-            let start_ptr := add(mload(0x40), 5)
-            let ptr := start_ptr
-            ptr := store_uint_or_byte(ptr, _queueIndex, 1)
-            ptr := store_uint_or_byte(ptr, _gasLimit, 1)
-            ptr := store_address(ptr, _target)
-            ptr := store_uint_or_byte(ptr, _value, 1)
-
-            switch eq(_data.length, 1)
-            case 1 {
-                // single byte
-                ptr := store_uint_or_byte(ptr, byte(0, calldataload(_data.offset)), 0)
-            }
-            default {
-                switch lt(_data.length, 56)
-                case 1 {
-                    // a string is 0-55 bytes long
-                    mstore8(ptr, add(0x80, _data.length))
-                    ptr := add(ptr, 1)
-                    calldatacopy(ptr, _data.offset, _data.length)
-                    ptr := add(ptr, _data.length)
-                }
-                default {
-                    // a string is more than 55 bytes long
-                    let len_bytes := get_uint_bytes(_data.length)
-                    mstore8(ptr, add(0xb7, len_bytes))
-                    ptr := add(ptr, 1)
-                    mstore(ptr, shl(mul(8, sub(32, len_bytes)), _data.length))
-                    ptr := add(ptr, len_bytes)
-                    calldatacopy(ptr, _data.offset, _data.length)
-                    ptr := add(ptr, _data.length)
-                }
-            }
-            ptr := store_address(ptr, _sender)
-
-            let payload_len := sub(ptr, start_ptr)
-            let value
-            let value_bytes
-            switch lt(payload_len, 56)
-            case 1 {
-                // the total payload of a list is 0-55 bytes long
-                value := add(0xc0, payload_len)
-                value_bytes := 1
-            }
-            default {
-                // If the total payload of a list is more than 55 bytes long
-                let len_bytes := get_uint_bytes(payload_len)
-                value_bytes := add(len_bytes, 1)
-                value := add(0xf7, len_bytes)
-                value := shl(mul(len_bytes, 8), value)
-                value := or(value, payload_len)
-            }
-            value := or(value, shl(mul(8, value_bytes), transactionType))
-            value_bytes := add(value_bytes, 1)
-            let value_bits := mul(8, value_bytes)
-            value := or(shl(sub(256, value_bits), value), shr(value_bits, mload(start_ptr)))
-            start_ptr := sub(start_ptr, value_bytes)
-            mstore(start_ptr, value)
-            hash := keccak256(start_ptr, sub(ptr, start_ptr))
-        }
-        return hash;
+    function setChainId(
+        uint64 _chainId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        chainId = _chainId;
     }
 
     /// @inheritdoc IL1MessageQueue
-    function appendCrossDomainMessage(
-        address _target,
-        uint256 _gasLimit,
-        bytes calldata _data
-    ) external override onlyMessenger {
-        // validate gas limit
-       // _validateGasLimit(_gasLimit, _data);
-
-        // do address alias to avoid replay attack in L2.
-        address _sender = msg.sender;
-
-        _queueTransaction(_sender, _target, 0, _gasLimit, _data);
+    function setRoleManager(
+        address _roleManager
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_roleManager == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        roleManager = _roleManager;
     }
 
-    /// @dev Internal function to queue a L1 transaction.
-    /// @param _sender The address of sender who will initiate this transaction in L2.
-    /// @param _target The address of target contract to call in L2.
-    /// @param _value The value passed
-    /// @param _gasLimit The maximum gas should be used for this transaction in L2.
-    /// @param _data The calldata passed to target contract.
-    function _queueTransaction(
-        address _sender,
-        address _target,
-        uint256 _value,
-        uint256 _gasLimit,   
-        bytes calldata _data
+    /// @inheritdoc IL1MessageQueue
+    function setMessageQueueProxy(
+        address _proxyAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_proxyAddress == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        messageQueueProxy = _proxyAddress;
+    }
+
+    function isNonceInExecutionQueue(
+        uint256 nonce
+    ) external view returns (bool) {
+        uint256 len = executionMessageQueue.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (executionMessageQueue[i].nonce == nonce) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function removeExecutionMessage(uint256 nonce) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        uint256 len = executionMessageQueue.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (executionMessageQueue[i].nonce == nonce) {
+                for (uint256 j = i; j < len - 1; j++) {
+                    executionMessageQueue[j] = executionMessageQueue[j + 1];
+                }
+                executionMessageQueue.pop();
+            }
+        }
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function popFirstNDepositElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        uint256 len = depositMessageQueue.length;
+        require(n <= nextCrossDomainDepositMessageIndex(), "Invalid index");
+        // Shift elements
+        for (uint256 i = 0; i < len - n; i++) {
+            depositMessageQueue[i] = depositMessageQueue[i + n];
+        }
+
+        // Remove the last n elements by reducing the array length
+        for (uint256 i = 0; i < n; i++) {
+            depositMessageQueue.pop();
+        }
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function popFirstNWithdrawalElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        uint256 len = withdrawalMessageQueue.length;
+        require(n <= nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
+        // Shift elements
+        for (uint256 i = 0; i < len - n; i++) {
+            withdrawalMessageQueue[i] = withdrawalMessageQueue[i + n];
+        }
+
+        // Remove the last n elements by reducing the array length
+        for (uint256 i = 0; i < n; i++) {
+            withdrawalMessageQueue.pop();
+        }
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function popFirstNLayerZeroElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        uint256 len = layerZeroMessageQueue.length;
+        for (uint256 i = 0; i < len - n; i++) {
+            layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
+        }
+
+        // Remove the last n elements by reducing the array length
+        for (uint256 i = 0; i < n; i++) {
+            layerZeroMessageQueue.pop();
+        }
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function appendCrossDomainDepositMessage(
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
+    ) external override onlyMessenger {
+        _queueDepositTransaction(from, to, l1Token, l2Token, amount);
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function appendCrossDomainWithdrawalMessage(
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
+    ) external override onlyMessenger {
+        _queueWithdrawalTransaction(from, to, l1Token, l2Token, amount);
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function appendExecutionMessage(
+        uint64 nonce,
+        uint64 chainId_,
+        uint64 blockNumber,
+        string memory from,
+        string memory to,
+        string memory l1Token,
+        string memory l2Token,
+        string memory amount
+    ) external override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+        _queueExecutionTransaction(
+            nonce,
+            chainId_,
+            blockNumber,
+            from,
+            to,
+            l1Token,
+            l2Token,
+            amount
+        );
+    }
+
+    /**********************
+     * Internal Functions *
+     **********************/
+
+    function _queueDepositTransaction(
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
     ) internal {
-        // compute transaction hash
-        uint256 _queueIndex = messageQueue.length;
-        bytes32 _hash = computeTransactionHash(_sender, _queueIndex, _value, _target, _gasLimit, _data);
-        messageQueue.push(_hash);
+        ++depositMessageIndex;
+
+        MessageData memory depositMessageData = MessageData({
+            nonce: depositMessageIndex,
+            chainId: chainId,
+            blockNumber: uint64(block.number),
+            fromAddress: from.addressToString(),
+            toAddress: to.addressToString(),
+            l1Token: l1Token.addressToString(),
+            l2Token: l2Token.addressToString(),
+            amount: uintToString(amount)
+        });
+
+        depositMessageQueue.push(depositMessageData);
 
         // emit event
-        emit QueueTransaction(_sender, _target, _value, uint64(_queueIndex), _gasLimit, _data);
+        emit QueueDepositTransaction(
+            depositMessageIndex,
+            chainId,
+            uint64(block.number),
+            l1Token,
+            l2Token,
+            from,
+            to,
+            amount
+        );
     }
 
-    
+    function _queueWithdrawalTransaction(
+        address from,
+        address to,
+        address l1Token,
+        address l2Token,
+        uint256 amount
+    ) internal {
+        ++withdrawalMessageIndex;
 
+        MessageData memory withdrawMessageData = MessageData({
+            nonce: withdrawalMessageIndex,
+            chainId: chainId,
+            blockNumber: uint64(block.number),
+            fromAddress: from.addressToString(),
+            toAddress: to.addressToString(),
+            l1Token: l1Token.addressToString(),
+            l2Token: l2Token.addressToString(),
+            amount: uintToString(amount)
+        });
+
+        withdrawalMessageQueue.push(withdrawMessageData);
+
+        // emit event
+        emit QueueWithdrawalTransaction(
+            withdrawalMessageIndex,
+            chainId,
+            uint64(block.number),
+            l1Token,
+            l2Token,
+            from,
+            to,
+            amount
+        );
+    }
+
+    function _queueExecutionTransaction(
+        uint64 nonce,
+        uint64 chainId_,
+        uint64 blockNumber,
+        string memory from,
+        string memory to,
+        string memory l1Token,
+        string memory l2Token,
+        string memory amount
+    ) internal {
+        MessageData memory executionMessageData = MessageData({
+            nonce: nonce,
+            chainId: chainId_,
+            blockNumber: blockNumber,
+            fromAddress: from,
+            toAddress: to,
+            l1Token: l1Token,
+            l2Token: l2Token,
+            amount: amount
+        });
+
+        executionMessageQueue.push(executionMessageData);
+    }
+
+    /// @notice Converts a uint256 to its string representation
+    /// @param value The uint256 value to convert
+    /// @return The string representation of the input value
+    function uintToString(
+        uint256 value
+    ) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+    
 }

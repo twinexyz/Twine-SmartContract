@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.24;
+
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+
+import {ITwineL2Gateway} from "./ITwineL2Gateway.sol";
+import {IRoleManager} from "../access/IRoleManager.sol";
+
+/// @title TwineGatewayBase
+/// @notice The `TwineGatewayBase` is a base contract for gateway contracts used in both in L1 and L2.
+abstract contract TwineL2GatewayBase is
+    ContextUpgradeable,
+    ReentrancyGuardUpgradeable,
+    ITwineL2Gateway
+{
+    /*************
+     * Constants *
+     *************/
+
+    /// @inheritdoc ITwineL2Gateway
+    address public override router;
+
+    /// @inheritdoc ITwineL2Gateway
+    address public override messenger;
+
+    address public roleManager;
+
+    //chainId=> L1Gateway
+    mapping(uint256 => mapping(string => string))
+        public
+        override counterpartGateWay;
+
+    /**********************
+     * Function Modifiers *
+     **********************/
+
+    modifier onlyRoles(bytes32 role) {
+        IRoleManager(roleManager).checkRole(role, _msgSender());
+        _;
+    }
+
+    function _initialize(
+        address _router,
+        address _messenger,
+        address _roleManager
+    ) internal {
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
+        router = _router;
+        messenger = _messenger;
+        roleManager = _roleManager;
+    }
+
+    /// @notice sets the rolemanager contract address
+    function setRoleManagerAddress(address _roleManagerAddress) external {
+        require(_roleManagerAddress != address(0),"value cann't be zero");
+        roleManager = _roleManagerAddress;
+    }
+
+    /// @notice sets the router contract address
+    function setRouterAddress(
+        address _router
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        router = _router;
+    }
+
+    /// @notice sets the messenger contract address
+    function setMessengerAddress(
+        address _messenger
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        messenger = _messenger;
+    }
+
+    /// @dev The storage slots for future usage.
+    uint256[46] private __gap;
+}

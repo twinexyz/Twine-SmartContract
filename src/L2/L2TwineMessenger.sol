@@ -1,127 +1,274 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
+
+import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
+import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
+import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
+import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
-contract L2TwineMessenger is IL2TwineMessenger {
-    
-    /// @notice Emitted when a cross domain message is relayed successfully.
-    /// @param messageHash The hash of the message.
-    event RelayedMessage(bytes32 indexed messageHash);
+contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
+    using TypeConversionLib for address;
 
-    /// @notice Emitted when a cross domain message is failed to relay.
-    /// @param messageHash The hash of the message.
-    event FailedRelayedMessage(bytes32 indexed messageHash);
+    /// @notice The address of Consensus Proving Precompile
+    address public consensusPrecompileAddress;
 
+    /// @notice The address of bridging Precompile
+    address public bridgingPrecompileAddress;
 
-    /// @notice The address of counterpart ScrollMessenger contract in L1.
-    address public immutable counterpart;
+    /// @notice mapping of (chainId => (L1TxnType => nonce))
+    mapping(uint256 => mapping(L1TxnType => uint256))
+        public l1MessageExecutedCount;
 
-    /// @notice Mapping from L1 message hash to a boolean value indicating if the message has been successfully executed.
-    mapping(bytes32 => bool) public isL1MessageExecuted;
+    /// @notice Mapping to store the receipt roots for each block number
+    mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
 
-    /// @notice The address of L2MessageQueue.
-    address public immutable messageQueue;
+    /// @notice Mapping to store consensus verification keys of L1s
+    mapping(uint256 => bytes32) public vKeys;
 
-    /// sender of a cross domain message.
-    address public xDomainMessageSender;
+    /// @notice SP1 Verifier Address
+    address public sp1Verifier;
 
-    event SentMessage(
-        address indexed sender,
-        address indexed target,
-        uint256 value,
-        uint256 gasLimit,
-        bytes message
-    );
+    /// @notice Skip zk Verification
+    bool public skipVerification;
 
-    constructor(address _counterpart, address _messageQueue) {
-        counterpart = _counterpart;
-        messageQueue = _messageQueue;
+    /***************
+     * Constructor *
+     ***************/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
+    function initialize(
+        uint256 ethChaindId,
+        address ethCounterpart,
+        address roleManager
+    ) external initializer {
+        TwineL2MessengerBase.__TwineMessengerBase_init(
+            ethChaindId,
+            ethCounterpart,
+            roleManager
+        );
+        consensusPrecompileAddress = address(0x16);
+        bridgingPrecompileAddress = address(0x15);
+        skipVerification = true;
+    }
+
+    function setPrecompileAddress(
+        address _consensusPrecompileAddress,
+        address _bridgingPrecompileAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        consensusPrecompileAddress = _consensusPrecompileAddress;
+        bridgingPrecompileAddress = _bridgingPrecompileAddress;
+    }
+
+    function setZkVerifcationStatus(
+        bool status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        skipVerification = status;
+    }
+
+    function setSp1VerifierAddress(
+        address sp1VerifierAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        sp1Verifier = sp1VerifierAddress;
+    }
+
+    /// @inheritdoc ITwineL2MessengerBase
     function sendMessage(
-        address _to,
-        uint256 _value,
-        bytes memory _message,
-        uint256 _gasLimit
-    ) external payable {
-        _sendMessage(_to, _value, _message, _gasLimit);
+        address from,
+        address l2Token,
+        string memory to,
+        string memory l1Token,
+        uint256 amount,
+        uint256 value,
+        uint256 chainId,
+        uint256 gasLimit
+    )
+        external
+        payable
+        override
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
+    {
+        _sendMessage(
+            from,
+            l2Token,
+            to,
+            l1Token,
+            amount,
+            value,
+            chainId,
+            gasLimit
+        );
     }
 
-    /// @inheritdoc IL2TwineMessenger
-    function relayMessage(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _nonce,
-        bytes memory _message
-    ) external override {
-        bytes32 _xDomainCalldataHash = keccak256(_encodeXDomainCalldata(_from, _to, _value, _nonce, _message));
+    function handleSolanaTransactions(
+        uint256 chainId,
+        bytes calldata precompileInput
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        bytes memory output = precompileInput;
+        bool success;
+        
+        if (!skipVerification) {
+            (success, output) = consensusPrecompileAddress.call(
+                precompileInput
+            );
+            require(success, "Consensus verification failed!");
 
-        require(!isL1MessageExecuted[_xDomainCalldataHash], "Message was already successfully executed");
+            SolanaVerifierPrecompileOutput memory verifierOutput = abi.decode(
+                output,
+                (SolanaVerifierPrecompileOutput)
+            );
 
-        _executeMessage(_from, _to, _value, _message, _xDomainCalldataHash);
+            ISP1Verifier(sp1Verifier).verifyProof(
+                vKeys[chainId],
+                verifierOutput.publicValue,
+                verifierOutput.proof
+            );
+        }
+
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(output);
+        require(txnSuccess, "Failed executing transactions");
+
+        emit SolanaTransactionsHandled(txnOutput);
+    }
+
+    function handleEthereumProofAndTransactions(
+        uint256 chainId,
+        uint256 height,
+        bytes32 receiptRoot,
+        bytes memory consensusProof,
+        bytes memory ethereumTransactions
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        // For testing purposes only. TODO: Remove before deploying to production.
+        if (skipVerification) {
+            blockReceiptRoots[chainId][height] = receiptRoot;
+        }
+        if (consensusProof.length > 0) {
+            _verifyConsensusProof(chainId, consensusProof);
+        }
+
+        if (ethereumTransactions.length > 0) {
+            bytes memory data = abi.encode(chainId, ethereumTransactions);
+            (
+                bool txnSuccess,
+                bytes memory txnOutput
+            ) = bridgingPrecompileAddress.call(data);
+            require(txnSuccess, "Ethereum Transactions failed!");
+            emit EthereumTransactionsHandled(txnOutput);
+        }
+    }
+
+    function verifyLayerZeroPayload(
+        uint256 chainId,
+        bytes memory lzPayload,
+        bytes memory payloadProof
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        bytes[] memory lzPayloads = new bytes[](1);
+        bytes[] memory payloadProofs = new bytes[](1);
+        lzPayloads[0] = lzPayload;
+        payloadProofs[0] = payloadProof;
+        (bool success, bytes memory output) = bridgingPrecompileAddress.call(
+            abi.encode(chainId, lzPayloads, payloadProofs)
+        );
+        require(success, "LayerZero verification failed!");
+        bytes32 guId = abi.decode(output, (bytes32));
+        emit LayerzeroPayload(chainId, guId);
+    }
+
+    function setVkeys(
+        uint256 chainId,
+        bytes32 vKey
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        vKeys[chainId] = vKey;
     }
 
     /// @dev Internal function to send cross domain message.
-    /// @param _to The address of account who receive the message.
-    /// @param _value The amount of ether passed when call target contract.
-    /// @param _message The content of the message.
-    /// @param _gasLimit Optional gas limit to complete the message relay on corresponding chain.
+    /// @param to The address of the contract to call.
+    /// @param value The amount of native token
+    /// @param gasLimit Optional gas limit to complete the message relay on corresponding chain.
     function _sendMessage(
-        address _to,
-        uint256 _value,
-        bytes memory _message,
-        uint256 _gasLimit
+        address from,
+        address l2Token,
+        string memory to,
+        string memory l1Token,
+        uint256 amount,
+        uint256 value,
+        uint256 chainId,
+        uint256 gasLimit
     ) internal {
-        require(msg.value == _value, "msg.value mismatch");
-
-        emit SentMessage(msg.sender, _to, _value, _gasLimit, _message);
+        ++messageCount;
+        emit SentMessage(
+            from,
+            l2Token,
+            to,
+            l1Token,
+            amount,
+            value,
+            messageCount,
+            chainId,
+            block.number,
+            gasLimit
+        );
     }
 
-    
-    /// @dev Internal function to generate the correct cross domain calldata for a message.
-    /// @param _sender Message sender address.
-    /// @param _target Target contract address.
-    /// @param _value The amount of ETH pass to the target.
-    /// @param _messageNonce Nonce for the provided message.
-    /// @param _message Message to send to the target.
-    /// @return ABI encoded cross domain calldata.
-    function _encodeXDomainCalldata(
-        address _sender,
-        address _target,
-        uint256 _value,
-        uint256 _messageNonce,
-        bytes memory _message
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encodeWithSignature(
-                "relayMessage(address,address,uint256,uint256,bytes)",
-                _sender,
-                _target,
-                _value,
-                _messageNonce,
-                _message
+    /// @notice function to verify the consensus proof
+    function _verifyConsensusProof(
+        uint256 chainId,
+        bytes memory consensusProof
+    ) internal {
+        (bool success, bytes memory output) = consensusPrecompileAddress.call(
+            consensusProof
+        );
+        require(success, "Consensus proof parsing failed!");
+        EthereumVerifierPrecompileOutput memory sp1Params = abi.decode(
+            output,
+            (EthereumVerifierPrecompileOutput)
+        );
+        if (!skipVerification) {
+            ISP1Verifier(sp1Verifier).verifyProof(
+                vKeys[chainId],
+                sp1Params.publicValue,
+                sp1Params.proof
             );
+        }
+        emit ConsensusVerified(consensusProof);
     }
 
-    /// @param _xDomainCalldataHash The hash of the message.
-    function _executeMessage(
-        address _from,
-        address _to,
-        uint256 _value,
-        bytes memory _message,
-        bytes32 _xDomainCalldataHash
-    ) internal {
-        xDomainMessageSender = _from;
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, ) = _to.call{value: _value}(_message);
-        // reset value to refund gas.
+    /// @notice decode the withdraw details
+    function _decodeWithdrawalDetails(
+        bytes memory output
+    ) internal pure returns (WithdrawalDetails memory) {
+        (
+            uint256 l1Nonce,
+            uint256 amount,
+            address l2Token,
+            string memory l1Token,
+            string memory to,
+            string memory from
+        ) = abi.decode(
+                output,
+                (uint256, uint256, address, string, string, string)
+            );
 
-        if (success) {
-            emit RelayedMessage(_xDomainCalldataHash);
-        } else {
-            emit FailedRelayedMessage(_xDomainCalldataHash);
-        }
+        return WithdrawalDetails(amount, l1Nonce, l2Token, to, l1Token, from);
     }
 }

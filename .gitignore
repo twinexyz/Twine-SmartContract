@@ -2,13 +2,21 @@
 cache/
 out/
 
+# Script Output
+marker/
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*/31337/
 /broadcast/**/dry-run/
+broadcast/
 
 # Docs
 docs/
 
 # Dotenv file
 .env
+
+.DS_Store
+
+node_modules/

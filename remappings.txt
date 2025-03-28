@@ -1,3 +1,8 @@
-@openzeppelin/contracts/=lib/openzeppelin-contracts
-@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts
+@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts
 @sp1-contracts/=lib/sp1-contracts/contracts/src/
+@xtoken/contracts/=lib/xERC20/solidity/
+@solidity-rlp/=lib/Solidity-RLP/
+@layerzerolabs/oapp-evm/=lib/devtools/packages/oapp-evm/
+@layerzerolabs/lz-evm-protocol-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/protocol
+@layerzerolabs/lz-evm-messagelib-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/messagelib

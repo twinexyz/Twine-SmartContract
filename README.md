@@ -1,66 +1,66 @@
-## Foundry
+## Twine Smart Contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Overview
+Twine Chain is a multi-chain settlement network designed to aggregate chains and provide seamless cross-chain liquidity access. This repository contains the bridge contract for Twine on the Solana blockchain.
 
-Foundry consists of:
+## Setup and Deployment Instructions
+### 1. General Setup
+-  **Makefile Usage:**  
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+    >All building, deployment, and setup operations can be executed through the Makefile.
+    - **List Available Commands:** 
+        - make help
 
-## Documentation
+- **General Configuration:**
+    > Set L1 and L2 private key and rpc
 
-https://book.getfoundry.sh/
+    - **L1 Setup**
 
-## Usage
+        make updateL1DefaultValues  
+    - **L2 Setup**
 
-### Build
+        make updateL2DefaultValues  
 
-```shell
-$ forge build
-```
+### 2. Deployment and Setup Commands
 
-### Test
+- **Fresh Deployment and Setup:**  
+    - make clean
+    - make build
+    - **Deploy and setup both L1 and L2(Twine chain) contracts**
+        - make setupEveryContracts
+    - **Deploy and setup  L1 contracts**
+        - make deployEveryL1Contracts
+        - make setupEveryL1Contracts
+    
+    - **Deploy and setup  L2 contracts**
+        - make deployEveryL2Contracts
+        - make setupEveryL2Contracts
 
-```shell
-$ forge test
-```
+### 3. Token Operations
+#### A. Native Token Deposit
+- **Deposit ERC20**
+    - make deposit-native-token
+- **Forced Withdrawal**
+    - make forcedWithdrawETH 
 
-### Format
+#### B.ERC20 Token Deposit
+- **Update Token Mapping (if not already set):**
+    - make updateTokenMappingCG
+- **Deposit ERC20**
+   - make depositERC20
+- **Forced Withdrawal**
+    - make forcedWithdrawERC20 
 
-```shell
-$ forge fmt
-```
+### 4. Steps to interact with deployed contracts
+ - List Available Commands:
+- Update contract addresses in deployedContracts.json
+- Set L1 and L2 private key and rpc
+    - make updateL1DefaultValues 
+    - make updateL2DefaultValues
 
-### Gas Snapshots
+- Use make command to interact with contracts
+     -  make help
 
-```shell
-$ forge snapshot
-```
 
-### Anvil
 
-```shell
-$ anvil
-```
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
