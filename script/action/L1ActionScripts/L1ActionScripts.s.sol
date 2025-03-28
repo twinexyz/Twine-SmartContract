@@ -346,9 +346,9 @@ contract finalizeWithdrawal is Script {
 
     // Data required for finalization
     uint64 chainId;
-    bytes32 batchId;
+    uint64 blockNumber;
     uint64 nonce;
-    uint8 isForced;
+    uint8 isForcedWithdrawal;
     bytes32 receiptRoot;
     string l1ReceiverAddress;
     string l1TokenAddress;
@@ -365,9 +365,9 @@ contract finalizeWithdrawal is Script {
 
         // Read parameters dynamically
         chainId = uint64(vm.envUint("CHAIN_ID"));
-        batchId = vm.envBytes32("BATCH_NUMBER");
+        blockNumber =  uint64(vm.envUint("BLOCK_NUMBER"));
         nonce = uint64(vm.envUint("NONCE"));
-        isForced = uint8(vm.envUint("IS_FORCED"));
+        isForcedWithdrawal = uint8(vm.envUint("IS_FORCED"));
         receiptRoot = vm.envBytes32("RECEIPT_ROOT");
         l1ReceiverAddress = vm.envString("L1_RECEIVER_ADDRESS");
         l1TokenAddress = vm.envString("L1_TOKEN_ADDRESS");
@@ -382,9 +382,9 @@ contract finalizeWithdrawal is Script {
         // Prepare Input
         ITwineChain.WithdrawalPublicInput memory publicInput = ITwineChain.WithdrawalPublicInput({
             chainId: chainId,
-            batchId: batchId,
+            blockNumber: blockNumber,
             nonce: nonce,
-            isForced: isForced,
+            isForcedWithdrawal: isForcedWithdrawal,
             receiptRoot: receiptRoot,
             l1ReceiverAddress: l1ReceiverAddress,
             l1TokenAddress: l1TokenAddress,

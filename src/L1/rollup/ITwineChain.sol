@@ -139,21 +139,21 @@ interface ITwineChain {
     }
 
     /// @notice required withdrawal data to execute withdrawal
-    /// @param receiptRoot receipt root of the batch
     /// @param chainId chain id of the L1 to withdraw on
-    /// @param batchId Twine batch Id on which the withdrawal was initiated
+    /// @param blockNumber Twine block number
     /// @param nonce nonce of the message
-    /// @param isForced identifier for denoting forced withdrawal
+    /// @param isForcedWithdrawal identifier for denoting forced withdrawal
+    /// @param receiptRoot receipt root of the batch
     /// @param l1ReceiverAddress receiver address on l1
     /// @param l1TokenAddress address of token to be received on l1
     /// @param l2TokenAddress address of token withdrawan from l2
     /// @param amount amount of token to withdraw
     struct WithdrawalPublicInput {
-        bytes32 receiptRoot;
-        bytes32 batchId;
         uint64 chainId;
+        uint64 blockNumber;
         uint64 nonce;
-        uint8 isForced;
+        uint8 isForcedWithdrawal;
+        bytes32 receiptRoot;
         string l1ReceiverAddress;
         string l1TokenAddress;
         string l2TokenAddress;
