@@ -44,47 +44,18 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @notice Emitted when consensus verificiation is successful
     event ConsensusVerified(bytes consensusProof);
 
-    /// @notice Emitted when L1 Token is deposited in L2
-    event L1TokenDeposit();
-
-    /// @notice Emitted when the forcedWithdrawal is successful
-    /// @param to The address of the receiver
-    /// @param from The address of the sender who initiates the message.
-    /// @param l1Nonce The l1 nonce value.
-    /// @param chainId The chainId of L1
-    /// @param gasLimit The optional gas limit passed to L1 or L2.
-    event ForcedWithdrawal(
-        address l2Token,
-        uint256 amount,
-        uint256 l1Nonce,
-        uint256 indexed chainId,
-        uint256 blockNumber,
-        uint256 gasLimit,
-        string l1Token,
-        string indexed from,
-        string indexed to
-    );
 
     /// @notice Emitted when the Layerzero payload is successfully verified
     event LayerzeroPayload(uint256 indexed sourceChainId, bytes32 indexed guId);
-
-    event ParityHash(
-        bytes32 parityHash,
-        uint256 blockNumber,
-        bytes32 blockHash
-    );
-
     struct SolanaVerifierPrecompileOutput {
         bytes publicValue;
         bytes proof;
         bytes transactionInput;
     }
-
     struct EthereumVerifierPrecompileOutput {
         bytes publicValue;
         bytes proof;
     }
-
     struct WithdrawalDetails {
         uint256 l1Nonce;
         uint256 amount;
