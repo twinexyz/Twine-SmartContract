@@ -86,7 +86,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     )
         external
         payable
@@ -94,7 +95,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
-        _sendMessage(txnType, from, to, l1Token, l2Token, amount);
+        _sendMessage(txnType, from, to, l1Token, l2Token, amount,message);
     }
 
     /**********************
@@ -107,19 +108,19 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) internal {
         // If transaction type is Deposit
         if (txnType == TransactionType.deposit) {
-            // require(msg.value >= _value, "Insufficient msg.value");
-
             // append message to L1 depositMessageQueue
             IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
                 from,
                 to,
                 l1Token,
                 l2Token,
-                amount
+                amount,
+                message
             );
         } else {
             // append message to L1 withdrawalMessageQueue
@@ -128,7 +129,8 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
                 to,
                 l1Token,
                 l2Token,
-                amount
+                amount,
+                message
             );
         }
     }

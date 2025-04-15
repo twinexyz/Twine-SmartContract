@@ -15,8 +15,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
      * Variables *
      *************/
     uint64 chainId;
-    uint64 depositMessageIndex;
-    uint64 withdrawalMessageIndex;
+    uint64 public depositMessageIndex;
+    uint64 public withdrawalMessageIndex;
     address public messenger;
     address public roleManager;
     address public messageQueueProxy;
@@ -146,10 +146,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return executionMessageQueue[queueIndex];
     }
 
-    function padAddress(address input) external pure returns (bytes32) {
-        return bytes32(uint256(uint160(input)));
-    }
-
     /*****************************
      * Public Mutating Functions *
      *****************************/
@@ -203,7 +199,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         return false;
     }
 
-    function removeExecutionMessage(uint256 nonce) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+    function removeExecutionMessage(
+        uint256 nonce
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = executionMessageQueue.length;
         for (uint256 i = 0; i < len; i++) {
             if (executionMessageQueue[i].nonce == nonce) {
@@ -216,7 +214,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNDepositElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+    function popFirstNDepositElement(
+        uint256 n
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = depositMessageQueue.length;
         require(n <= nextCrossDomainDepositMessageIndex(), "Invalid index");
         // Shift elements
@@ -231,7 +231,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNWithdrawalElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+    function popFirstNWithdrawalElement(
+        uint256 n
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = withdrawalMessageQueue.length;
         require(n <= nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
         // Shift elements
@@ -246,7 +248,9 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNLayerZeroElement(uint256 n) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
+    function popFirstNLayerZeroElement(
+        uint256 n
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         uint256 len = layerZeroMessageQueue.length;
         for (uint256 i = 0; i < len - n; i++) {
             layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
@@ -264,9 +268,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) external override onlyMessenger {
-        _queueDepositTransaction(from, to, l1Token, l2Token, amount);
+        _queueDepositTransaction(from, to, l1Token, l2Token, amount,message);
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -275,9 +280,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) external override onlyMessenger {
-        _queueWithdrawalTransaction(from, to, l1Token, l2Token, amount);
+        _queueWithdrawalTransaction(from, to, l1Token, l2Token, amount,message);
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -289,7 +295,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         string memory to,
         string memory l1Token,
         string memory l2Token,
-        string memory amount
+        string memory amount,
+        bytes memory message
     ) external override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
         _queueExecutionTransaction(
             nonce,
@@ -299,7 +306,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             to,
             l1Token,
             l2Token,
-            amount
+            amount,
+            message
         );
     }
 
@@ -312,7 +320,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) internal {
         ++depositMessageIndex;
 
@@ -324,7 +333,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             toAddress: to.addressToString(),
             l1Token: l1Token.addressToString(),
             l2Token: l2Token.addressToString(),
-            amount: uintToString(amount)
+            amount: uintToString(amount),
+            message: message
         });
 
         depositMessageQueue.push(depositMessageData);
@@ -347,7 +357,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) internal {
         ++withdrawalMessageIndex;
 
@@ -359,7 +370,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             toAddress: to.addressToString(),
             l1Token: l1Token.addressToString(),
             l2Token: l2Token.addressToString(),
-            amount: uintToString(amount)
+            amount: uintToString(amount),
+            message: message
         });
 
         withdrawalMessageQueue.push(withdrawMessageData);
@@ -385,7 +397,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         string memory to,
         string memory l1Token,
         string memory l2Token,
-        string memory amount
+        string memory amount,
+        bytes memory message
     ) internal {
         MessageData memory executionMessageData = MessageData({
             nonce: nonce,
@@ -395,7 +408,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             toAddress: to,
             l1Token: l1Token,
             l2Token: l2Token,
-            amount: amount
+            amount: amount,
+            message: message
         });
 
         executionMessageQueue.push(executionMessageData);
@@ -404,9 +418,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice Converts a uint256 to its string representation
     /// @param value The uint256 value to convert
     /// @return The string representation of the input value
-    function uintToString(
-        uint256 value
-    ) internal pure returns (string memory) {
+    function uintToString(uint256 value) internal pure returns (string memory) {
         if (value == 0) {
             return "0";
         }
@@ -424,5 +436,4 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         }
         return string(buffer);
     }
-    
 }

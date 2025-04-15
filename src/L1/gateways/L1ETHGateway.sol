@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {IL2ERC20Gateway} from "../../L2/gateways/L2CustomERC20Gateway.sol";
+import {ProcessMessageLib} from "../../libraries/utils/ProcessMessageLib.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
@@ -12,7 +14,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     using TypeConversionLib for string;
     using TypeConversionLib for address;
 
-    address l2TokenAddress;
+    address public l2TokenAddress;
 
     /***************
      * Constructor *
@@ -31,12 +33,14 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         address _gatewayrouter,
         address _messenger,
         address _roleManager,
+        address _counterPartGateway,
         uint64 _chainId
     ) external initializer {
         TwineL1GatewayBase._initialize(
             _gatewayrouter,
             _messenger,
             _roleManager,
+            _counterPartGateway,
             _chainId
         );
     }
@@ -44,7 +48,6 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     /*****************************
      * Public Mutating Functions *
      *****************************/
-   
 
     /// @inheritdoc IL1ETHGateway
     function depositETH(
@@ -52,11 +55,32 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
+         require(msg.value > 0, "Amount for gas is needed");
+        require(
+            msg.value >= (gasLimit + amount),
+            "Not efficient gas value"
+        );
         _deposit(to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ETHGateway
     function depositETHAndCall(
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        ProcessMessageLib.ForcedMessage[] memory data
+    ) external payable override {
+        (uint256 totalValue, bytes memory messageData) = ProcessMessageLib
+            .processForcedMessages(data);
+        require(msg.value > 0, "Amount for gas is needed");
+        require(
+            msg.value >= (gasLimit + totalValue + amount),
+            "Not efficient gas value"
+        );
+        _deposit(to, amount, gasLimit, messageData);
+    }
+
+    function routerDepositETHAndCall(
         address to,
         uint256 amount,
         uint256 gasLimit,
@@ -89,10 +113,14 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
     {
-        require(amount.stringToUint() > 0, "Amout must be greater than zero");
-        (bool _success, ) = to.stringToAddress().call{
-            value: amount.stringToUint()
-        }("");
+        uint256 amountUint = amount.stringToUint();
+        require(amountUint > 0, "Amount must be greater than zero");
+        require(l2Token.stringToAddress() == l2TokenAddress, "Wrong L2Token");
+        require(
+            address(this).balance >= amountUint,
+            "Insufficient contract balance"
+        );
+        (bool _success, ) = to.stringToAddress().call{value: amountUint}("");
         require(_success, "ETH transfer failed");
 
         emit FinalizeWithdrawETH(
@@ -123,7 +151,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         address to,
         uint256 amount,
         uint256 gasLimit,
-        bytes memory _data
+        bytes memory data
     ) internal virtual {
         require(amount > 0, "Amount can not be zero");
         require(
@@ -131,13 +159,20 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             "Amount and gas limit should not be greater than msg.value"
         );
 
-        // 1. Extract real sender if this call is from L1GatewayRouter.
+        // Extract real sender if this call is from L1GatewayRouter.
         address from = _msgSender();
+
         if (gatewayRouter == from) {
-            (from, _data) = abi.decode(_data, (address, bytes));
+            (from, data) = abi.decode(data, (address, bytes));
         }
 
-        // 3. Calculate the type of transaction
+
+         bytes memory _depositMessage = abi.encodeCall(
+            IL2ERC20Gateway.finalizeDepositERC20,
+            (address(0), l2TokenAddress, from,to, chainId, amount)
+        );
+
+        //Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType transactionType = ITwineL1MessengerBase
                 .TransactionType
                 .deposit;
@@ -148,7 +183,8 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             to,
             address(0),
             l2TokenAddress,
-            amount
+            amount,
+            abi.encodePacked(_depositMessage,data)
         );
     }
 
@@ -179,7 +215,8 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             to,
             address(0),
             l2TokenAddress,
-            amount
+            amount,
+            data
         );
     }
 }
