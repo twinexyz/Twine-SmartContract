@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.24;
-import {ProcessMessageLib} from "../../../libraries/utils/ProcessMessageLib.sol";
 interface IL1ERC20Gateway {
     /**********
      * Events *
@@ -99,21 +98,6 @@ interface IL1ERC20Gateway {
     /// @param data Optional data to forward to recipient's account.
     /// @param gasLimit Gas limit required to complete the deposit on L2.
     function depositERC20AndCall(
-        address token,
-        address to,
-        uint256 amount,
-        uint256 gasLimit,
-        ProcessMessageLib.ForcedMessage[] memory data
-    ) external payable;
-
-    /// @notice Deposit some token to a recipient's account on L2 and call.
-    /// @dev Make this function payable to send relayer fee in Ether.
-    /// @param token The address of token in L1.
-    /// @param to The address of recipient's account on L2.
-    /// @param amount The amount of token to transfer.
-    /// @param data Optional data to forward to recipient's account.
-    /// @param gasLimit Gas limit required to complete the deposit on L2.
-    function routerDepositERC20AndCall(
         address token,
         address to,
         uint256 amount,

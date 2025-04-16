@@ -7,7 +7,6 @@ import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/L2CustomERC20Gateway.sol";
-import {ProcessMessageLib} from "../../libraries/utils/ProcessMessageLib.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
@@ -35,19 +34,16 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
     /// @param _gatewayrouter The address of L1GatewayRouter in L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     /// @param _roleManager The address of Role manager contract.
-    ///@param _counterPartGateway The address of Counterpart gateway
     function initialize(
         address _gatewayrouter,
         address _messenger,
         address _roleManager,
-        address _counterPartGateway,
         uint64 _chainId
     ) external initializer {
         TwineL1GatewayBase._initialize(
             _gatewayrouter,
             _messenger,
             _roleManager,
-            _counterPartGateway,
             _chainId
         );
     }
@@ -83,12 +79,6 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         emit UpdateTokenMapping(l1Token, oldL2Token, l2Token);
     }
 
-    function setCounterPartGateway(address l2Token, address gatewayAddress) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-         require(l2Token != address(0), "token address cannot be 0");
-         require(gatewayAddress != address(0), "token address cannot be 0");
-
-    }
-
     /**********************
      * Internal Functions *
      **********************/
@@ -120,12 +110,6 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address from;
         (from, amount, data) = _transferERC20In(token, amount, data);
 
-         bytes memory functionCall = abi.encodeCall(
-            IL2ERC20Gateway.finalizeDepositERC20,
-            (token, l2Token, from,to, chainId, amount)
-        );
-        bytes memory depositMessage = abi.encode(counterPartGateway,functionCall);
-
         // Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
@@ -134,7 +118,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             token,
             l2Token,
             amount,
-            abi.encode(depositMessage,data)
+            data
         );
     }
 

@@ -22,7 +22,7 @@ abstract contract TwineL2MessengerBase is
     address public roleManager;
 
     //chainId=> L1TwineMessenger
-    mapping(uint256 => address) counterpartMessenger;
+    mapping(uint256 => address) public counterpartMessenger;
 
     //chainId=> L1Gateway
     mapping(uint256 => mapping(string => string))

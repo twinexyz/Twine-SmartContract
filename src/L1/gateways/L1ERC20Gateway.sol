@@ -9,7 +9,6 @@ import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
-import {ProcessMessageLib} from "../../libraries/utils/ProcessMessageLib.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 
 /// @title L1ERC20Gateway
@@ -34,24 +33,6 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
 
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20AndCall(
-        address l1Token,
-        address to,
-        uint256 amount,
-        uint256 gasLimit,
-        ProcessMessageLib.ForcedMessage[] memory data
-    ) external payable override {
-        (uint256 totalValue, bytes memory messageData) = ProcessMessageLib
-            .processForcedMessages(data);
-        require(msg.value > 0, "Amount for gas is needed");
-        require(
-            msg.value >= (gasLimit + totalValue),
-            "Not efficient gas value"
-        );
-        _deposit(l1Token, to, amount, gasLimit, messageData);
-    }
-
-    /// @inheritdoc IL1ERC20Gateway
-    function routerDepositERC20AndCall(
         address l1Token,
         address to,
         uint256 amount,

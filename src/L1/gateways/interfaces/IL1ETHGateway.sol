@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ProcessMessageLib} from "../../../libraries/utils/ProcessMessageLib.sol";
+
 
 interface IL1ETHGateway {
     /// @notice Emitted when someone deposit ETH from L1 to L2.
@@ -57,18 +57,6 @@ interface IL1ETHGateway {
     /// @param gasLimit Gas limit required to complete the deposit on L2.
     /// @param data message of functions to call
     function depositETHAndCall(
-        address to,
-        uint256 amount,
-        uint256 gasLimit,
-        ProcessMessageLib.ForcedMessage[] memory data
-    ) external payable;
-
-    // @notice Deposit ETH to some recipient's account in L2 and call the target contract.
-    /// @param to The address of recipient's account on L2.
-    /// @param amount The amount of ETH to be deposited.
-    /// @param gasLimit Gas limit required to complete the deposit on L2.
-    /// @param data message of functions to call
-    function routerDepositETHAndCall(
         address to,
         uint256 amount,
         uint256 gasLimit,

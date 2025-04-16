@@ -122,4 +122,5 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
             block.number
         );
     }
+
 }

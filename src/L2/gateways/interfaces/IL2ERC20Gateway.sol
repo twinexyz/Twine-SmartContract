@@ -69,6 +69,33 @@ interface IL2ERC20Gateway {
     /*****************************
      * Public Mutating Functions *
      *****************************/
+    /// @notice Withdraw of some token to a recipient's account on L1.
+    /// @dev Make this function payable to send relayer fee
+    /// @param token The address of token in L2.
+    /// @param to The address of recipient's account on L1.
+    /// @param amount The amount of token to transfer.
+    /// @param gasLimit Unused, but included for potential forward compatibility considerations.
+    function withdrawERC20InSvm(
+        address token,
+        string calldata to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit
+    ) external payable;
+
+    /// @notice Withdraw of some token to a recipient's account on L1.
+    /// @dev Make this function payable to send relayer fee
+    /// @param token The address of token in L2.
+    /// @param to The address of recipient's account on L1.
+    /// @param amount The amount of token to transfer.
+    /// @param gasLimit Unused, but included for potential forward compatibility considerations.
+    function withdrawERC20InEvm(
+        address token,
+        address to,
+        uint256 amount,
+        uint256 chainId,
+        uint256 gasLimit
+    ) external payable;
 
     /// @notice Withdraw of some token to a recipient's account on L1.
     /// @dev Make this function payable to send relayer fee

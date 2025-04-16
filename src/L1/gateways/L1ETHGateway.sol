@@ -5,7 +5,6 @@ import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL2ERC20Gateway} from "../../L2/gateways/L2CustomERC20Gateway.sol";
-import {ProcessMessageLib} from "../../libraries/utils/ProcessMessageLib.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
@@ -33,14 +32,12 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         address _gatewayrouter,
         address _messenger,
         address _roleManager,
-        address _counterPartGateway,
         uint64 _chainId
     ) external initializer {
         TwineL1GatewayBase._initialize(
             _gatewayrouter,
             _messenger,
             _roleManager,
-            _counterPartGateway,
             _chainId
         );
     }
@@ -68,23 +65,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         address to,
         uint256 amount,
         uint256 gasLimit,
-        ProcessMessageLib.ForcedMessage[] memory data
-    ) external payable override {
-        (uint256 totalValue, bytes memory messageData) = ProcessMessageLib
-            .processForcedMessages(data);
-        require(msg.value > 0, "Amount for gas is needed");
-        require(
-            msg.value >= (gasLimit + totalValue + amount),
-            "Not efficient gas value"
-        );
-        _deposit(to, amount, gasLimit, messageData);
-    }
-
-    function routerDepositETHAndCall(
-        address to,
-        uint256 amount,
-        uint256 gasLimit,
-        bytes calldata data
+        bytes memory data
     ) external payable override {
         _deposit(to, amount, gasLimit, data);
     }
@@ -167,11 +148,6 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         }
 
 
-         bytes memory _depositMessage = abi.encodeCall(
-            IL2ERC20Gateway.finalizeDepositERC20,
-            (address(0), l2TokenAddress, from,to, chainId, amount)
-        );
-
         //Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType transactionType = ITwineL1MessengerBase
                 .TransactionType
@@ -184,7 +160,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
             address(0),
             l2TokenAddress,
             amount,
-            abi.encodePacked(_depositMessage,data)
+            data
         );
     }
 

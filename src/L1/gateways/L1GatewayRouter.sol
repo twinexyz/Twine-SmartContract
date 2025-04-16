@@ -3,7 +3,6 @@
 pragma solidity ^0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {ProcessMessageLib} from "../../libraries/utils/ProcessMessageLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -12,7 +11,6 @@ import {IL1ETHGateway} from "./interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IL1GatewayRouter} from "./interfaces/IL1GatewayRouter.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {ProcessMessageLib} from "../../libraries/utils/ProcessMessageLib.sol";
 
 /// @title L1GatewayRouter
 /// @notice The `L1GatewayRouter` is the main entry for depositing Ether and ERC20 tokens.
@@ -135,13 +133,7 @@ contract L1GatewayRouter is
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
-        depositERC20AndCall(
-            token,
-            to,
-            amount,
-            gasLimit,
-            new ProcessMessageLib.ForcedMessage[](0)
-        );
+        depositERC20AndCall(token, to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -150,7 +142,7 @@ contract L1GatewayRouter is
         address to,
         uint256 amount,
         uint256 gasLimit,
-        ProcessMessageLib.ForcedMessage[] memory data
+        bytes memory data
     ) public payable override onlyNotInContext {
         address gateway = getERC20Gateway(token);
         require(gateway != address(0), "no gateway available");
@@ -158,18 +150,10 @@ contract L1GatewayRouter is
         // enter deposit context
         gatewayInContext = gateway;
 
-        (uint256 totalValue, bytes memory messageData) = ProcessMessageLib
-            .processForcedMessages(data);
-        require(msg.value > 0, "Amount for gas is needed");
-        require(
-            msg.value >= (gasLimit + totalValue + amount),
-            "Not efficient gas value"
-        );
-
         // encode msg.sender with data
-        bytes memory routerData = abi.encode(_msgSender(), messageData);
+        bytes memory routerData = abi.encode(_msgSender(), data);
 
-        IL1ERC20Gateway(gateway).routerDepositERC20AndCall{value: msg.value}(
+        IL1ERC20Gateway(gateway).depositERC20AndCall{value: msg.value}(
             token,
             to,
             amount,
@@ -180,22 +164,13 @@ contract L1GatewayRouter is
         // leave deposit context
         gatewayInContext = address(0);
     }
-    /// @inheritdoc IL1ERC20Gateway
-    function routerDepositERC20AndCall(
-        address ,
-        address ,
-        uint256 ,
-        uint256 ,
-        bytes memory 
-    )external payable virtual override {
-       revert("Not accessible from router contract"); 
-    }
+
     function finalizeTokenWithdrawal(
         string memory,
         string memory,
         string memory,
         string memory,
-        uint64
+        uint64 
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
         revert("Not accessible from router contract");
     }
@@ -228,7 +203,7 @@ contract L1GatewayRouter is
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
-        depositETHAndCall(to, amount, gasLimit, new ProcessMessageLib.ForcedMessage[](0));
+        depositETHAndCall(to, amount, gasLimit, new bytes(0));
     }
 
     /// @inheritdoc IL1ETHGateway
@@ -236,7 +211,7 @@ contract L1GatewayRouter is
         address to,
         uint256 amount,
         uint256 gasLimit,
-        ProcessMessageLib.ForcedMessage[] memory data
+        bytes memory data
     ) public payable override onlyNotInContext {
         address gateway = ethGateway;
         require(gateway != address(0), "eth gateway available");
@@ -244,22 +219,12 @@ contract L1GatewayRouter is
         // encode msg.sender with data
         bytes memory routerData = abi.encode(_msgSender(), data);
 
-        IL1ETHGateway(gateway).routerDepositETHAndCall{value: msg.value}(
+        IL1ETHGateway(gateway).depositETHAndCall{value: msg.value}(
             to,
             amount,
             gasLimit,
             routerData
         );
-    }
-
-    /// @inheritdoc IL1ETHGateway
-    function routerDepositETHAndCall(
-        address ,
-        uint256 ,
-        uint256 ,
-        bytes memory 
-    )external payable virtual override {
-       revert("Not accessible from router contract"); 
     }
 
     /// @inheritdoc IL1ETHGateway

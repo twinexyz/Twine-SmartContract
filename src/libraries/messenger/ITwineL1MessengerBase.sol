@@ -40,7 +40,8 @@ interface ITwineL1MessengerBase {
         address to,
         address l1_token,
         address l2_token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) external payable;
     
 }

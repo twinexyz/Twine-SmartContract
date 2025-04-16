@@ -15,6 +15,22 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         LayerZero,
         Message
     }
+    struct TokenTxn {
+        uint64 amount;
+        address receiver;
+        address token;
+        bool deposit;
+    }
+    struct L1ForcedTxn {
+        address targetContract;
+        uint64 value;
+        bytes data;
+    }
+    struct L1Txns {
+        uint64 nonce;
+        TokenTxn tokenTxn;
+        L1ForcedTxn[] l1ForcedTxn;
+    }
 
     /// @notice Emitted when a cross domain message is sent.
     /// @param from The address of the sender who initiates the message.
@@ -35,6 +51,10 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 gasLimit
     );
 
+     /// @notice Emitted when a deposit or withdraw handling is failed.
+      /// @param reason The reason of failure
+    event TransactionFailed(string reason);
+
     /// @notice Emitted when consenus  verification and transaction of solana are executed successfully
     event SolanaTransactionsHandled(bytes transactionOutput);
 
@@ -43,7 +63,6 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     /// @notice Emitted when consensus verificiation is successful
     event ConsensusVerified(bytes consensusProof);
-
 
     /// @notice Emitted when the Layerzero payload is successfully verified
     event LayerzeroPayload(uint256 indexed sourceChainId, bytes32 indexed guId);

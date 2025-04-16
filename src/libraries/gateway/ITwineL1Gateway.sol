@@ -3,7 +3,7 @@
 pragma solidity ^0.8.24;
 
 interface ITwineL1Gateway {
-    
+
     /*************************
      * Public View Functions *
      *************************/
