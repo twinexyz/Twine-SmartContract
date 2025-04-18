@@ -95,7 +95,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
-        _sendMessage(txnType, from, to, l1Token, l2Token, amount,message);
+        _sendMessage(txnType, from, to, l1Token, l2Token,amount,message);
     }
 
     /**********************

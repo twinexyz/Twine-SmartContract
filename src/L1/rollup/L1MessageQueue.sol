@@ -271,7 +271,14 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint256 amount,
         bytes memory message
     ) external override onlyMessenger {
-        _queueDepositTransaction(from, to, l1Token, l2Token, amount,message);
+        _queueDepositTransaction(
+            from,
+            to,
+            l1Token,
+            l2Token,
+            amount,
+            message
+        );
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -283,7 +290,14 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint256 amount,
         bytes memory message
     ) external override onlyMessenger {
-        _queueWithdrawalTransaction(from, to, l1Token, l2Token, amount,message);
+        _queueWithdrawalTransaction(
+            from,
+            to,
+            l1Token,
+            l2Token,
+            amount,
+            message
+        );
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -348,7 +362,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             l2Token,
             from,
             to,
-            amount
+            amount,
+            message
         );
     }
 
@@ -385,7 +400,8 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             l2Token,
             from,
             to,
-            amount
+            amount,
+            message
         );
     }
 

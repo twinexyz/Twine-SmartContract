@@ -153,7 +153,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     function _deposit(
         address token,
         address to,
-        uint256 amount, 
+        uint256 amount,
         uint256 gasLimit,
         bytes memory data
     ) internal virtual;

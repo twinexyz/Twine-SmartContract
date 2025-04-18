@@ -24,9 +24,8 @@ abstract contract TwineL2MessengerBase is
     //chainId=> L1TwineMessenger
     mapping(uint256 => address) public counterpartMessenger;
 
-    //chainId=> L1Gateway
-    mapping(uint256 => mapping(string => string))
-        public tokenCounterpartGateWay;
+    //chainId=> (l2Token => L2Gateway)
+    mapping(uint256 => mapping(address => address)) public tokenGateWay;
 
     //count for the messages
     uint256 public messageCount;
@@ -64,7 +63,7 @@ abstract contract TwineL2MessengerBase is
     function setRoleManager(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_roleManagerAddress != address(0),"value cann't be zero");
+        require(_roleManagerAddress != address(0), "value cann't be zero");
         roleManager = _roleManagerAddress;
     }
 
@@ -72,7 +71,7 @@ abstract contract TwineL2MessengerBase is
     function setFeeVault(
         address _feeVault
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_feeVault != address(0),"Address can't be zero");
+        require(_feeVault != address(0), "Address can't be zero");
         feeVault = _feeVault;
     }
 
@@ -88,7 +87,7 @@ abstract contract TwineL2MessengerBase is
         uint256 len = _chainId.length;
         for (uint256 i = 0; i < len; i++) {
             require(
-               _counterpartMessenger[i] != address(0),
+                _counterpartMessenger[i] != address(0),
                 " Value cann't be zero"
             );
             address _oldCounterPart = counterpartMessenger[_chainId[i]];
@@ -99,6 +98,14 @@ abstract contract TwineL2MessengerBase is
                 _counterpartMessenger[i]
             );
         }
+    }
+
+    function setTokenGateWay(
+        uint256 chainId,
+        address l2Token,
+        address gateway
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        tokenGateWay[chainId][l2Token] = gateway;
     }
 
     /// @dev The storage slots for future usage.

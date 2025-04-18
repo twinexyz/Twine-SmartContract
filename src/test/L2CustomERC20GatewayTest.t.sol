@@ -68,7 +68,7 @@ contract L2CustomERC20GatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0, address(0), address(roleManager),L2MessageExecutorAddress)
+                (0, address(0), address(roleManager),L2MessageExecutorAddress,address(0))
             )
         );
 

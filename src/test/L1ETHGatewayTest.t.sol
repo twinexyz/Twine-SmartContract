@@ -79,7 +79,7 @@ contract L1ETHGatewayTest is Test {
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0, address(0), address(0),L2MessageExecutorAddress)
+                (0, address(0), address(0),L2MessageExecutorAddress,address(0))
             )
         );
 
@@ -193,7 +193,7 @@ contract L1ETHGatewayTest is Test {
             "1000",
             1
         );
-        // assertEq(l1Token.balanceOf(address(gateway)), 0);
+        assertEq(l1Token.balanceOf(address(gateway)), 0);
     }
 
     function testforcedWithdrawal() public {

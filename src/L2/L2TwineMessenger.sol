@@ -4,22 +4,17 @@ pragma solidity ^0.8.24;
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
-import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
+import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
+import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
 contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     using TypeConversionLib for address;
-
-    /// @notice The address of Consensus Proving Precompile
-    address public consensusPrecompileAddress;
-
-    /// @notice The address of bridging Precompile
-    address public bridgingPrecompileAddress;
 
     /// @notice SP1 Verifier Address
     address public sp1Verifier;
@@ -30,18 +25,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     /// @notice Skip zk Verification
     bool public skipVerification;
 
-    /// @notice mapping of (chainId => (L1TxnType => nonce))
-    mapping(uint256 => mapping(L1TxnType => uint256))
-        public l1MessageExecutedCount;
+    /// @notice The address of the system contract
+    address public systemStorageContract;
 
-    /// @notice last nonce of executed deposit message
-    uint64 lastExecutedDepositMessageNonce;
+    /// @notice The address of Consensus Proving Precompile
+    address public consensusPrecompileAddress;
 
-    /// @notice last nonce of executed withdraw message
-    uint64 lastExecutedWithdrawMessageNonce;
-
-    /// @notice Mapping to store the receipt roots for each block number
-    mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
+    /// @notice The address of bridging Precompile
+    address public bridgingPrecompileAddress;
 
     /// @notice Mapping to store consensus verification keys of L1s
     mapping(uint256 => bytes32) public vKeys;
@@ -59,7 +50,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 chaindId,
         address counterpartMessenger,
         address roleManager,
-        address msgExecutorAddress
+        address msgExecutorAddress,
+        address systemStorageContractAddress
     ) external initializer {
         TwineL2MessengerBase.__TwineMessengerBase_init(
             chaindId,
@@ -69,6 +61,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         consensusPrecompileAddress = address(0x16);
         bridgingPrecompileAddress = address(0x15);
         msgExecutor = msgExecutorAddress;
+        systemStorageContract = systemStorageContractAddress;
         skipVerification = true;
     }
 
@@ -102,6 +95,16 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
             "sp1Verifier address cannot be zero"
         );
         sp1Verifier = sp1VerifierAddress;
+    }
+
+    function setSystemStorageContract(
+        address systemStorageContractAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            systemStorageContractAddress != address(0),
+            "System Storage ContractAddress cannot be zero"
+        );
+        systemStorageContract = systemStorageContractAddress;
     }
 
     function setMsgExecutorAddress(
@@ -173,11 +176,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function executeDepositWithdrawLogic(
         bytes calldata precompileInput
-    )
-        external
-        nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
-    {
+    ) external {
         // Ensure this can only be called by the contract itself
         require(msg.sender == address(this), "Unauthorized");
 
@@ -190,21 +189,49 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
         if (l1Txns.tokenTxn.deposit) {
             require(
-                l1Txns.nonce - 1 == lastExecutedDepositMessageNonce,
+                l1Txns.nonce - 1 ==
+                    ITwineSystemStorage(systemStorageContract)
+                        .l1MessageExecutedCount(
+                            l1Txns.tokenTxn.chainId,
+                            ITwineSystemStorage.L1TxnType.Deposit
+                        ),
                 "Message Already Executed"
             );
-            //  ITwineERC20Upgradeable(token).mint(l1Txns.tokenTxn.receiver,l1Txns.tokenTxn.amount);
+            IL2ERC20Gateway(
+                tokenGateWay[l1Txns.tokenTxn.chainId][l1Txns.tokenTxn.token]
+            ).mintTokens(
+                    l1Txns.tokenTxn.amount,
+                    l1Txns.tokenTxn.token,
+                    l1Txns.tokenTxn.receiver
+                );
             if (l1Txns.l1ForcedTxn.length > 0) {
                 IL2MsgExecutor(msgExecutor).processMessage(l1Txns.l1ForcedTxn);
             }
-            lastExecutedDepositMessageNonce = l1Txns.nonce;
+            ITwineSystemStorage(systemStorageContract).increaseNonce(
+                l1Txns.tokenTxn.chainId,
+                ITwineSystemStorage.L1TxnType.Deposit
+            );
         } else {
             require(
-                l1Txns.nonce - 1 == lastExecutedWithdrawMessageNonce,
+                l1Txns.nonce - 1 ==
+                    ITwineSystemStorage(systemStorageContract)
+                        .l1MessageExecutedCount(
+                            l1Txns.tokenTxn.chainId,
+                            ITwineSystemStorage.L1TxnType.ForcedWithdraw
+                        ),
                 "Message Already Executed"
             );
-            //  ITwineERC20Upgradeable(token).burn(l1Txns.tokenTxn.receiver,l1Txns.tokenTxn.amount);
-            lastExecutedWithdrawMessageNonce = l1Txns.nonce;
+            IL2ERC20Gateway(
+                tokenGateWay[l1Txns.tokenTxn.chainId][l1Txns.tokenTxn.token]
+            ).burnTokens(
+                    l1Txns.tokenTxn.amount,
+                    l1Txns.tokenTxn.token,
+                    l1Txns.tokenTxn.receiver
+                );
+            ITwineSystemStorage(systemStorageContract).increaseNonce(
+                l1Txns.tokenTxn.chainId,
+                ITwineSystemStorage.L1TxnType.ForcedWithdraw
+            );
         }
     }
 
@@ -256,9 +283,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
         // For testing purposes only. TODO: Remove before deploying to production.
-        if (skipVerification) {
-            blockReceiptRoots[chainId][height] = receiptRoot;
-        }
+        // if (skipVerification) {
+        //     ITwineSystemStorage(systemStorageContract).blockReceiptRoots(chainId,height) = receiptRoot;
+        // }
         if (consensusProof.length > 0) {
             _verifyConsensusProof(chainId, consensusProof);
         }

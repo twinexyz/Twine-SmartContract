@@ -283,6 +283,22 @@ contract L2GatewayRouter is
         revert("Not accessible from router contract");
     }
 
+     function mintTokens(
+        uint256 ,
+        address ,
+        address 
+    ) external payable{
+        revert("Not accessible from router contract");
+    }
+    /// @notice Burn token from the given address to process the L1 Forced Withdraw Transaction
+    function burnTokens(
+        uint256 ,
+        address ,
+        address 
+    ) external payable{
+        revert("Not accessible from router contract");
+    }
+
     /**********************
      * Internal Functions *
      **********************/

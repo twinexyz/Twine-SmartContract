@@ -3,22 +3,12 @@ pragma solidity ^0.8.24;
 
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
-    enum TransactionType {
-        BridgeTxns,
-        LayerZeroDVN
-    }
 
-    /// @notice All types of messages incoming from L1
-    enum L1TxnType {
-        Deposit,
-        ForcedWithdraw,
-        LayerZero,
-        Message
-    }
     struct TokenTxn {
-        uint64 amount;
-        address receiver;
+        uint256 chainId;
+        uint256 amount;
         address token;
+        address receiver;
         bool deposit;
     }
     struct L1ForcedTxn {
@@ -106,6 +96,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes memory consensusProof,
         bytes memory ethereumTransactions
     ) external;
+    
     /// @notice verify the layerzero payload
     /// @param lzPayload layerzero payload
     /// @param payloadProof  proof of payload

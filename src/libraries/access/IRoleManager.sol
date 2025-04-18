@@ -38,6 +38,11 @@ interface IRoleManager {
      **/
     function TWINE_GATEWAYS() external view returns (bytes32);
 
+     /**
+     * @notice Returns bytes32 value of the public variable TWINE_MESSENGER
+     **/
+    function TWINE_MESSENGER() external view returns (bytes32);
+
     /**
      * @notice Returns bytes32 value of the public variable  TWINE_OPERATIONS_HANDLER
      **/

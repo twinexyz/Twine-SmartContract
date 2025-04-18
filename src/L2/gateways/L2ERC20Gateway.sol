@@ -3,8 +3,8 @@
 pragma solidity ^0.8.24;
 
 import {IL2ERC20Gateway} from "./interfaces/IL2ERC20Gateway.sol";
+import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
-
 abstract contract L2ERC20Gateway is TwineL2GatewayBase, IL2ERC20Gateway {
     /// @inheritdoc IL2ERC20Gateway
     function withdrawERC20(
@@ -55,6 +55,26 @@ abstract contract L2ERC20Gateway is TwineL2GatewayBase, IL2ERC20Gateway {
         bytes calldata data
     ) external payable override nonReentrant {
         _withdraw(l2Token, to, amount, chainId, gasLimit, data);
+    }
+
+    /// @inheritdoc IL2ERC20Gateway
+    function mintTokens(
+        uint256 amount,
+        address token,
+        address receiver
+    ) external payable override nonReentrant {
+        require(amount > 0, "Amount can not be zero");
+        ITwineERC20(token).mint(receiver, amount);
+    }
+
+    /// @inheritdoc IL2ERC20Gateway
+    function burnTokens(
+        uint256 amount,
+        address token,
+        address from
+    ) external payable override nonReentrant {
+        require(amount > 0, "Amount can not be zero");
+        ITwineERC20(token).burn(from, amount);
     }
 
     /**********************
@@ -113,5 +133,4 @@ abstract contract L2ERC20Gateway is TwineL2GatewayBase, IL2ERC20Gateway {
         }
         return string(_string);
     }
-    
 }

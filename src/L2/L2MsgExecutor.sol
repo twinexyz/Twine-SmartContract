@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-
+import "forge-std/console.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -38,7 +38,7 @@ contract L2MsgExecutor is IL2MsgExecutor, ContextUpgradeable,ReentrancyGuardUpgr
         IL2TwineMessenger.L1ForcedTxn[] memory messages
     ) external override
         nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()){
+        onlyRoles(IRoleManager(roleManager).TWINE_MESSENGER()){
         for (uint256 i = 0; i < messages.length; i++) {
             IL2TwineMessenger.L1ForcedTxn memory callMessage = messages[i];
             (bool success, ) = callMessage.targetContract.call{

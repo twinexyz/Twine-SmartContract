@@ -69,6 +69,20 @@ interface IL2ERC20Gateway {
     /*****************************
      * Public Mutating Functions *
      *****************************/
+    /// @notice Mint token to the given address to process the L1 Deposit Transaction
+     function mintTokens(
+        uint256 amount,
+        address token,
+        address receiver
+    ) external payable;
+
+    /// @notice Burn token from the given address to process the L1 Forced Withdraw Transaction
+    function burnTokens(
+        uint256 amount,
+        address token,
+        address from
+    ) external payable;
+
     /// @notice Withdraw of some token to a recipient's account on L1.
     /// @dev Make this function payable to send relayer fee
     /// @param token The address of token in L2.

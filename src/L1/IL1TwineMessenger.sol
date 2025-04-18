@@ -33,6 +33,4 @@ interface IL1TwineMessenger is ITwineL1MessengerBase {
     /// @param _rollup the adress of twine chain to set
     function setRollupAddress(address _rollup) external;
 
-
-
 }

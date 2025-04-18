@@ -6,7 +6,6 @@ import {L1ERC20Gateway} from "./L1ERC20Gateway.sol";
 import {IL1TwineMessenger} from "../IL1TwineMessenger.sol";
 import {IL1ERC20Gateway} from "./interfaces/IL1ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {IL2ERC20Gateway} from "../../L2/gateways/L2CustomERC20Gateway.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";

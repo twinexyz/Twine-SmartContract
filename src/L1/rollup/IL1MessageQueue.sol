@@ -23,7 +23,8 @@ interface IL1MessageQueue {
         address l2Token,
         address from,
         address toTwineAddress,
-        uint256 amount
+        uint256 amount,
+        bytes message
     );
 
     /// @notice Emitted when a new L1 => L2 forced withdrawal transaction is appended to the queue.
@@ -43,7 +44,8 @@ interface IL1MessageQueue {
         address l2Token,
         address from,
         address toTwineAddress,
-        uint256 amount
+        uint256 amount,
+        bytes message
     );
 
     /**********
