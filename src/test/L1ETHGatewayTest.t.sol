@@ -129,6 +129,7 @@ contract L1ETHGatewayTest is Test {
         );
         gateway = L1ETHGateway(L1ETHGatewayAddress);
         roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
+        gateway.setL2TokenAddress(address(l2Token));
 
         //setup gateway in router;
         vm.startPrank(initialOwner);
@@ -185,20 +186,19 @@ contract L1ETHGatewayTest is Test {
             0
         );
         roleManager.grantRole(TWINE_CHAIN, initialOwner);
-        console.log("2");
         gateway.finalizeTokenWithdrawal(
             addressToString(address(l1Token)),
             addressToString(address(l2Token)),
             addressToString(initialOwner),
-            "1000",
+            "10000000000",
             1
         );
-        assertEq(l1Token.balanceOf(address(gateway)), 0);
+        assertEq(address(gateway).balance, 999999990000000000);
+        vm.stopPrank();
     }
 
     function testforcedWithdrawal() public {
         vm.startPrank(initialOwner);
-        gateway.setL2TokenAddress(address(l2Token));
         vm.deal(initialOwner, 1 ether);
         gateway.forcedWithdrawalETH(initialOwner, 100000, 10, new bytes(0));
         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
@@ -217,5 +217,24 @@ contract L1ETHGatewayTest is Test {
             _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
         }
         return string(_string);
+    }
+
+     function uintToString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
     }
 }

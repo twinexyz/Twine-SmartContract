@@ -130,6 +130,7 @@ contract TwineChainTest is Test {
             )
         );
         ethGateway = L1ETHGateway(L1ETHGatewayAddress);
+        ethGateway.setL2TokenAddress(0x19B78FF82C94b5E517f2279f3fBF10498B039179);
         address L1CustomERC20GatewayAddress = Upgrades.deployTransparentProxy(
             "L1CustomERC20Gateway.sol",
             msg.sender,
