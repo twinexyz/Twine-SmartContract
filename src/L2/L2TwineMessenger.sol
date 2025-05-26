@@ -5,6 +5,7 @@ import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
+import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
@@ -81,6 +82,18 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
 
+    function setTwineSystemStorage(
+        address _systemStorageContract
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        systemStorageContract = _systemStorageContract;
+    }
+
+    function setMessaageExecutor(
+        address _msgExecutor
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        twineExecutor = _msgExecutor;
+    }
+
     function setZkVerifcationStatus(
         bool status
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -153,88 +166,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         );
     }
 
-    function handleDepoistsWithdraws(
-        bytes calldata precompileInput
-    )
-        external
-        nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
-    {
-        try this.executeDepositWithdrawLogic(precompileInput) {
-            // Transaction executed successfully
-        } catch Error(string memory reason) {
-            // Standard error case
-            emit TransactionFailed(reason);
-            // Return without reverting - this way the transaction itself isn't marked as failed
-            return;
-        } catch (bytes memory reason) {
-            // Low-level error case
-            emit TransactionFailed(string(reason));
-            return;
-        }
-    }
-
-    function executeDepositWithdrawLogic(
-        bytes calldata precompileInput
-    ) external {
-        // Ensure this can only be called by the contract itself
-        require(msg.sender == address(this), "Unauthorized");
-
-        bool successMsg;
-        bytes memory output;
-
-        (successMsg, output) = bridgingPrecompileAddress.call(precompileInput);
-        require(successMsg, "Failed executing transactions!");
-        L1Txns memory l1Txns = abi.decode(output, (L1Txns));
-
-        if (l1Txns.tokenTxn.deposit) {
-            require(
-                l1Txns.nonce - 1 ==
-                    ITwineSystemStorage(systemStorageContract)
-                        .l1MessageExecutedCount(
-                            l1Txns.tokenTxn.chainId,
-                            ITwineSystemStorage.L1TxnType.Deposit
-                        ),
-                "Message Already Executed"
-            );
-            IL2ERC20Gateway(
-                tokenGateWay[l1Txns.tokenTxn.chainId][l1Txns.tokenTxn.token]
-            ).mintTokens(
-                    l1Txns.tokenTxn.amount,
-                    l1Txns.tokenTxn.token,
-                    l1Txns.tokenTxn.receiver
-                );
-            if (l1Txns.l1ForcedTxn.length > 0) {
-                IL2MsgExecutor(msgExecutor).processMessage(l1Txns.l1ForcedTxn);
-            }
-            ITwineSystemStorage(systemStorageContract).increaseNonce(
-                l1Txns.tokenTxn.chainId,
-                ITwineSystemStorage.L1TxnType.Deposit
-            );
-        } else {
-            require(
-                l1Txns.nonce - 1 ==
-                    ITwineSystemStorage(systemStorageContract)
-                        .l1MessageExecutedCount(
-                            l1Txns.tokenTxn.chainId,
-                            ITwineSystemStorage.L1TxnType.ForcedWithdraw
-                        ),
-                "Message Already Executed"
-            );
-            IL2ERC20Gateway(
-                tokenGateWay[l1Txns.tokenTxn.chainId][l1Txns.tokenTxn.token]
-            ).burnTokens(
-                    l1Txns.tokenTxn.amount,
-                    l1Txns.tokenTxn.token,
-                    l1Txns.tokenTxn.receiver
-                );
-            ITwineSystemStorage(systemStorageContract).increaseNonce(
-                l1Txns.tokenTxn.chainId,
-                ITwineSystemStorage.L1TxnType.ForcedWithdraw
-            );
-        }
-    }
-
     function handleSolanaTransactions(
         uint256 chainId,
         bytes calldata precompileInput
@@ -267,8 +198,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(output);
         require(txnSuccess, "Failed executing transactions");
-
-        emit SolanaTransactionsHandled(txnOutput);
+        handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
     }
 
     function handleEthereumProofAndTransactions(
@@ -283,9 +213,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
         // For testing purposes only. TODO: Remove before deploying to production.
-        // if (skipVerification) {
-        //     ITwineSystemStorage(systemStorageContract).blockReceiptRoots(chainId,height) = receiptRoot;
-        // }
+        if (skipVerification) {
+            ITwineSystemStorage(systemStorageContract).setBlockReceipts(
+                chainId,
+                height,
+                receiptRoot
+            );
+        }
         if (consensusProof.length > 0) {
             _verifyConsensusProof(chainId, consensusProof);
         }
@@ -297,7 +231,88 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 bytes memory txnOutput
             ) = bridgingPrecompileAddress.call(data);
             require(txnSuccess, "Ethereum Transactions failed!");
-            emit EthereumTransactionsHandled(txnOutput);
+            handleBridgeTransactions(chainId, ChainType.Ethereum, txnOutput);
+        }
+    }
+
+    function handleBridgeTransactions(
+        uint256 chainId,
+        ChainType chainType,
+        bytes memory precompileOutput
+    ) internal {
+        L1Txns memory l1Txn = abi.decode(precompileOutput, (L1Txns));
+        uint256 nonce = l1Txn.nonce;
+        address to = l1Txn.tokenTxn.receiver;
+        address token = l1Txn.tokenTxn.token;
+        uint256 amount = l1Txn.tokenTxn.amount;
+        bool shouldMint = l1Txn.tokenTxn.deposit;
+
+        if (shouldMint) {
+            _checkAndUpdateNonce(
+                chainId,
+                ITwineSystemStorage.L1TxnType.Deposit
+            );
+
+            try this.mintAndCall(token, to, amount, l1Txn.contractCalls) {
+                // success
+            } catch (bytes memory lowLevelError) {
+                if (chainType == ChainType.Ethereum) {
+                    emit EthereumTransactionsHandled(0, nonce, lowLevelError);
+                } else {
+                    emit SolanaTransactionsHandled(0, nonce, lowLevelError);
+                }
+                return;
+            }
+        } else {
+            _checkAndUpdateNonce(
+                chainId,
+                ITwineSystemStorage.L1TxnType.ForcedWithdraw
+            );
+
+            try ITwineERC20(token).burn(to, value) {
+                // Success
+            } catch (bytes memory lowLevelError) {
+                if (chainType == ChainType.Ethereum) {
+                    emit EthereumTransactionsHandled(0, nonce, lowLevelError);
+                } else {
+                    emit SolanaTransactionsHandled(0, nonce, lowLevelError);
+                }
+                return;
+            }
+        }
+        if (chainType == ChainType.Ethereum) {
+            emit EthereumTransactionsHandled(1, nonce, precompileOutput);
+        } else {
+            emit SolanaTransactionsHandled(1, nonce, precompileOutput);
+        }
+    }
+
+    function _checkAndUpdateNonce(
+        uint256 chainId,
+        ITwineSystemStorage.L1TxnType txnType
+    ) internal {
+        uint256 expectedNonce = ITwineSystemStorage(twineSystemStorageContract)
+            .getLastMessageExecuted(chainId, txnType);
+        require(expectedNonce + 1 == l1_txns.nonce, "Invalid nonce");
+
+        ITwineSystemStorage(twineSystemStorageContract).increaseNonce(
+            chainId,
+            txnType
+        );
+    }
+
+    function mintAndCall(
+        address token,
+        address to,
+        uint256 amount,
+        bytes memory contractCalls
+    ) external {
+        require(msg.sender == address(this), "Only self-call allowed");
+
+        ITwineERC20(token).mint(to, amount);
+
+        if (contractCalls.length > 0) {
+            IL2MsgExecutor(twineExecutor).processMessage(contractCalls);
         }
     }
 

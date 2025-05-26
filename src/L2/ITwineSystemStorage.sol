@@ -11,10 +11,17 @@ interface ITwineSystemStorage {
         Message
     }
 
-    ///@notice get the executed nonce according to the txn type
-    /// @param chainId The ID of the chain of which transaction is executed
-    /// @param txnType The type of the transaction
-    function l1MessageExecutedCount(uint256 chainId, L1TxnType txnType) external view returns (uint256);
+    /// @notice Get current nonce for chain id and message type
+    /// @param _chainId The ID of the chain to get nonce
+    /// @param _txnType The type of transaction 
+    /// @return nonce Nonce for that chainId and txnType
+    function getLastMessageExecuted(uint256 _chainId, L1TxnType _txnType) external returns(uint256);
+    
+    /// @notice Get receipt root of chain with chain id `_chainId` and height `_height`  
+    /// @param _chainId The ID of the chain to get nonce
+    /// @param _height The block height to fetch receipt root at
+    /// @return receiptRoot ReceiptRoot of chain at height
+    function getReceiptRoot(uint256 _chainId, uint256 _height) external returns(bytes32);
 
     /// @notice Sets the receipt root for a specific block on a specific chain.
     /// @dev Can only be called by the authorized `twineMessenger`.

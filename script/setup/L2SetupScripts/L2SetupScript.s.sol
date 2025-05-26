@@ -29,6 +29,7 @@ contract L2SetupScript is Script {
     address ethTokenAddress;
     address fauxCoinAddress;    
     address roleManagerAddress;
+    address l2MessageExecutorAddress;
     address l2ETHGatewayAddress;
     address l1FauxCoinAddress;
     address l1ETHGatewayAddress;
@@ -41,6 +42,7 @@ contract L2SetupScript is Script {
     address l2TwineMessengerAddress;
     address bridgingPrecompileAddress;
     address consensusPrecompileAddress;
+    address twineSystemStorage;
     address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
 
@@ -72,6 +74,11 @@ contract L2SetupScript is Script {
         l2TwineMessengerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2TwineMessenger"
+        );
+
+        l2MessageExecutorAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2MsgExecutor"
         );
 
         solTokenAddress = vm.parseJsonAddress(
@@ -125,6 +132,7 @@ contract L2SetupScript is Script {
         fauxCoin  = MockERC20(fauxCoinAddress);
         bridgingPrecompileAddress = address(0x15);
         consensusPrecompileAddress = address(0x16);
+        twineSystemStorage = address(0x17);
     }
 
     function run() external {
@@ -180,6 +188,8 @@ contract L2SetupScript is Script {
         chainIds[0] = chainIdEth;
         counterpartMessenger[0] = l1TwineMessengerAddress;
         l2TwineMessenger.setCounterpartMessenger(chainIds,counterpartMessenger);
+        l2TwineMessenger.setTwineSystemStorage(twineSystemStorage);
+        l2TwineMessenger.setMessaageExecutor(l2MessageExecutorAddress);
 
         //L2CustomERC20Gateway
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
