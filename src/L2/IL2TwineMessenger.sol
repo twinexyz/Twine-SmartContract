@@ -18,7 +18,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     struct L1Txns {
         uint64 nonce;
         TokenTxn tokenTxn;
-        ContractCall[] contractCalls;
+        bytes contractCallData;
     }
 
     enum ChainType {

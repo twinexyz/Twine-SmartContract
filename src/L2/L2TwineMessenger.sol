@@ -241,7 +241,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 ITwineSystemStorage.L1TxnType.Deposit
             );
 
-            try this.mintAndCall(token, to, amount, l1Txn.contractCalls) {
+            try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
                 // success
             } catch (bytes memory lowLevelError) {
                 if (chainType == ChainType.Ethereum) {
@@ -295,15 +295,16 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         address token,
         address to,
         uint256 amount,
-        ContractCall[] memory contractCalls
+        bytes memory contractCallData
     ) external {
         require(msg.sender == address(this), "Only self-call allowed");
 
         ITwineERC20(token).mint(to, amount);
 
 
-        if (contractCalls.length > 0) {
-            IL2MsgExecutor(msgExecutor).processMessage(contractCalls);
+        if (contractCallData.length > 0) {
+            ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
+            IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
         }
     }
 
