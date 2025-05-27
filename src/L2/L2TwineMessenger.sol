@@ -82,18 +82,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
 
-    function setTwineSystemStorage(
-        address _systemStorageContract
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        systemStorageContract = _systemStorageContract;
-    }
-
-    function setMessaageExecutor(
-        address _msgExecutor
-    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        twineExecutor = _msgExecutor;
-    }
-
     function setZkVerifcationStatus(
         bool status
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -250,6 +238,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         if (shouldMint) {
             _checkAndUpdateNonce(
                 chainId,
+                nonce,
                 ITwineSystemStorage.L1TxnType.Deposit
             );
 
@@ -266,10 +255,11 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         } else {
             _checkAndUpdateNonce(
                 chainId,
+                nonce,
                 ITwineSystemStorage.L1TxnType.ForcedWithdraw
             );
 
-            try ITwineERC20(token).burn(to, value) {
+            try ITwineERC20(token).burn(to, amount) {
                 // Success
             } catch (bytes memory lowLevelError) {
                 if (chainType == ChainType.Ethereum) {
@@ -289,13 +279,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
 
     function _checkAndUpdateNonce(
         uint256 chainId,
+        uint256 nonce,
         ITwineSystemStorage.L1TxnType txnType
     ) internal {
-        uint256 expectedNonce = ITwineSystemStorage(twineSystemStorageContract)
+        uint256 expectedNonce = ITwineSystemStorage(systemStorageContract)
             .getLastMessageExecuted(chainId, txnType);
-        require(expectedNonce + 1 == l1_txns.nonce, "Invalid nonce");
+        require(expectedNonce + 1 == nonce, "Invalid nonce");
 
-        ITwineSystemStorage(twineSystemStorageContract).increaseNonce(
+        ITwineSystemStorage(systemStorageContract).increaseNonce(
             chainId,
             txnType
         );
@@ -305,14 +296,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         address token,
         address to,
         uint256 amount,
-        bytes memory contractCalls
+        ContractCall[] memory contractCalls
     ) external {
         require(msg.sender == address(this), "Only self-call allowed");
 
         ITwineERC20(token).mint(to, amount);
 
         if (contractCalls.length > 0) {
-            IL2MsgExecutor(twineExecutor).processMessage(contractCalls);
+            IL2MsgExecutor(msgExecutor).processMessage(contractCalls);
         }
     }
 

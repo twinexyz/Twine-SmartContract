@@ -8,7 +8,7 @@ import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 /// @notice This contract manages storage for messages incoming from Layer 1 (L1) and tracks receipt roots for blocks.
 ///         It also maintains a nonce counter for different types of L1 transactions.
 ///         This is the only contract that can be modified from the twine precomiles
-contract TwineSystemStorageContract is ITwineSystemStorage {
+contract TwineSystemStorage is ITwineSystemStorage {
     
     /// @notice Address of the authorized Twine Admin who can set messenger contract
     /// @dev Only this address can initialize the twine messenger address

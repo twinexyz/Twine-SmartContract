@@ -5,6 +5,6 @@ import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 interface IL2MsgExecutor  {
 
     event TransactionCallFailed(uint256 index);
-    function processMessage(IL2TwineMessenger.L1ForcedTxn[] memory messages) external; 
+    function processMessage(IL2TwineMessenger.ContractCall[] memory messages) external; 
 
 }

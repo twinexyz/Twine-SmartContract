@@ -12,6 +12,7 @@ import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
+import {TwineSystemStorage} from "../../../src/L2/TwineSystemStorage.sol";
 
 contract L2SetupScript is Script {
     RoleManager roleManager;
@@ -19,6 +20,7 @@ contract L2SetupScript is Script {
     L2GatewayRouter l2GatewayRouter;
     L2TwineMessenger l2TwineMessenger;
     L2CustomERC20Gateway l2CustomERC20Gateway;
+    TwineSystemStorage twineSystemStorage;
     MockERC20_9Decimals solToken;
     MockERC20 ethToken ;
     MockERC20 fauxCoin;
@@ -42,7 +44,7 @@ contract L2SetupScript is Script {
     address l2TwineMessengerAddress;
     address bridgingPrecompileAddress;
     address consensusPrecompileAddress;
-    address twineSystemStorage;
+    address twineSystemStorageAddress;
     address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
 
@@ -132,7 +134,8 @@ contract L2SetupScript is Script {
         fauxCoin  = MockERC20(fauxCoinAddress);
         bridgingPrecompileAddress = address(0x15);
         consensusPrecompileAddress = address(0x16);
-        twineSystemStorage = address(0x17);
+        twineSystemStorageAddress = address(0x17);
+        twineSystemStorage = TwineSystemStorage(twineSystemStorageAddress);
     }
 
     function run() external {
@@ -142,6 +145,9 @@ contract L2SetupScript is Script {
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
+
+        // setup twine messenger address
+        twineSystemStorage.setInitialTwineMessenger(l2TwineMessengerAddress);
 
         //roleManager setup
 
@@ -188,8 +194,8 @@ contract L2SetupScript is Script {
         chainIds[0] = chainIdEth;
         counterpartMessenger[0] = l1TwineMessengerAddress;
         l2TwineMessenger.setCounterpartMessenger(chainIds,counterpartMessenger);
-        l2TwineMessenger.setTwineSystemStorage(twineSystemStorage);
-        l2TwineMessenger.setMessaageExecutor(l2MessageExecutorAddress);
+        l2TwineMessenger.setSystemStorageContract(twineSystemStorageAddress);
+        l2TwineMessenger.setMsgExecutorAddress(l2MessageExecutorAddress);
 
         //L2CustomERC20Gateway
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);

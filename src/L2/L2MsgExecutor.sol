@@ -35,12 +35,12 @@ contract L2MsgExecutor is IL2MsgExecutor, ContextUpgradeable,ReentrancyGuardUpgr
     }
 
     function processMessage(
-        IL2TwineMessenger.L1ForcedTxn[] memory messages
+        IL2TwineMessenger.ContractCall[] memory messages
     ) external override
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_MESSENGER()){
         for (uint256 i = 0; i < messages.length; i++) {
-            IL2TwineMessenger.L1ForcedTxn memory callMessage = messages[i];
+            IL2TwineMessenger.ContractCall memory callMessage = messages[i];
             (bool success, ) = callMessage.targetContract.call{
                 value: callMessage.value
             }(callMessage.data);
