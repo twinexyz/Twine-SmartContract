@@ -51,18 +51,17 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         uint256 chaindId,
         address counterpartMessenger,
         address roleManager,
-        address msgExecutorAddress,
-        address systemStorageContractAddress
+        address msgExecutorAddress
     ) external initializer {
         TwineL2MessengerBase.__TwineMessengerBase_init(
             chaindId,
             counterpartMessenger,
             roleManager
         );
-        consensusPrecompileAddress = address(0x16);
-        bridgingPrecompileAddress = address(0x15);
+        consensusPrecompileAddress = address(0x15);
+        bridgingPrecompileAddress = address(0x16);
         msgExecutor = msgExecutorAddress;
-        systemStorageContract = systemStorageContractAddress;
+        systemStorageContract = address(0x17);
         skipVerification = true;
     }
 
@@ -301,6 +300,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         require(msg.sender == address(this), "Only self-call allowed");
 
         ITwineERC20(token).mint(to, amount);
+
 
         if (contractCalls.length > 0) {
             IL2MsgExecutor(msgExecutor).processMessage(contractCalls);

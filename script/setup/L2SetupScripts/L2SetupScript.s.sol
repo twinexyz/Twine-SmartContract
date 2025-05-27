@@ -132,8 +132,8 @@ contract L2SetupScript is Script {
         solToken = MockERC20_9Decimals(solTokenAddress);
         ethToken = MockERC20(ethTokenAddress);
         fauxCoin  = MockERC20(fauxCoinAddress);
-        bridgingPrecompileAddress = address(0x15);
-        consensusPrecompileAddress = address(0x16);
+        consensusPrecompileAddress = address(0x15);
+        bridgingPrecompileAddress = address(0x16);
         twineSystemStorageAddress = address(0x17);
         twineSystemStorage = TwineSystemStorage(twineSystemStorageAddress);
     }
@@ -147,7 +147,7 @@ contract L2SetupScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // setup twine messenger address
-        twineSystemStorage.setInitialTwineMessenger(l2TwineMessengerAddress);
+        twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
 
         //roleManager setup
 

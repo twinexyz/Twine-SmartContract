@@ -44,16 +44,6 @@ contract TwineSystemStorage is ITwineSystemStorage {
     }
 
     /// @notice Sets the address of the authorized Twine messenger contract.
-    /// @dev Can only be called once
-    /// @param _twineMessenger The new address of the Twine messenger contract.
-    function setInitialTwineMessenger(address _twineMessenger) onlyTwineAdmin external {
-        require(_twineMessenger != address(0), "ShouldBeValidMessenger");
-        if (twineMessenger == address(0)) {
-            twineMessenger = _twineMessenger;
-        }
-    }
-
-    /// @notice Sets the address of the authorized Twine messenger contract.
     /// @dev Can only be called by the current `twineMessenger`.
     /// @param _twineMessenger The new address of the Twine messenger contract.
     function setTwineMessenger(

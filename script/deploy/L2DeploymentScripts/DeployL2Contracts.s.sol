@@ -47,31 +47,6 @@ contract DeployL2Contracts is Script {
                 (L2GatewayRouterAddress, address(0), roleManagerAddress)
             )
         );
-        
-        address solToken = Upgrades.deployTransparentProxy(
-            "TwineStandardERC20.sol",
-            msg.sender,
-            abi.encodeCall(
-                TwineStandardERC20.initialize,
-                ("TwineSol", "TWS", 9, address(L2CustomERC20GatewayAddress))
-            )
-        );
-         address ethToken = Upgrades.deployTransparentProxy(
-            "TwineStandardERC20.sol",
-            msg.sender,
-            abi.encodeCall(
-                TwineStandardERC20.initialize,
-                ("TwineEth", "TWE", 18, address(L2CustomERC20GatewayAddress))
-            )
-        );
-        address randomToken = Upgrades.deployTransparentProxy(
-            "TwineStandardERC20.sol",
-            msg.sender,
-            abi.encodeCall(
-                TwineStandardERC20.initialize,
-                ("FauxCoin", "FAUX", 18, address(L2CustomERC20GatewayAddress))
-            )
-        );
 
         // Deploying an upgradeable proxy for L2ETHGateway
         address L2ETHGatewayAddress = Upgrades.deployTransparentProxy(
@@ -95,13 +70,32 @@ contract DeployL2Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (
-                    0,
-                    address(0),
-                    roleManagerAddress,
-                    L2MessageExecutorAddress,
-                    address(0)
-                )
+                (0, address(0), roleManagerAddress, L2MessageExecutorAddress)
+            )
+        );
+
+        address solToken = Upgrades.deployTransparentProxy(
+            "TwineStandardERC20.sol",
+            msg.sender,
+            abi.encodeCall(
+                TwineStandardERC20.initialize,
+                ("TwineSol", "TWS", 9, address(L2TwineMessengerAddress))
+            )
+        );
+        address ethToken = Upgrades.deployTransparentProxy(
+            "TwineStandardERC20.sol",
+            msg.sender,
+            abi.encodeCall(
+                TwineStandardERC20.initialize,
+                ("TwineEth", "TWE", 18, address(L2TwineMessengerAddress))
+            )
+        );
+        address randomToken = Upgrades.deployTransparentProxy(
+            "TwineStandardERC20.sol",
+            msg.sender,
+            abi.encodeCall(
+                TwineStandardERC20.initialize,
+                ("FauxCoin", "FAUX", 18, address(L2TwineMessengerAddress))
             )
         );
 
