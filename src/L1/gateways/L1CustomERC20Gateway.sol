@@ -98,7 +98,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address token,
         address to,
         uint256 amount,
-        uint256 gasLimit,
+        uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual override {
         require(amount > 0, "Amount can not be zero");
@@ -126,7 +126,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address l2Token,
         address to,
         uint256 amount,
-        uint256 gasLimit,
+        uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual override {
         require(amount > 0, "withdrawing zero amount not allowd");

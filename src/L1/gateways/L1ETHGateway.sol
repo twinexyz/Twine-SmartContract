@@ -128,6 +128,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     /// @param to The address of recipient's account on L2.
     /// @param amount The amount of ETH to be deposited.
     /// @param gasLimit Gas limit required to complete the deposit on L2.
+    /// @param data Additional call data to be passed
     function _deposit(
         address to,
         uint256 amount,
@@ -167,11 +168,11 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     /// @dev The internal ETH forced withdrawal implementation.
     /// @param to The address of recipient's account in L1.
     /// @param amount The amount of ETH to be withdrawn.
-    /// @param gasLimit Gas limit required to complete withdrawal.
+    /// @param data Additional call data to be passed
     function _forcedWithdrawalEth(
         address to,
         uint256 amount,
-        uint256 gasLimit,
+        uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual {
         require(amount > 0, "withdrawing zero amount not allowed");
