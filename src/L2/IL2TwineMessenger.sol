@@ -3,17 +3,27 @@ pragma solidity ^0.8.24;
 
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
-    enum TransactionType {
-        BridgeTxns,
-        LayerZeroDVN
+
+    struct TokenTxn {
+        uint256 amount;
+        address token;
+        address receiver;
+        bool deposit;
+    }
+    struct ContractCall {
+        address targetContract;
+        uint64 value;
+        bytes data;
+    }
+    struct L1Txns {
+        uint64 nonce;
+        TokenTxn tokenTxn;
+        bytes contractCallData;
     }
 
-    /// @notice All types of messages incoming from L1
-    enum L1TxnType {
-        Deposit,
-        ForcedWithdraw,
-        LayerZero,
-        Message
+    enum ChainType {
+        Ethereum,
+        Solana
     }
 
     /// @notice Emitted when a cross domain message is sent.
@@ -35,15 +45,18 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 gasLimit
     );
 
+     /// @notice Emitted when a deposit or withdraw handling is failed.
+      /// @param reason The reason of failure
+    event TransactionFailed(string reason);
+
     /// @notice Emitted when consenus  verification and transaction of solana are executed successfully
-    event SolanaTransactionsHandled(bytes transactionOutput);
+    event SolanaTransactionsHandled(uint8 status, uint256 nonce, bytes transactionOutput);
 
     /// @notice Emitted when consenus  verification and transaction of ethereum are executed successfully
-    event EthereumTransactionsHandled(bytes transactionOutput);
+    event EthereumTransactionsHandled(uint8 status, uint256 nonce, bytes transactionOutput);
 
     /// @notice Emitted when consensus verificiation is successful
     event ConsensusVerified(bytes consensusProof);
-
 
     /// @notice Emitted when the Layerzero payload is successfully verified
     event LayerzeroPayload(uint256 indexed sourceChainId, bytes32 indexed guId);
@@ -87,6 +100,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes memory consensusProof,
         bytes memory ethereumTransactions
     ) external;
+    
     /// @notice verify the layerzero payload
     /// @param lzPayload layerzero payload
     /// @param payloadProof  proof of payload

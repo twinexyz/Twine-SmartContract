@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {L2MsgExecutor} from "../L2/L2MsgExecutor.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../L2/gateways/L2GatewayRouter.sol";
@@ -23,15 +24,16 @@ contract L2CustomERC20GatewayTest is Test {
     L1CustomERC20Gateway private counterpartGateway;
 
     address initialOwner = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
+    string solanaAddress = "BdhpXtonNKnVKpEK7iSzZvVU1gKSWtMjUaTuQZ4rvJkS";
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
     bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
-     bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
+    bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
     address L2CustomERC20GatewayAddress;
 
     function setUp() public {
         vm.startPrank(initialOwner);
         // Deploy tokens
-        l1Token = new MockERC20("Mock L2", "ML2");
+        l1Token = new MockERC20("Mock L1", "ML1");
         l2Token = new MockERC20("Mock L2", "ML2");
 
         address roleManagerAddress = Upgrades.deployTransparentProxy(
@@ -54,13 +56,19 @@ contract L2CustomERC20GatewayTest is Test {
         );
         router = L2GatewayRouter(L2GatewayRouterAddress);
 
+         address L2MessageExecutorAddress = Upgrades.deployTransparentProxy(
+            "L2MsgExecutor.sol",
+            initialOwner,
+            abi.encodeCall(L2MsgExecutor.initialize, (roleManagerAddress))
+        );
+
         // Deploying an upgradeable proxy for L2TwineMessenger
         address L2TwineMessengerAddress = Upgrades.deployTransparentProxy(
             "L2TwineMessenger.sol",
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0, address(0), address(roleManager))
+                (0, address(0), address(roleManager),L2MessageExecutorAddress)
             )
         );
 
@@ -79,7 +87,7 @@ contract L2CustomERC20GatewayTest is Test {
             )
         );
         gateway = L2CustomERC20Gateway(L2CustomERC20GatewayAddress);
-         roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
+        roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
         //setup the rolemanager
 
         address[] memory tokens = new address[](1);
@@ -95,6 +103,33 @@ contract L2CustomERC20GatewayTest is Test {
         gateway.setRoleManagerAddress(address(roleManager));
         vm.stopPrank();
     }
+
+    function testUpdateTokenMappingNonAdmin() public {
+        address nonAdminUser = address(0x123);
+        vm.startPrank(nonAdminUser);
+        vm.expectRevert();
+        gateway.updateTokenMapping(
+            1,
+            address(l2Token),
+            addressToString(address(l1Token))
+        );
+        vm.stopPrank();
+    }
+
+    function testUpdateTokenMapping() public {
+        vm.startPrank(initialOwner);
+        gateway.updateTokenMapping(
+            1,
+            address(l2Token),
+            addressToString(address(l1Token))
+        );
+        assertEq(
+            gateway.tokenMapping(1, address(l2Token)),
+            addressToString(address(l1Token))
+        );
+        vm.stopPrank();
+    }
+    
     function testwithdrawERC20() public {
         vm.startPrank(initialOwner);
         gateway.updateTokenMapping(
@@ -120,6 +155,36 @@ contract L2CustomERC20GatewayTest is Test {
             1,
             0
         );
+        assertEq(l2Token.balanceOf(initialOwner), 99980);
+    }
+
+    function testwithdrawERC20InSVM() public {
+        vm.startPrank(initialOwner);
+        gateway.updateTokenMapping(
+            1,
+            address(l2Token),
+            addressToString(address(l1Token))
+        );
+        assertEq(l2Token.balanceOf(initialOwner), 100000);
+        l2Token.approve(address(gateway), 100000);
+        l2Token.approve(address(router), 100000);
+        gateway.withdrawERC20InSvm(address(l2Token), solanaAddress, 10, 1, 0);
+        router.withdrawERC20InSvm(address(l2Token), solanaAddress, 10, 1, 0);
+        assertEq(l2Token.balanceOf(initialOwner), 99980);
+    }
+
+    function testwithdrawERC20InEVM() public {
+        vm.startPrank(initialOwner);
+        gateway.updateTokenMapping(
+            1,
+            address(l2Token),
+            addressToString(address(l1Token))
+        );
+        assertEq(l2Token.balanceOf(initialOwner), 100000);
+        l2Token.approve(address(gateway), 100000);
+        l2Token.approve(address(router), 100000);
+        gateway.withdrawERC20InEvm(address(l2Token), initialOwner, 10, 1, 0);
+        router.withdrawERC20InEvm(address(l2Token), initialOwner, 10, 1, 0);
         assertEq(l2Token.balanceOf(initialOwner), 99980);
     }
 

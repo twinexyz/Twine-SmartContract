@@ -19,17 +19,20 @@ abstract contract TwineL1GatewayBase is
      * Constants *
      *************/
 
-    uint64 chainId;
+    ///@notice chain Id of the contract deployed
+    uint64 public chainId;
+
     /// @inheritdoc ITwineL1Gateway
     address public override gatewayRouter;
 
     /// @inheritdoc ITwineL1Gateway
     address public override messenger;
 
+    ///@notice address of roleManagerContract
     address public roleManager;
 
     /// @dev The storage slots for future usage.
-    uint256[46] private __gap;
+    uint256[45] private __gap;
 
     /**********************
      * Function Modifiers *

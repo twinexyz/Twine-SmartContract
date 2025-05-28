@@ -67,10 +67,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     address public verifier;
 
     /// @notice Address of the rolemanager contract
-    address roleManager;
+    address public roleManager;
 
     /// @notice status of genesis block
-    bool isGenesisBlockCommitted;
+    bool public isGenesisBlockCommitted;
 
     /// @notice Skip zk Verification
     bool public skipVerification;
@@ -193,6 +193,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32 _inclusionVKey,
         bytes32 _withdrawalVKey
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_executionVKey != bytes32(0) && _inclusionVKey != bytes32(0) && _withdrawalVKey != bytes32(0), "Keys can not be zero");
         executionVKey = _executionVKey;
         inclusionVKey = _inclusionVKey;
         withdrawalVKey = _withdrawalVKey;
@@ -455,7 +456,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 forcedMessage.l2Token,
                 forcedMessage.fromAddress,
                 forcedMessage.toAddress,
-                forcedMessage.amount
+                forcedMessage.amount,
+                forcedMessage.message
             );
         }
 

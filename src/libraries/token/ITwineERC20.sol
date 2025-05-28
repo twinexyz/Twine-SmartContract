@@ -8,21 +8,7 @@ import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC2
 // The recommended ERC20 implementation for bridge token.
 // deployed in L2 when original token is on L1
 // deployed in L1 when original token is on L2
-interface ITwineERC20 is IERC20, IERC20Permit {
-    /// @notice Return the address of Gateway the token belongs to.
-    function gateway() external view returns (address);
-
-    /// @notice Return the address of counterpart token.
-    function counterpart() external view returns (address);
-
-    /// @dev ERC677 Standard, see https://github.com/ethereum/EIPs/issues/677
-    /// Defi can use this method to transfer L1/L2 token to L2/L1,
-    /// and deposit to L2/L1 contract in one transaction
-    function transferAndCall(
-        address receiver,
-        uint256 amount,
-        bytes calldata data
-    ) external returns (bool success);
+interface ITwineERC20 is IERC20 {
 
     /// @notice Mint some token to recipient's account.
     /// @dev Gateway Utilities, only gateway contract can call
