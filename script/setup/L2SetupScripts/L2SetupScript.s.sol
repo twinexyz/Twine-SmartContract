@@ -12,6 +12,7 @@ import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
+import {TwineSystemStorage} from "../../../src/L2/TwineSystemStorage.sol";
 
 contract L2SetupScript is Script {
     RoleManager roleManager;
@@ -19,6 +20,7 @@ contract L2SetupScript is Script {
     L2GatewayRouter l2GatewayRouter;
     L2TwineMessenger l2TwineMessenger;
     L2CustomERC20Gateway l2CustomERC20Gateway;
+    TwineSystemStorage twineSystemStorage;
     MockERC20_9Decimals solToken;
     MockERC20 ethToken ;
     MockERC20 fauxCoin;
@@ -29,6 +31,7 @@ contract L2SetupScript is Script {
     address ethTokenAddress;
     address fauxCoinAddress;    
     address roleManagerAddress;
+    address l2MessageExecutorAddress;
     address l2ETHGatewayAddress;
     address l1FauxCoinAddress;
     address l1ETHGatewayAddress;
@@ -41,6 +44,7 @@ contract L2SetupScript is Script {
     address l2TwineMessengerAddress;
     address bridgingPrecompileAddress;
     address consensusPrecompileAddress;
+    address twineSystemStorageAddress;
     address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
 
@@ -72,6 +76,11 @@ contract L2SetupScript is Script {
         l2TwineMessengerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2TwineMessenger"
+        );
+
+        l2MessageExecutorAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2MsgExecutor"
         );
 
         solTokenAddress = vm.parseJsonAddress(
@@ -123,8 +132,10 @@ contract L2SetupScript is Script {
         solToken = MockERC20_9Decimals(solTokenAddress);
         ethToken = MockERC20(ethTokenAddress);
         fauxCoin  = MockERC20(fauxCoinAddress);
-        bridgingPrecompileAddress = address(0x15);
-        consensusPrecompileAddress = address(0x16);
+        consensusPrecompileAddress = address(0x15);
+        bridgingPrecompileAddress = address(0x16);
+        twineSystemStorageAddress = address(0x17);
+        twineSystemStorage = TwineSystemStorage(twineSystemStorageAddress);
     }
 
     function run() external {
@@ -134,6 +145,9 @@ contract L2SetupScript is Script {
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
+
+        // setup twine messenger address
+        twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
 
         //roleManager setup
 
@@ -145,6 +159,8 @@ contract L2SetupScript is Script {
         );
         roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l2CustomERC20GatewayAddress);
         roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l2CustomERC20GatewayAddress);
+        roleManager.grantRole(keccak256("TWINE_MESSENGER"), l2TwineMessengerAddress);
+        roleManager.checkRole(keccak256("TWINE_MESSENGER"), l2TwineMessengerAddress);
 
 
         //L2ETHGateway setup
@@ -180,6 +196,8 @@ contract L2SetupScript is Script {
         chainIds[0] = chainIdEth;
         counterpartMessenger[0] = l1TwineMessengerAddress;
         l2TwineMessenger.setCounterpartMessenger(chainIds,counterpartMessenger);
+        l2TwineMessenger.setSystemStorageContract(twineSystemStorageAddress);
+        l2TwineMessenger.setMsgExecutorAddress(l2MessageExecutorAddress);
 
         //L2CustomERC20Gateway
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);

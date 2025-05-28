@@ -5,13 +5,12 @@ import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBas
 interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     struct TokenTxn {
-        uint256 chainId;
         uint256 amount;
         address token;
         address receiver;
         bool deposit;
     }
-    struct L1ForcedTxn {
+    struct ContractCall {
         address targetContract;
         uint64 value;
         bytes data;
@@ -19,7 +18,12 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     struct L1Txns {
         uint64 nonce;
         TokenTxn tokenTxn;
-        L1ForcedTxn[] l1ForcedTxn;
+        bytes contractCallData;
+    }
+
+    enum ChainType {
+        Ethereum,
+        Solana
     }
 
     /// @notice Emitted when a cross domain message is sent.
@@ -46,10 +50,10 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event TransactionFailed(string reason);
 
     /// @notice Emitted when consenus  verification and transaction of solana are executed successfully
-    event SolanaTransactionsHandled(bytes transactionOutput);
+    event SolanaTransactionsHandled(uint8 status, uint256 nonce, bytes transactionOutput);
 
     /// @notice Emitted when consenus  verification and transaction of ethereum are executed successfully
-    event EthereumTransactionsHandled(bytes transactionOutput);
+    event EthereumTransactionsHandled(uint8 status, uint256 nonce, bytes transactionOutput);
 
     /// @notice Emitted when consensus verificiation is successful
     event ConsensusVerified(bytes consensusProof);
