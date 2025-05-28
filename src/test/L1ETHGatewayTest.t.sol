@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
-import {Types} from "../libraries/rlp/Types.sol";
+import {L2MsgExecutor} from "../L2/L2MsgExecutor.sol";
 import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
@@ -36,6 +36,7 @@ contract L1ETHGatewayTest is Test {
     function setUp() public {
         vm.startPrank(initialOwner);
         deal(initialOwner, 10 ether);
+        l2Token = new MockERC20("Mock L2", "ML2");
 
         //setup the rolemanager
         address roleManagerAddress = Upgrades.deployTransparentProxy(
@@ -67,12 +68,18 @@ contract L1ETHGatewayTest is Test {
         );
         messageQueue = L1MessageQueue(L1MessageQueueAddress);
 
+        address L2MessageExecutorAddress = Upgrades.deployTransparentProxy(
+            "L2MsgExecutor.sol",
+            initialOwner,
+            abi.encodeCall(L2MsgExecutor.initialize, (roleManagerAddress))
+        );
+
         address L2TwineMessengerAddress = Upgrades.deployTransparentProxy(
             "L2TwineMessenger.sol",
             msg.sender,
             abi.encodeCall(
                 L2TwineMessenger.initialize,
-                (0, address(0), address(0))
+                (0, address(0), address(0),L2MessageExecutorAddress)
             )
         );
 
@@ -122,6 +129,7 @@ contract L1ETHGatewayTest is Test {
         );
         gateway = L1ETHGateway(L1ETHGatewayAddress);
         roleManager.grantRole(TWINE_GATEWAYS, address(gateway));
+        gateway.setL2TokenAddress(address(l2Token));
 
         //setup gateway in router;
         vm.startPrank(initialOwner);
@@ -132,6 +140,27 @@ contract L1ETHGatewayTest is Test {
         gateway.setRoleManagerAddress(address(roleManager));
         messageQueue.setMessengerAddress(address(l1TwineMessenger));
         vm.stopPrank();
+    }
+
+    function testSetL2TokenAddressNonAdminReverts() public {
+        address nonAdminUser = address(0x123);
+        address l2TokenAddress = address(0x234);
+        vm.startPrank(nonAdminUser);
+        vm.expectRevert();
+        gateway.setL2TokenAddress(l2TokenAddress);
+    }
+
+    function testSetL2TokenAddressZeroAddressNotAllowed() public {
+        vm.startPrank(initialOwner);
+        vm.expectRevert();
+        gateway.setL2TokenAddress(address(0));
+    }
+
+    function testSetL2TokenAddress() public {
+        vm.startPrank(initialOwner);
+        address l2TokenAddress = address(0x123);
+        gateway.setL2TokenAddress(l2TokenAddress);
+        assertEq(gateway.l2TokenAddress(), l2TokenAddress);
     }
 
     function testDepositETH() public {
@@ -145,5 +174,67 @@ contract L1ETHGatewayTest is Test {
             0
         );
         assertEq(address(gateway).balance, 2 ether);
+    }
+
+    function testfinalizeTokenWithdrawal() public {
+        vm.startPrank(initialOwner);
+        uint256 depositAmount = 1 ether;
+        gateway.setL2TokenAddress(address(l2Token));
+        gateway.depositETH{value: depositAmount}(
+            initialOwner,
+            depositAmount,
+            0
+        );
+        roleManager.grantRole(TWINE_CHAIN, initialOwner);
+        gateway.finalizeTokenWithdrawal(
+            addressToString(address(l1Token)),
+            addressToString(address(l2Token)),
+            addressToString(initialOwner),
+            "10000000000",
+            1
+        );
+        assertEq(address(gateway).balance, 999999990000000000);
+        vm.stopPrank();
+    }
+
+    function testforcedWithdrawal() public {
+        vm.startPrank(initialOwner);
+        vm.deal(initialOwner, 1 ether);
+        gateway.forcedWithdrawalETH(initialOwner, 100000, 10, new bytes(0));
+        assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+    }
+
+    function addressToString(
+        address _address
+    ) public pure returns (string memory) {
+        bytes32 _bytes = bytes32(uint256(uint160(_address)));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
+    }
+
+     function uintToString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
     }
 }

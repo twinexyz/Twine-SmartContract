@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+
+
 interface IL1ETHGateway {
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
@@ -52,13 +54,13 @@ interface IL1ETHGateway {
     /// @notice Deposit ETH to some recipient's account in L2 and call the target contract.
     /// @param to The address of recipient's account on L2.
     /// @param amount The amount of ETH to be deposited.
-    /// @param data Optional data to forward to recipient's account.
     /// @param gasLimit Gas limit required to complete the deposit on L2.
+    /// @param data message of functions to call
     function depositETHAndCall(
         address to,
         uint256 amount,
         uint256 gasLimit,
-        bytes calldata data
+        bytes memory data
     ) external payable;
 
     /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.

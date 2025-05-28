@@ -18,7 +18,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     using SafeERC20 for IERC20;
     using TypeConversionLib for string;
     using TypeConversionLib for address;
-    
+
     /// @inheritdoc IL1ERC20Gateway
     function depositERC20(
         address l1Token,
@@ -26,6 +26,8 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
+        require(msg.value > 0, "Amount for gas is needed");
+        require(msg.value >= gasLimit, "Not efficient gas value");
         _deposit(l1Token, to, amount, gasLimit, new bytes(0));
     }
 
@@ -76,7 +78,15 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             to.stringToAddress(),
             amount.stringToUint()
         );
-        emit FinalizeWithdrawERC20(l1Token, l2Token, to, amount,nonce,chainId,block.number);
+        emit FinalizeWithdrawERC20(
+            l1Token,
+            l2Token,
+            to,
+            amount,
+            nonce,
+            chainId,
+            block.number
+        );
     }
 
     /**********************
@@ -138,8 +148,8 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
     /// @param token The token to deposit.
     /// @param to The recipient address to recieve the token in L2.
     /// @param amount The amount of token to deposit.
-    /// @param data Optional data to forward to recipient's account.
     /// @param gasLimit Gas limit required to complete the deposit on L2.
+    /// @param data Optional data to forward to recipient's account.
     function _deposit(
         address token,
         address to,

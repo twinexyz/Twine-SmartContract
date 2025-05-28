@@ -23,7 +23,8 @@ interface IL1MessageQueue {
         address l2Token,
         address from,
         address toTwineAddress,
-        uint256 amount
+        uint256 amount,
+        bytes message
     );
 
     /// @notice Emitted when a new L1 => L2 forced withdrawal transaction is appended to the queue.
@@ -43,7 +44,8 @@ interface IL1MessageQueue {
         address l2Token,
         address from,
         address toTwineAddress,
-        uint256 amount
+        uint256 amount,
+        bytes message
     );
 
     /**********
@@ -74,6 +76,7 @@ interface IL1MessageQueue {
         string l1Token;
         string l2Token;
         string amount;
+        bytes message;
     }
 
     /*************************
@@ -145,6 +148,16 @@ interface IL1MessageQueue {
     /// @param _proxyAddress message queue proxy address to set
     function setMessageQueueProxy(address _proxyAddress) external;
 
+    /// @notice Checks if the nonce provided is present in execution message queue or not
+    /// @param nonce Nonce to check
+    function isNonceInExecutionQueue(
+        uint256 nonce
+    ) external view returns (bool);
+
+    /// @notice Remove message with the given nonce from the execution message queue
+    /// @param nonce The nonce of the message to be removed
+    function removeExecutionMessage(uint256 nonce) external;
+
     /// @notice Removes the first N message from the Deposit Queue
     /// @param n number of deposit message to pop
     function popFirstNDepositElement(uint256 n) external;
@@ -167,7 +180,8 @@ interface IL1MessageQueue {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) external;
 
     /// @notice Append new message to the deposit queue
@@ -180,7 +194,8 @@ interface IL1MessageQueue {
         address to,
         address l1Token,
         address l2Token,
-        uint256 amount
+        uint256 amount,
+        bytes memory message
     ) external;
 
     /// @notice Append message that are ready for execution
@@ -200,16 +215,7 @@ interface IL1MessageQueue {
         string memory to,
         string memory l1Token,
         string memory l2Token,
-        string memory amount
+        string memory amount,
+        bytes memory message
     ) external;
-
-    /// @notice Checks if the nonce provided is present in execution message queue or not
-    /// @param nonce Nonce to check
-    function isNonceInExecutionQueue(
-        uint256 nonce
-    ) external view returns (bool);
-
-    /// @notice Remove message with the given nonce from the execution message queue
-    /// @param nonce The nonce of the message to be removed
-    function removeExecutionMessage(uint256 nonce) external;
 }

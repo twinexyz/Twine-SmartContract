@@ -2,8 +2,8 @@
 pragma solidity 0.8.24;
 
 /**
- * @title TypeConversionUtils
- * @notice TypeConversionUtils contains different conversion functions .
+ * @title TypeConversionLib
+ * @notice TypeConversionLib contains different conversion functions .
  **/
 library TypeConversionLib {
     /// @notice Converts an Ethereum address to its string representation

@@ -3,9 +3,8 @@
 pragma solidity ^0.8.24;
 
 import {IL2TwineMessenger} from "../IL2TwineMessenger.sol";
-import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
-
 import {ITwineERC20} from "../../libraries/token/ITwineERC20.sol";
+import {IL2ERC20Gateway, L2ERC20Gateway} from "./L2ERC20Gateway.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineL2GatewayBase} from "../../libraries/gateway/TwineL2GatewayBase.sol";
 

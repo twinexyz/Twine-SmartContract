@@ -9,6 +9,7 @@ import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
 import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 
 contract WithdrawETH is Script {
     L2ETHGateway l2ETHGateway;
@@ -102,3 +103,100 @@ contract WithdrawERC20 is Script {
         vm.stopBroadcast();
     }
 }
+contract GrantRole is Script {
+    RoleManager roleManager;
+    address roleManagerAddress;
+
+    string role;
+    address account;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2RoleManager");
+        roleManager = RoleManager(roleManagerAddress);
+
+        // Read parameters dynamically
+        role = vm.envString("ROLE");
+        account = vm.envAddress("Account");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        bytes32 encodedRole = keccak256(abi.encodePacked(role));
+       
+        vm.startBroadcast(deployerPrivateKey);
+
+        roleManager.grantRole(encodedRole, account);
+        roleManager.checkRole(encodedRole, account);
+
+        vm.stopBroadcast();
+    }
+}
+
+contract RevokeRole is Script {
+    RoleManager roleManager;
+    address roleManagerAddress;
+
+    string role;
+    address account;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2RoleManager");
+        roleManager = RoleManager(roleManagerAddress);
+
+        // Read parameters dynamically
+        role = vm.envString("ROLE");
+        account = vm.envAddress("Account");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        bytes32 encodedRole = keccak256(abi.encodePacked(role));
+       
+        vm.startBroadcast(deployerPrivateKey);
+
+        roleManager.revokeRole(encodedRole, account);
+        
+        vm.stopBroadcast();
+    }
+}
+contract UpdateTokenMapping is Script {
+    uint256 chainId;
+    address l2ERC20TokenAddress;
+    address l2CustomERC20GatewayAddress;
+    string l1TokenAddress;
+    L2CustomERC20Gateway l2CustomERC20Gateway;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile(
+            "./script/utils/deployedContracts.json"
+        );
+        l2CustomERC20GatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".Twine.L2CustomERC20Gateway"
+        );
+        l2CustomERC20Gateway = L2CustomERC20Gateway(
+            l2CustomERC20GatewayAddress
+        );
+
+        chainId = vm.envUint("CHAIN_ID");
+        l2ERC20TokenAddress = vm.envAddress("L2_TOKEN_ADDRESS");
+        l1TokenAddress = vm.envString("L1_TOKEN_ADDRESS");
+    }
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+        l2CustomERC20Gateway.updateTokenMapping(
+            chainId,
+            l2ERC20TokenAddress,
+            l1TokenAddress
+        );
+        vm.stopBroadcast();
+    }
+}
+

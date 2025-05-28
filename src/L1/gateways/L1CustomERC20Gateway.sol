@@ -98,27 +98,26 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address token,
         address to,
         uint256 amount,
-        uint256 gasLimit,
+        uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual override {
         require(amount > 0, "Amount can not be zero");
-        require(msg.value > 0, "Amount for gas is needed");
-        require(msg.value >= gasLimit, "Not efficient gas value");
         address l2Token = tokenMapping[token];
         require(l2Token != address(0), "no corresponding l2 token");
 
-        // 1. Transfer token into this contract.
+        //  Transfer token into this contract.
         address from;
         (from, amount, data) = _transferERC20In(token, amount, data);
 
-        // 4. Send message to L1TwineMessenger.
+        // Send message to L1TwineMessenger.
         IL1TwineMessenger(messenger).sendMessage{value: msg.value}(
             ITwineL1MessengerBase.TransactionType.deposit,
             from,
             to,
             token,
             l2Token,
-            amount
+            amount,
+            data
         );
     }
 
@@ -127,7 +126,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address l2Token,
         address to,
         uint256 amount,
-        uint256 gasLimit,
+        uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual override {
         require(amount > 0, "withdrawing zero amount not allowd");
@@ -140,7 +139,8 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
             to,
             l1Token,
             l2Token,
-            amount
+            amount,
+            data
         );
 
         emit ForcedWithdrawalERC20Initated(

@@ -2,9 +2,14 @@
 pragma solidity ^0.8.24;
 
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
+import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
+import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
+import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
@@ -12,27 +17,26 @@ import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBas
 contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     using TypeConversionLib for address;
 
+    /// @notice SP1 Verifier Address
+    address public sp1Verifier;
+
+    /// @notice msg Executor Address
+    address public msgExecutor;
+
+    /// @notice Skip zk Verification
+    bool public skipVerification;
+
+    /// @notice The address of the system contract
+    address public systemStorageContract;
+
     /// @notice The address of Consensus Proving Precompile
     address public consensusPrecompileAddress;
 
     /// @notice The address of bridging Precompile
     address public bridgingPrecompileAddress;
 
-    /// @notice mapping of (chainId => (L1TxnType => nonce))
-    mapping(uint256 => mapping(L1TxnType => uint256))
-        public l1MessageExecutedCount;
-
-    /// @notice Mapping to store the receipt roots for each block number
-    mapping(uint256 => mapping(uint256 => bytes32)) public blockReceiptRoots;
-
     /// @notice Mapping to store consensus verification keys of L1s
     mapping(uint256 => bytes32) public vKeys;
-
-    /// @notice SP1 Verifier Address
-    address public sp1Verifier;
-
-    /// @notice Skip zk Verification
-    bool public skipVerification;
 
     /***************
      * Constructor *
@@ -44,17 +48,20 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function initialize(
-        uint256 ethChaindId,
-        address ethCounterpart,
-        address roleManager
+        uint256 chaindId,
+        address counterpartMessenger,
+        address roleManager,
+        address msgExecutorAddress
     ) external initializer {
         TwineL2MessengerBase.__TwineMessengerBase_init(
-            ethChaindId,
-            ethCounterpart,
+            chaindId,
+            counterpartMessenger,
             roleManager
         );
-        consensusPrecompileAddress = address(0x16);
-        bridgingPrecompileAddress = address(0x15);
+        consensusPrecompileAddress = address(0x15);
+        bridgingPrecompileAddress = address(0x16);
+        msgExecutor = msgExecutorAddress;
+        systemStorageContract = address(0x17);
         skipVerification = true;
     }
 
@@ -62,6 +69,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         address _consensusPrecompileAddress,
         address _bridgingPrecompileAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            _consensusPrecompileAddress != address(0),
+            "Consensus precompile address cannot be zero"
+        );
+        require(
+            _bridgingPrecompileAddress != address(0),
+            "Bridging precompile address cannot be zero"
+        );
         consensusPrecompileAddress = _consensusPrecompileAddress;
         bridgingPrecompileAddress = _bridgingPrecompileAddress;
     }
@@ -75,7 +90,38 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     function setSp1VerifierAddress(
         address sp1VerifierAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            sp1VerifierAddress != address(0),
+            "sp1Verifier address cannot be zero"
+        );
         sp1Verifier = sp1VerifierAddress;
+    }
+
+    function setSystemStorageContract(
+        address systemStorageContractAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            systemStorageContractAddress != address(0),
+            "System Storage ContractAddress cannot be zero"
+        );
+        systemStorageContract = systemStorageContractAddress;
+    }
+
+    function setMsgExecutorAddress(
+        address msgExecutorAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            msgExecutorAddress != address(0),
+            "msgExecutor address cannot be zero"
+        );
+        msgExecutor = msgExecutorAddress;
+    }
+
+    function setVkeys(
+        uint256 chainId,
+        bytes32 vKey
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        vKeys[chainId] = vKey;
     }
 
     /// @inheritdoc ITwineL2MessengerBase
@@ -117,7 +163,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     {
         bytes memory output = precompileInput;
         bool success;
-        
+
         if (!skipVerification) {
             (success, output) = consensusPrecompileAddress.call(
                 precompileInput
@@ -139,8 +185,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(output);
         require(txnSuccess, "Failed executing transactions");
-
-        emit SolanaTransactionsHandled(txnOutput);
+        handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
     }
 
     function handleEthereumProofAndTransactions(
@@ -156,7 +201,11 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     {
         // For testing purposes only. TODO: Remove before deploying to production.
         if (skipVerification) {
-            blockReceiptRoots[chainId][height] = receiptRoot;
+            ITwineSystemStorage(systemStorageContract).setBlockReceipts(
+                chainId,
+                height,
+                receiptRoot
+            );
         }
         if (consensusProof.length > 0) {
             _verifyConsensusProof(chainId, consensusProof);
@@ -169,7 +218,93 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 bytes memory txnOutput
             ) = bridgingPrecompileAddress.call(data);
             require(txnSuccess, "Ethereum Transactions failed!");
-            emit EthereumTransactionsHandled(txnOutput);
+            handleBridgeTransactions(chainId, ChainType.Ethereum, txnOutput);
+        }
+    }
+
+    function handleBridgeTransactions(
+        uint256 chainId,
+        ChainType chainType,
+        bytes memory precompileOutput
+    ) internal {
+        L1Txns memory l1Txn = abi.decode(precompileOutput, (L1Txns));
+        uint256 nonce = l1Txn.nonce;
+        address to = l1Txn.tokenTxn.receiver;
+        address token = l1Txn.tokenTxn.token;
+        uint256 amount = l1Txn.tokenTxn.amount;
+        bool shouldMint = l1Txn.tokenTxn.deposit;
+
+        if (shouldMint) {
+            _checkAndUpdateNonce(
+                chainId,
+                nonce,
+                ITwineSystemStorage.L1TxnType.Deposit
+            );
+
+            try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
+                // success
+            } catch (bytes memory lowLevelError) {
+                if (chainType == ChainType.Ethereum) {
+                    emit EthereumTransactionsHandled(0, nonce, lowLevelError);
+                } else {
+                    emit SolanaTransactionsHandled(0, nonce, lowLevelError);
+                }
+                return;
+            }
+        } else {
+            _checkAndUpdateNonce(
+                chainId,
+                nonce,
+                ITwineSystemStorage.L1TxnType.ForcedWithdraw
+            );
+
+            try ITwineERC20(token).burn(to, amount) {
+                // Success
+            } catch (bytes memory lowLevelError) {
+                if (chainType == ChainType.Ethereum) {
+                    emit EthereumTransactionsHandled(0, nonce, lowLevelError);
+                } else {
+                    emit SolanaTransactionsHandled(0, nonce, lowLevelError);
+                }
+                return;
+            }
+        }
+        if (chainType == ChainType.Ethereum) {
+            emit EthereumTransactionsHandled(1, nonce, precompileOutput);
+        } else {
+            emit SolanaTransactionsHandled(1, nonce, precompileOutput);
+        }
+    }
+
+    function _checkAndUpdateNonce(
+        uint256 chainId,
+        uint256 nonce,
+        ITwineSystemStorage.L1TxnType txnType
+    ) internal {
+        uint256 expectedNonce = ITwineSystemStorage(systemStorageContract)
+            .getLastMessageExecuted(chainId, txnType);
+        require(expectedNonce + 1 == nonce, "Invalid nonce");
+
+        ITwineSystemStorage(systemStorageContract).increaseNonce(
+            chainId,
+            txnType
+        );
+    }
+
+    function mintAndCall(
+        address token,
+        address to,
+        uint256 amount,
+        bytes memory contractCallData
+    ) external {
+        require(msg.sender == address(this), "Only self-call allowed");
+
+        ITwineERC20(token).mint(to, amount);
+
+
+        if (contractCallData.length > 0) {
+            ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
+            IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
         }
     }
 
@@ -192,13 +327,6 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         require(success, "LayerZero verification failed!");
         bytes32 guId = abi.decode(output, (bytes32));
         emit LayerzeroPayload(chainId, guId);
-    }
-
-    function setVkeys(
-        uint256 chainId,
-        bytes32 vKey
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        vKeys[chainId] = vKey;
     }
 
     /// @dev Internal function to send cross domain message.
