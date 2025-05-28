@@ -159,6 +159,8 @@ contract L2SetupScript is Script {
         );
         roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l2CustomERC20GatewayAddress);
         roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l2CustomERC20GatewayAddress);
+        roleManager.grantRole(keccak256("TWINE_MESSENGER"), l2TwineMessengerAddress);
+        roleManager.checkRole(keccak256("TWINE_MESSENGER"), l2TwineMessengerAddress);
 
 
         //L2ETHGateway setup

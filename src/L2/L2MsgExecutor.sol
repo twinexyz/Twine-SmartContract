@@ -8,8 +8,11 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 
-
-contract L2MsgExecutor is IL2MsgExecutor, ContextUpgradeable,ReentrancyGuardUpgradeable {
+contract L2MsgExecutor is
+    IL2MsgExecutor,
+    ContextUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     address roleManager;
     error MessageExecutionFailed(uint256 messageIndex);
     /**********************
@@ -36,9 +39,12 @@ contract L2MsgExecutor is IL2MsgExecutor, ContextUpgradeable,ReentrancyGuardUpgr
 
     function processMessage(
         IL2TwineMessenger.ContractCall[] memory messages
-    ) external override
+    )
+        external
+        override
         nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_MESSENGER()){
+        onlyRoles(IRoleManager(roleManager).TWINE_MESSENGER())
+    {
         for (uint256 i = 0; i < messages.length; i++) {
             IL2TwineMessenger.ContractCall memory callMessage = messages[i];
             (bool success, ) = callMessage.targetContract.call{
