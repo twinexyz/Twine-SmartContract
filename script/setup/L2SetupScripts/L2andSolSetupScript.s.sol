@@ -33,7 +33,6 @@ contract L2andSolSetupScript is Script {
     address roleManagerAddress;
     address l2MessageExecutorAddress;
     address l2ETHGatewayAddress;
-    address l1FauxCoinAddress;
     address l2ERC20TokenAddress;
     address l2MessageQueueAddress;
     address l2GatewayRouterAddress;
@@ -44,6 +43,9 @@ contract L2andSolSetupScript is Script {
     address consensusPrecompileAddress;
     address twineSystemStorageAddress;
     address l2CustomERC20GatewayAddress;
+
+    string solanaFauxCoinAddress;
+
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
@@ -99,7 +101,7 @@ contract L2andSolSetupScript is Script {
             ".Twine.FauxCoin" 
         );
 
-        l1FauxCoinAddress  = vm.parseJsonAddress(
+        solanaFauxCoinAddress = vm.parseJsonString(
             solanaJson,
             ".FauxCoin"
         );
@@ -192,7 +194,7 @@ contract L2andSolSetupScript is Script {
         l2CustomERC20Gateway.updateTokenMapping(
             chainIdSolana,
             fauxCoinAddress,
-            addressToString(l1FauxCoinAddress)
+            solanaFauxCoinAddress
         );
 
         // TODO: Map FauxCoin  on Twine to FauxCoin on solana
