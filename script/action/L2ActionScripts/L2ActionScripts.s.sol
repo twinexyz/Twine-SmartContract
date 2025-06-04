@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
+import {TwineStandardERC20} from "../../../src/libraries/token/TwineStandardERC20.sol";
 import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
@@ -60,13 +61,12 @@ contract WithdrawETH is Script {
 }
 
 contract WithdrawERC20 is Script {
-    MockERC20 token;
+    TwineStandardERC20 token;
     L2CustomERC20Gateway l2CustomERC20Gateway;
 
     address tokenAddress;
     address l2CustomERC20GatewayAddress;
 
-    address _token;
     string to;
     uint256 amount;
     uint256 chainId;
@@ -75,13 +75,13 @@ contract WithdrawERC20 is Script {
         string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
 
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2CustomERC20Gateway"); 
-        tokenAddress = vm.parseJsonAddress(deployedJson, ".Twine.FauxCoin");
 
         l2CustomERC20Gateway = L2CustomERC20Gateway(l2CustomERC20GatewayAddress);
-        token = MockERC20(tokenAddress);
 
         // Read parameters dynamically
-        _token = vm.envAddress("TOKEN");
+        tokenAddress = vm.envAddress("TOKEN");
+        token = TwineStandardERC20(tokenAddress);
+
         to = vm.envString("RECEIVER");
         amount = vm.envUint("AMOUNT");
         chainId = vm.envUint("CHAIN_ID");
@@ -93,11 +93,9 @@ contract WithdrawERC20 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        token.mint(admin, 10 ether);
-        token.approve(l2CustomERC20GatewayAddress, 5 ether);
         console.log("Balance of Admin before withdrawal: ", token.balanceOf(admin));
         
-        l2CustomERC20Gateway.withdrawERC20(_token, to, amount, chainId, 0);
+        l2CustomERC20Gateway.withdrawERC20(tokenAddress, to, amount, chainId, 0);
 
         console.log("Balance of Admin after withdrawal: ", token.balanceOf(admin));
         vm.stopBroadcast();

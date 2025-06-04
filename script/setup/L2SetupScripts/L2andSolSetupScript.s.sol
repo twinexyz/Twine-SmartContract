@@ -50,6 +50,10 @@ contract L2andSolSetupScript is Script {
             "./script/utils/deployedContracts.json"
         );
 
+        string memory solanaJson = vm.readFile(
+            "./script/utils/solanaProgram.json"
+        );
+
         roleManagerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Twine.L2RoleManager"
@@ -95,6 +99,11 @@ contract L2andSolSetupScript is Script {
             ".Twine.FauxCoin" 
         );
 
+        l1FauxCoinAddress  = vm.parseJsonAddress(
+            solanaJson,
+            ".FauxCoin"
+        );
+
         chainIdEth = 17000; //holesky chain Id
         chainIdSolana = 900;
 
@@ -124,7 +133,7 @@ contract L2andSolSetupScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // setup twine messenger address
-        // twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
+        twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
 
         //roleManager setup
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
@@ -178,6 +187,12 @@ contract L2andSolSetupScript is Script {
             chainIdSolana,
             solTokenAddress,
             "11111111111111111111111111111111"
+        );
+
+        l2CustomERC20Gateway.updateTokenMapping(
+            chainIdSolana,
+            fauxCoinAddress,
+            addressToString(l1FauxCoinAddress)
         );
 
         // TODO: Map FauxCoin  on Twine to FauxCoin on solana
