@@ -137,10 +137,12 @@ contract L2SetupScript is Script {
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
-        console.log("After Broadcast");
+
+        
+        // setup twine messenger address
+        twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
 
         //roleManager setup
-
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
         roleManager.checkRole(keccak256("CHAIN_ADMIN"), initialOwner);
         roleManager.grantRole(
@@ -163,13 +165,7 @@ contract L2SetupScript is Script {
             keccak256("TWINE_MESSENGER"),
             l2TwineMessengerAddress
         );
-        console.log("Role manager setup complete");
 
-        // setup twine messenger address
-        // address admin = twineSystemStorage.admin();
-        // console.logAddress(admin);
-        // twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
-        // console.log("Set twine messenger");
 
         //L2ETHGateway setup
         l2ETHGateway.setRoleManagerAddress(roleManagerAddress);
@@ -181,7 +177,6 @@ contract L2SetupScript is Script {
         GatewaychainId[0] = chainIdEth;
         l1Tokens[0] = addressToString(l1FauxCoinAddress);
         CounterpartGateWay[0] = addressToString(l1ETHGatewayAddress);
-        console.log("L2ETHGateway setup complete");
 
         //L2GatewayRouter Setup
         address[] memory tokens = new address[](3);
@@ -196,7 +191,6 @@ contract L2SetupScript is Script {
         l2GatewayRouter.setERC20Gateway(tokens, gateways);
         l2GatewayRouter.setETHGateway(l2ETHGatewayAddress);
         l2GatewayRouter.setDefaultERC20Gateway(l2CustomERC20GatewayAddress);
-        console.log("L2Gateway router setup complete");
 
         //L2TwineMessenger
         l2TwineMessenger.setPrecompileAddress(
@@ -214,7 +208,6 @@ contract L2SetupScript is Script {
         );
         l2TwineMessenger.setSystemStorageContract(twineSystemStorageAddress);
         l2TwineMessenger.setMsgExecutorAddress(l2MessageExecutorAddress);
-        console.log("L2Twine messenger setup complete");
 
         //L2CustomERC20Gateway
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
@@ -238,7 +231,6 @@ contract L2SetupScript is Script {
             solTokenAddress,
             "11111111111111111111111111111111"
         );
-        console.log("L2CustomERC20 setup complete");
 
         // TODO: Map FauxCoin  on Twine to FauxCoin on solana
 
