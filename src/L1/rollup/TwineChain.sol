@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+import "forge-std/console.sol";
 
 import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -417,6 +418,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             TransactionType.layerZero,
             chainData.lzTransactionCount
         );
+             
+        console.log("Calculated Rolling Hash:");
+        console.logBytes32(lzTransactionRollingHash);
 
         require(
             lzTransactionRollingHash == chainData.lzTransactionRollingHash,
@@ -686,7 +690,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                     selectedMessages[i].toAddress,
                     selectedMessages[i].l1Token,
                     selectedMessages[i].l2Token,
-                    selectedMessages[i].amount
+                    selectedMessages[i].amount,
+                    selectedMessages[i].message
                 )
             );
         }
