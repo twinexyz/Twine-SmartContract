@@ -26,10 +26,10 @@ contract DepositETH is Script {
     address receiver;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1GatewayRouter");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
         l1ETHGateway = L1ETHGateway(l1GatewayRouterAddress);
 
@@ -69,10 +69,10 @@ contract ForcedWithdrawETH is Script {
     address receiver;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
 
@@ -112,11 +112,11 @@ contract DepositERC20 is Script {
     address receiver;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Dev1.FauxCoin");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
-        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
+        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".FauxCoin");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1GatewayRouter");
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L1CustomERC20Gateway");
 
         token = MockERC20(l1ERC20TokenAddress); 
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
@@ -168,12 +168,13 @@ contract ForcedWithdrawERC20 is Script {
     address receiver;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedL1ContractJson = vm.readFile("./script/utils/L1Addresses.json");
+        string memory deployedL2ContractJson = vm.readFile("./script/utils/twineAddresses.json");
 
-        l1ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Dev1.FauxCoin");
-        l2ERC20TokenAddress = vm.parseJsonAddress(deployedJson, ".Twine.FauxCoin");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        l1ERC20TokenAddress = vm.parseJsonAddress(deployedL1ContractJson, ".FauxCoin");
+        l2ERC20TokenAddress = vm.parseJsonAddress(deployedL2ContractJson, ".FauxCoin");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1GatewayRouter");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1MessageQueue");
 
         l1token = MockERC20(l1ERC20TokenAddress); 
         l2token = MockERC20(l2ERC20TokenAddress); 
@@ -217,9 +218,9 @@ contract CommitBatch is Script {
     uint64 endBlock;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
         twineChain = TwineChain(twineChainAddress);
 
         // Read environment variables
@@ -277,9 +278,9 @@ contract FinalizeBatch is Script {
     bytes executionProof;
     
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
         twineChain = TwineChain(twineChainAddress);
 
         // Read environment variables
@@ -313,10 +314,10 @@ contract commitAndFinalizeTransaction is Script {
     bytes inclusionProof;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
 
         twineChain = TwineChain(twineChainAddress);
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
@@ -358,9 +359,9 @@ contract finalizeWithdrawal is Script {
     bytes inclusionProof;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
-        twineChainAddress = vm.parseJsonAddress(deployedJson, ".Dev1.TwineChain");
+        twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
         twineChain = TwineChain(twineChainAddress);
 
         // Read parameters dynamically
@@ -415,9 +416,9 @@ contract GrantRole is Script {
     address account;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json.json");
         
-        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1RoleManager");
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".L1RoleManager");
         roleManager = RoleManager(roleManagerAddress);
 
         // Read parameters dynamically
@@ -446,9 +447,9 @@ contract RevokeRole is Script {
     address account;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         
-        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1RoleManager");
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".L1RoleManager");
         roleManager = RoleManager(roleManagerAddress);
 
         // Read parameters dynamically

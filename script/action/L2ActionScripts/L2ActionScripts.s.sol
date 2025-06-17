@@ -26,9 +26,9 @@ contract WithdrawETH is Script {
     uint256 gasLimit;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l2ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2ETHGateway");
-        l2TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2TwineMessenger");
+        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
+        l2ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L2ETHGateway");
+        l2TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L2TwineMessenger");
         l2ETHGateway = L2ETHGateway(l2ETHGatewayAddress);
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
 
@@ -72,9 +72,9 @@ contract WithdrawERC20 is Script {
     uint256 chainId;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
 
-        l2CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2CustomERC20Gateway"); 
+        l2CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L2CustomERC20Gateway"); 
 
         l2CustomERC20Gateway = L2CustomERC20Gateway(l2CustomERC20GatewayAddress);
 
@@ -109,9 +109,9 @@ contract GrantRole is Script {
     address account;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
         
-        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2RoleManager");
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".L2RoleManager");
         roleManager = RoleManager(roleManagerAddress);
 
         // Read parameters dynamically
@@ -140,9 +140,9 @@ contract RevokeRole is Script {
     address account;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
         
-        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".Twine.L2RoleManager");
+        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".L2RoleManager");
         roleManager = RoleManager(roleManagerAddress);
 
         // Read parameters dynamically
@@ -171,11 +171,11 @@ contract UpdateTokenMapping is Script {
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
-            "./script/utils/deployedContracts.json"
+            "./script/utils/twineAddresses.json"
         );
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Twine.L2CustomERC20Gateway"
+            ".L2CustomERC20Gateway"
         );
         l2CustomERC20Gateway = L2CustomERC20Gateway(
             l2CustomERC20GatewayAddress

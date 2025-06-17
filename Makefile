@@ -326,9 +326,6 @@ WithdrawERC20FromL2:
 setupEveryL2Contracts:
 	bash script/shell/setups/L2setups/setupEveryL2Contracts.sh
 
-#setup L2 contract for solana
-setupL2ContractForSolana:
-	bash script/shell/setups/L2setups/setupL2forSolana.sh
 
 # **************************************
 # *		Config L1 and L1     *

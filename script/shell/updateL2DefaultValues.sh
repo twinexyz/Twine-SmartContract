@@ -25,8 +25,6 @@ FILES=(
 
     # L2 Setups
     "script/shell/setups/L2Setups/setupEveryL2Contracts.sh" 
-    "script/shell/setups/L2Setups/setupL2forSolana.sh" 
-
     
     # L2 Actions
     "script/shell/actions/L2actions/erc20withdraw.sh" 
