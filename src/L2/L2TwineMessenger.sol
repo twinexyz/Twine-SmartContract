@@ -11,10 +11,11 @@ import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
+import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
-contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
+contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompressor {
     using TypeConversionLib for address;
 
     /// @notice SP1 Verifier Address
@@ -53,6 +54,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
         address roleManager,
         address msgExecutorAddress
     ) external initializer {
+        ZstdCompressor.__ZstdCompressor__init(address(0x18));
         TwineL2MessengerBase.__TwineMessengerBase_init(
             chaindId,
             counterpartMessenger,
@@ -241,7 +243,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
                 ITwineSystemStorage.L1TxnType.Deposit
             );
 
-            try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
+            try this.mintAndCall(chainType, token, to, amount, l1Txn.contractCallData) {
                 // success
             } catch (bytes memory lowLevelError) {
                 if (chainType == ChainType.Ethereum) {
@@ -292,6 +294,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     }
 
     function mintAndCall(
+        ChainType chainType,
         address token,
         address to,
         uint256 amount,
@@ -299,12 +302,18 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger {
     ) external {
         require(msg.sender == address(this), "Only self-call allowed");
 
+        if ( chainType == ChainType.Solana ) {
+            bytes memory output = _decompress(contractCallData);
+            contractCallData = output;
+        }
+
         ITwineERC20(token).mint(to, amount);
 
 
         if (contractCallData.length > 0) {
             ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
+
         }
     }
 

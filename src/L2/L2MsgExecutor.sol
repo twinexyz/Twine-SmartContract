@@ -34,6 +34,8 @@ contract L2MsgExecutor is
     }
 
     function initialize(address roleManagerAddress) external initializer {
+        ContextUpgradeable.__Context_init();
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         roleManager = roleManagerAddress;
     }
 

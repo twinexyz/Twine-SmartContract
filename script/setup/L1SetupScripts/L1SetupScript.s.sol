@@ -45,85 +45,97 @@ contract L1SetupScript is Script {
     address l2ETHTokenAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile(
-            "./script/utils/deployedContracts.json"
+        string memory deployedL1Json = vm.readFile(
+            "./script/utils/L1Addresses.json"
+        );
+
+        string memory deployedL2Json = vm.readFile(
+            "./script/utils/twineAddresses.json"
         );
 
         roleManagerAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1RoleManager"
+            deployedL1Json,
+            ".L1RoleManager"
         );
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1ETHGateway"
+            deployedL1Json,
+            ".L1ETHGateway"
         );
 
         l1ERC20TokenAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.FauxCoin"
+            deployedL1Json,
+            ".FauxCoin"
         );
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1CustomERC20Gateway"
+            deployedL1Json,
+            ".L1CustomERC20Gateway"
         );
 
         twineChainAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.TwineChain"
+            deployedL1Json,
+            ".TwineChain"
         );
 
         l1GatewayRouterAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1GatewayRouter"
+            deployedL1Json,
+            ".L1GatewayRouter"
         );
 
         l1XERC20GatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1XERC20Gateway"
+            deployedL1Json,
+            ".L1XERC20Gateway"
         );
 
         l1MessageQueueAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1MessageQueue"
+            deployedL1Json,
+            ".L1MessageQueue"
         );
 
         l1TwineMessengerAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Dev1.L1TwineMessenger"
+            deployedL1Json,
+            ".L1TwineMessenger"
         );
 
         l2TwineMessengerAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.L2TwineMessenger"
+            deployedL2Json,
+            ".L2TwineMessenger"
         );
 
-        verifierAddress = vm.parseJsonAddress(deployedJson, ".Dev1.Verifier");
+        verifierAddress = vm.parseJsonAddress(deployedL1Json, ".Verifier");
 
-        executionVkey = vm.parseJsonBytes32(deployedJson, ".Dev1.executionVkey");
-        inclusionVKey = vm.parseJsonBytes32(deployedJson, ".Dev1.inclusionVkey");
-        withdrawalVKey = vm.parseJsonBytes32(deployedJson, ".Dev1.withdrawalVkey");
-
+        executionVkey = vm.parseJsonBytes32(
+            deployedL1Json,
+            ".executionVkey"
+        );
+        inclusionVKey = vm.parseJsonBytes32(
+            deployedL1Json,
+            ".inclusionVkey"
+        );
+        withdrawalVKey = vm.parseJsonBytes32(
+            deployedL1Json,
+            ".withdrawalVkey"
+        );
 
         l2ERC20TokenAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.FauxCoin"
+            deployedL2Json,
+            ".FauxCoin"
         );
 
         l2ETHTokenAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.ETHToken"
+            deployedL2Json,
+            ".ETHToken"
         );
 
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.L2CustomERC20Gateway"
+            deployedL2Json,
+            ".L2CustomERC20Gateway"
         );
 
         l2ETHGatewayAddress = vm.parseJsonAddress(
-            deployedJson,
-            ".Twine.L2ETHGateway"
+            deployedL2Json,
+            ".L2ETHGateway"
         );
 
         twineChain = TwineChain(twineChainAddress);
@@ -141,7 +153,6 @@ contract L1SetupScript is Script {
     }
 
     function run() external {
-        
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
         twineOperationsHandler = initialOwner;
@@ -156,14 +167,26 @@ contract L1SetupScript is Script {
         roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l1ETHGatewayAddress);
         roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l1ETHGatewayAddress);
 
-        roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l1CustomERC20GatewayAddress);
-        roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l1CustomERC20GatewayAddress);
+        roleManager.grantRole(
+            keccak256("TWINE_GATEWAYS"),
+            l1CustomERC20GatewayAddress
+        );
+        roleManager.checkRole(
+            keccak256("TWINE_GATEWAYS"),
+            l1CustomERC20GatewayAddress
+        );
 
         roleManager.grantRole(keccak256("TWINE_CHAIN"), twineChainAddress);
         roleManager.checkRole(keccak256("TWINE_CHAIN"), twineChainAddress);
 
-        roleManager.grantRole(keccak256("TWINE_OPERATIONS_HANDLER"),twineOperationsHandler);
-        roleManager.checkRole(keccak256("TWINE_OPERATIONS_HANDLER"),twineOperationsHandler);
+        roleManager.grantRole(
+            keccak256("TWINE_OPERATIONS_HANDLER"),
+            twineOperationsHandler
+        );
+        roleManager.checkRole(
+            keccak256("TWINE_OPERATIONS_HANDLER"),
+            twineOperationsHandler
+        );
 
         //TwineChain setup
         twineChain.setRoleManagerAddress(roleManagerAddress);
@@ -171,7 +194,10 @@ contract L1SetupScript is Script {
         twineChain.setMessengerQueueAddress(l1MessageQueueAddress);
         twineChain.setVeriferAddress(verifierAddress);
         twineChain.setProgramVKey(executionVkey, inclusionVKey, withdrawalVKey);
-        twineChain.setGatewayAddress(l1ETHGatewayAddress, l1CustomERC20GatewayAddress);
+        twineChain.setGatewayAddress(
+            l1ETHGatewayAddress,
+            l1CustomERC20GatewayAddress
+        );
 
         //L1ETHGateway setup
         l1ETHGateway.setRoleManagerAddress(roleManagerAddress);
@@ -190,7 +216,7 @@ contract L1SetupScript is Script {
         l1GatewayRouter.setRoleManagerAddress(roleManagerAddress);
         l1GatewayRouter.setETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter.setDefaultERC20Gateway(l1CustomERC20GatewayAddress);
-        
+
         address[] memory tokens = new address[](1);
         address[] memory gateways = new address[](1);
         tokens[0] = l1ERC20TokenAddress;
