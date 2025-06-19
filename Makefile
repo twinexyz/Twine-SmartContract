@@ -326,6 +326,7 @@ WithdrawERC20FromL2:
 setupEveryL2Contracts:
 	bash script/shell/setups/L2setups/setupEveryL2Contracts.sh
 
+
 # **************************************
 # *		Config L1 and L1     *
 # **************************************
@@ -333,5 +334,6 @@ setupEveryContracts:
 	bash script/shell/updateL1L2Configuration.sh
 	if [ -d marker ]; then rm -rf marker; fi
 	bash script/configure.sh
+
 
 	

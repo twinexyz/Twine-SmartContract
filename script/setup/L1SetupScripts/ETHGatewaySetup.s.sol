@@ -9,8 +9,8 @@ contract SetRoleManager is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
 
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
@@ -31,8 +31,8 @@ contract setGatewayRouter is Script {
     address l1GatewayRouterAddress;
     
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
 
         l1GatewayRouterAddress = vm.envAddress("GATEWAY_ROUTER_ADDRESS");
@@ -53,8 +53,8 @@ contract setTwineMessenger is Script {
     address l1TwineMessengerAddress;
     
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
 
         l1TwineMessengerAddress = vm.envAddress("TWINE_MESSENGER_ADDRESS");
@@ -75,8 +75,8 @@ contract setL2TokenAddress is Script {
     address l2ETHTokenAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
 
         l2ETHTokenAddress = vm.envAddress("L2_ETH_TOKEN_ADDRESS");
@@ -98,9 +98,9 @@ contract SetChainId is Script {
     uint256 chainId;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         
-        l1EthGatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1ETHGateway");
+        l1EthGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
         l1EthGateway = L1ETHGateway(l1EthGatewayAddress);
 
         // Read parameters dynamically
