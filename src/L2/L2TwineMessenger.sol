@@ -302,15 +302,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
     ) external {
         require(msg.sender == address(this), "Only self-call allowed");
 
-        if ( chainType == ChainType.Solana ) {
-            bytes memory output = _decompress(contractCallData);
-            contractCallData = output;
-        }
-
         ITwineERC20(token).mint(to, amount);
 
-
         if (contractCallData.length > 0) {
+            if ( chainType == ChainType.Solana ) {
+                bytes memory output = _decompress(contractCallData);
+                contractCallData = output;
+            }
+
             ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
 
