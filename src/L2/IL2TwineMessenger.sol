@@ -15,9 +15,16 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint64 value;
         bytes data;
     }
+    struct L1Metadata {
+        uint64 blockHeight;
+        string fromAddress;
+        string l1Token;
+    }
+
     struct L1Txns {
         uint64 nonce;
         TokenTxn tokenTxn;
+        L1Metadata l1Metadata;
         bytes contractCallData;
     }
 
