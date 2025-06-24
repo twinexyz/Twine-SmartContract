@@ -3,12 +3,11 @@ pragma solidity ^0.8.24;
 
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
-
     struct TokenTxn {
-        uint256 amount;
         address token;
         address receiver;
         bool deposit;
+        uint256 amount;
     }
     struct ContractCall {
         address targetContract;
@@ -54,13 +53,9 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
      /// @notice Emitted when a deposit or withdraw handling is failed.
       /// @param reason The reason of failure
-    event TransactionFailed(string reason);
+    event TransactionFailed(bytes reason);
 
-    /// @notice Emitted when consenus  verification and transaction of solana are executed successfully
-    event SolanaTransactionsHandled(uint8 status, uint256 nonce, bytes transactionOutput);
-
-    /// @notice Emitted when consenus  verification and transaction of ethereum are executed successfully
-    event EthereumTransactionsHandled(uint8 status, uint256 nonce, bytes transactionOutput);
+    event L1TransactionsHandled(uint256 chainId, uint8 status, uint256 nonce, bytes transactionOutput);
 
     /// @notice Emitted when consensus verificiation is successful
     event ConsensusVerified(bytes consensusProof);
