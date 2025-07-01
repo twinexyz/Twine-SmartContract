@@ -230,7 +230,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         bytes memory precompileOutput
     ) internal {
         L1Txns memory l1Txn = abi.decode(precompileOutput, (L1Txns));
-        uint256 nonce = l1Txn.nonce;
+        uint256 nonce = uint256(l1Txn.nonce);
         address to = l1Txn.tokenTxn.receiver;
         address token = l1Txn.tokenTxn.token;
         uint256 amount = l1Txn.tokenTxn.amount;
@@ -246,11 +246,8 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
             try this.mintAndCall(chainType, token, to, amount, l1Txn.contractCallData) {
                 // success
             } catch (bytes memory lowLevelError) {
-                if (chainType == ChainType.Ethereum) {
-                    emit EthereumTransactionsHandled(0, nonce, lowLevelError);
-                } else {
-                    emit SolanaTransactionsHandled(0, nonce, lowLevelError);
-                }
+                emit TransactionFailed(lowLevelError);
+                emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;
             }
         } else {
@@ -263,19 +260,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
             try ITwineERC20(token).burn(to, amount) {
                 // Success
             } catch (bytes memory lowLevelError) {
-                if (chainType == ChainType.Ethereum) {
-                    emit EthereumTransactionsHandled(0, nonce, lowLevelError);
-                } else {
-                    emit SolanaTransactionsHandled(0, nonce, lowLevelError);
-                }
+                emit TransactionFailed(lowLevelError);
+                emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;
             }
         }
-        if (chainType == ChainType.Ethereum) {
-            emit EthereumTransactionsHandled(1, nonce, precompileOutput);
-        } else {
-            emit SolanaTransactionsHandled(1, nonce, precompileOutput);
-        }
+
+        emit L1TransactionsHandled(chainId, 1, nonce, precompileOutput);
     }
 
     function _checkAndUpdateNonce(
@@ -302,15 +293,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
     ) external {
         require(msg.sender == address(this), "Only self-call allowed");
 
-        if ( chainType == ChainType.Solana ) {
-            bytes memory output = _decompress(contractCallData);
-            contractCallData = output;
-        }
-
         ITwineERC20(token).mint(to, amount);
 
-
         if (contractCallData.length > 0) {
+            if ( chainType == ChainType.Solana ) {
+                bytes memory output = _decompress(contractCallData);
+                contractCallData = output;
+            }
+
             ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
 
