@@ -36,6 +36,13 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The list of queued transactions that are ready for execution.
     MessageData[] public executionMessageQueue;
 
+    mapping(uint256 => bytes32) private depositRollingHashes;
+
+    mapping(uint256 => bytes32) private withdrawRollingHashes;
+
+    /// @dev The storage slots reserved for future usage.
+    uint256[46] private __gap;
+
     /**********************
      * Function Modifiers *
      **********************/
@@ -271,14 +278,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint256 amount,
         bytes memory message
     ) external override onlyMessenger {
-        _queueDepositTransaction(
-            from,
-            to,
-            l1Token,
-            l2Token,
-            amount,
-            message
-        );
+        _queueDepositTransaction(from, to, l1Token, l2Token, amount, message);
     }
 
     /// @inheritdoc IL1MessageQueue
@@ -351,9 +351,20 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             message: message
         });
 
-        depositMessageQueue.push(depositMessageData);
+        bytes32 particularTransactionHash = computeTransactionHash(
+            depositMessageData
+        );
 
-        // emit event
+        bytes32 calculatedRollingHash = keccak256(
+            abi.encodePacked(
+                particularTransactionHash,
+                depositRollingHashes[depositMessageIndex - 1]
+            )
+        );
+
+        depositRollingHashes[depositMessageIndex] = calculatedRollingHash;
+
+        // emit deposit event
         emit QueueDepositTransaction(
             depositMessageIndex,
             chainId,
@@ -389,7 +400,18 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             message: message
         });
 
-        withdrawalMessageQueue.push(withdrawMessageData);
+        bytes32 particularTransactionHash = computeTransactionHash(
+            withdrawMessageData
+        );
+
+        bytes32 calculatedRollingHash = keccak256(
+            abi.encodePacked(
+                particularTransactionHash,
+                withdrawRollingHashes[withdrawalMessageIndex - 1]
+            )
+        );
+
+        withdrawRollingHashes[withdrawalMessageIndex] = calculatedRollingHash;
 
         // emit event
         emit QueueWithdrawalTransaction(
@@ -429,6 +451,25 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         });
 
         executionMessageQueue.push(executionMessageData);
+    }
+
+    function computeTransactionHash(
+        MessageData memory transactionData
+    ) public pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    transactionData.nonce,
+                    transactionData.chainId,
+                    transactionData.blockNumber,
+                    transactionData.fromAddress,
+                    transactionData.toAddress,
+                    transactionData.l1Token,
+                    transactionData.l2Token,
+                    transactionData.amount,
+                    transactionData.message
+                )
+            );
     }
 
     /// @notice Converts a uint256 to its string representation
