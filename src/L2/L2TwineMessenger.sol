@@ -15,7 +15,11 @@ import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
-contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompressor {
+contract L2TwineMessenger is
+    TwineL2MessengerBase,
+    IL2TwineMessenger,
+    ZstdCompressor
+{
     using TypeConversionLib for address;
 
     /// @notice SP1 Verifier Address
@@ -25,7 +29,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
     address public msgExecutor;
 
     /// @notice Skip zk Verification
-    bool public skipVerification;
+    bool public zkVerify;
 
     /// @notice The address of the system contract
     address public systemStorageContract;
@@ -64,7 +68,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         bridgingPrecompileAddress = address(0x16);
         msgExecutor = msgExecutorAddress;
         systemStorageContract = address(0x17);
-        skipVerification = true;
+        zkVerify = true;
     }
 
     function setPrecompileAddress(
@@ -86,7 +90,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
     function setZkVerifcationStatus(
         bool status
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        skipVerification = status;
+        zkVerify = status;
     }
 
     function setSp1VerifierAddress(
@@ -124,6 +128,17 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         bytes32 vKey
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         vKeys[chainId] = vKey;
+    }
+
+    /// @notice sets the checkpoint header in L1 that was last considered verified on Twine
+    /// either via verifying the consensus proof of that header or during initialization
+    /// set up by the admin
+    ///
+    /// @param chainId: Chain identifier of a specific chain, 1 for eth mainnet, 17000 for 
+    /// eth holesky and so on 
+    /// @param headerHash: Hash of the checkpoint header 
+    function setLastVerifiedHeaderHash(uint256 chainId, bytes32 headerHash) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        ITwineSystemStorage(systemStorageContract).setLastVerifiedHeaderHash(chainId, headerHash);
     }
 
     /// @inheritdoc ITwineL2MessengerBase
@@ -166,7 +181,7 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         bytes memory output = precompileInput;
         bool success;
 
-        if (!skipVerification) {
+        if (zkVerify) {
             (success, output) = consensusPrecompileAddress.call(
                 precompileInput
             );
@@ -202,13 +217,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
         // For testing purposes only. TODO: Remove before deploying to production.
-        if (skipVerification) {
+        if (!zkVerify) {
             ITwineSystemStorage(systemStorageContract).setBlockReceipts(
                 chainId,
                 height,
                 receiptRoot
             );
         }
+
         if (consensusProof.length > 0) {
             _verifyConsensusProof(chainId, consensusProof);
         }
@@ -243,7 +259,15 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
                 ITwineSystemStorage.L1TxnType.Deposit
             );
 
-            try this.mintAndCall(chainType, token, to, amount, l1Txn.contractCallData) {
+            try
+                this.mintAndCall(
+                    chainType,
+                    token,
+                    to,
+                    amount,
+                    l1Txn.contractCallData
+                )
+            {
                 // success
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
@@ -296,14 +320,16 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         ITwineERC20(token).mint(to, amount);
 
         if (contractCallData.length > 0) {
-            if ( chainType == ChainType.Solana ) {
+            if (chainType == ChainType.Solana) {
                 bytes memory output = _decompress(contractCallData);
                 contractCallData = output;
             }
 
-            ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
+            ContractCall[] memory contractCallsArray = abi.decode(
+                contractCallData,
+                (ContractCall[])
+            );
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
-
         }
     }
 
@@ -357,26 +383,53 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         );
     }
 
-    /// @notice function to verify the consensus proof
+    /// @notice function to verify the consensus proof by submitting the raw proof inputs to the 
+    /// consensus verifier precompile where the correctness of inputs is verified. 
+    /// The consensus verifier input outputs the proof and public values along with the receipt roots 
+    /// and hash of the headers whose consensus proof we are trying to verify. 
+    /// The consensus proof is verified by calling the verifier function of the sp1-contract.
+    /// Upon successful verification, the receipt roots of all the headers the proof represents are 
+    /// updated in the system contract and the last verified header hash is also updated on system 
+    /// contracts. 
     function _verifyConsensusProof(
         uint256 chainId,
         bytes memory consensusProof
     ) internal {
         (bool success, bytes memory output) = consensusPrecompileAddress.call(
-            consensusProof
+            abi.encode(chainId, consensusProof)
         );
         require(success, "Consensus proof parsing failed!");
         EthereumVerifierPrecompileOutput memory sp1Params = abi.decode(
             output,
             (EthereumVerifierPrecompileOutput)
         );
-        if (!skipVerification) {
-            ISP1Verifier(sp1Verifier).verifyProof(
-                vKeys[chainId],
-                sp1Params.publicValue,
-                sp1Params.proof
-            );
+        if (zkVerify) {
+            for (uint i; i < sp1Params.solProofComponents.length; i++) {
+                ISP1Verifier(sp1Verifier).verifyProof(
+                    vKeys[chainId],
+                    sp1Params.solProofComponents[i].publicValue,
+                    sp1Params.solProofComponents[i].proof
+                );
+            }
         }
+
+        for (uint i; i < sp1Params.verifiedReceiptRoots.length; i++) {
+            ITwineSystemStorage(systemStorageContract).setBlockReceipts(chainId, sp1Params.verifiedReceiptRoots[i].height, sp1Params.verifiedReceiptRoots[i].receiptRoot);
+        }
+
+        
+        ITwineSystemStorage(systemStorageContract).setLastVerifiedHeaderHash(chainId, sp1Params.solProofComponents[sp1Params.solProofComponents.length - 1].headerHash);
         emit ConsensusVerified(consensusProof);
+    }
+
+    /// @notice Takes the consensus proof of ethereum and submits the proof to the consensus verifier 
+    /// precompile for correctness of various constraints and verifies the consensus proof (sp1 proof)
+    /// by submitting it to the sp1-verifier contract
+    /// 
+    /// @param chainId: Chain identifier of a specific chain whose consensus proof we are trying to verify
+    /// @param consensus_proof: Proof components that comprises of the raw sp1-proof and public values 
+    /// along with other essentials required in verification of the proof. 
+    function verify_ethereum_consensus_proof(uint256 chainId, bytes memory consensus_proof) external {
+        _verifyConsensusProof(chainId, consensus_proof);
     }
 }

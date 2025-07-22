@@ -29,6 +29,12 @@ contract TwineSystemStorage is ITwineSystemStorage {
     ///      This mapping allows retrieval of the receipt root for a specific block on a specific chain.
     mapping(uint256 => mapping(uint256 => bytes32)) private blockReceiptRoots;
 
+    /// @notice Mapping to store the last header oa a chain whose proof was verified on twine. 
+    /// @dev Structure: chainId => headerHash
+    ///      This mapping allows the retrieval of hash of the header of a specified chain whose consensus proof 
+    ///      was verified on a twine the the last time.
+    mapping(uint256 => bytes32) private lastVerifiedHeaderHash; 
+
     /// @notice Modifier to restrict access to functions only callable by the authorized Twine messenger.
     /// @dev Reverts if the caller is not the `twineMessenger`.
     modifier onlyTwineMessenger() {
@@ -81,6 +87,21 @@ contract TwineSystemStorage is ITwineSystemStorage {
     ) external onlyTwineMessenger {
         blockReceiptRoots[_chainId][_height] = _receiptRoot;
     }
+
+    /// @notice Sets the last verified header hash for a specific chain.
+    /// @dev Can only be called by the authorized `twineMessenger`.
+    /// @param _chainId The ID of the chain whose header is to be stored
+    /// @param _headerHash The hash of the header whose consensus proof was verified on twine 
+    function setLastVerifiedHeaderHash(uint256 _chainId, bytes32 _headerHash) external onlyTwineMessenger {
+        lastVerifiedHeaderHash[_chainId] = _headerHash;
+    }
+
+    /// @notice Get last verified header hash of chain with chain id `_chainId`
+    /// @param _chainId The ID of the chain to get nonce
+    /// @return headerHash HeaderHash of chain 
+    function getLastVerifiedHeaderHash(uint256 _chainId) external view returns(bytes32) {
+        return lastVerifiedHeaderHash[_chainId];
+    } 
 
     /// @notice Increments the nonce for a specific transaction type on a specific chain.
     /// @dev Can only be called by the authorized `twineMessenger`.

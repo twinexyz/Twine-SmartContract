@@ -67,10 +67,23 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes proof;
         bytes transactionInput;
     }
-    struct EthereumVerifierPrecompileOutput {
+   struct EthereumVerifierPrecompileOutput {
+        SolProofComponent[] solProofComponents;
+        VerifiedReceipt[] verifiedReceiptRoots;
+        bool basedProof;
+    }
+
+    struct SolProofComponent {
         bytes publicValue;
         bytes proof;
+        bytes32 headerHash;
     }
+
+    struct VerifiedReceipt {
+        uint64 height;
+        bytes32 receiptRoot;
+    }
+
     struct WithdrawalDetails {
         uint256 l1Nonce;
         uint256 amount;
