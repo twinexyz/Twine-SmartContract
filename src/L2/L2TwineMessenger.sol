@@ -399,26 +399,26 @@ contract L2TwineMessenger is
             abi.encode(chainId, consensusProof)
         );
         require(success, "Consensus proof parsing failed!");
-        EthereumVerifierPrecompileOutput memory sp1Params = abi.decode(
+        EthereumVerifierPrecompileOutput memory precompileOutput = abi.decode(
             output,
             (EthereumVerifierPrecompileOutput)
         );
         if (zkVerify) {
-            for (uint i; i < sp1Params.solProofComponents.length; i++) {
+            for (uint i; i < precompileOutput.solProofComponents.length; i++) {
                 ISP1Verifier(sp1Verifier).verifyProof(
                     vKeys[chainId],
-                    sp1Params.solProofComponents[i].publicValue,
-                    sp1Params.solProofComponents[i].proof
+                    precompileOutput.solProofComponents[i].publicValue,
+                    precompileOutput.solProofComponents[i].proof
                 );
             }
         }
 
-        for (uint i; i < sp1Params.verifiedReceiptRoots.length; i++) {
-            ITwineSystemStorage(systemStorageContract).setBlockReceipts(chainId, sp1Params.verifiedReceiptRoots[i].height, sp1Params.verifiedReceiptRoots[i].receiptRoot);
+        for (uint i; i < precompileOutput.verifiedReceiptRoots.length; i++) {
+            ITwineSystemStorage(systemStorageContract).setBlockReceipts(chainId, precompileOutput.verifiedReceiptRoots[i].height, precompileOutput.verifiedReceiptRoots[i].receiptRoot);
         }
 
         
-        ITwineSystemStorage(systemStorageContract).setLastVerifiedHeaderHash(chainId, sp1Params.solProofComponents[sp1Params.solProofComponents.length - 1].headerHash);
+        ITwineSystemStorage(systemStorageContract).setLastVerifiedHeaderHash(chainId, precompileOutput.solProofComponents[precompileOutput.solProofComponents.length - 1].headerHash);
         emit ConsensusVerified(consensusProof);
     }
 
