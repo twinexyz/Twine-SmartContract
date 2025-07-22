@@ -63,7 +63,7 @@ contract ForcedWithdrawETH is Script {
     L1MessageHandler l1MessageHandler;
 
     address l1ETHGatewayAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
 
     uint256 withdrawAmount;
     address receiver;
@@ -72,9 +72,9 @@ contract ForcedWithdrawETH is Script {
         string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
         l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
         // Read parameters dynamically 
         withdrawAmount = vm.envUint("WITHDRAW_AMOUNT");
@@ -162,7 +162,7 @@ contract ForcedWithdrawERC20 is Script {
     address l1ERC20TokenAddress;
     address l2ERC20TokenAddress;
     address l1GatewayRouterAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
 
     uint256 withdrawAmount;
     address receiver;
@@ -174,12 +174,12 @@ contract ForcedWithdrawERC20 is Script {
         l1ERC20TokenAddress = vm.parseJsonAddress(deployedL1ContractJson, ".FauxCoin");
         l2ERC20TokenAddress = vm.parseJsonAddress(deployedL2ContractJson, ".FauxCoin");
         l1GatewayRouterAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1GatewayRouter");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1MessageHandler");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1MessageHandler");
 
         l1token = MockERC20(l1ERC20TokenAddress); 
         l2token = MockERC20(l2ERC20TokenAddress); 
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
         // Read parameters dynamically
         withdrawAmount = vm.envUint("WITHDRAW_AMOUNT");
@@ -307,7 +307,7 @@ contract commitAndFinalizeTransaction is Script {
     L1MessageHandler l1MessageHandler;
 
     address twineChainAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
 
     // data required for transaction finalization
     bytes transactionInfo;
@@ -317,10 +317,10 @@ contract commitAndFinalizeTransaction is Script {
         string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
         twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
 
         twineChain = TwineChain(twineChainAddress);
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
         // Read parameters dynamically
         transactionInfo = vm.envBytes("TRANSACTION_INFO");

@@ -9,8 +9,8 @@ contract SetRoleManagerAddress is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1TwineMessenger");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L1TwineMessenger");
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
 
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
@@ -31,8 +31,8 @@ contract SetRollupAddress is Script {
     address rollupAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1TwineMessenger");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L1TwineMessenger");
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
 
         rollupAddress = vm.envAddress("ROLLUP_ADDRESS");
@@ -53,8 +53,8 @@ contract setMessageHandlerAddress is Script {
     address messageHandlerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1TwineMessenger");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L1TwineMessenger");
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
 
         messageHandlerAddress = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
@@ -75,8 +75,8 @@ contract SetCounterpartMessenger is Script {
     address counterpartMessenger;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1TwineMessenger");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L1TwineMessenger");
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
 
         counterpartMessenger = vm.envAddress("COUNTERPART_MESSENGER");

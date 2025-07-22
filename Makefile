@@ -30,7 +30,7 @@ help:
 	@echo "revokeRole                      - Revoke a role from an entity"
 	@echo "setupRoleManagerTwineChain      - Configure role manager for Twine Chain"
 	@echo "setupChainIdTwineChain          - Configure chain ID for Twine Chain"
-	@echo "setupMessageQueueTwineChain     - Configure message queue for Twine Chain"
+	@echo "setupMessageHandlerTwineChain     - Configure message queue for Twine Chain"
 	@echo "setupVerifierTwineChain         - Set up verifier for Twine Chain"
 	@echo "setupVkeysTwineChain            - Configure program V keys for Twine Chain"
 	@echo "setupGatewayTwineChain          - Configure gateway for Twine Chain"
@@ -49,7 +49,7 @@ help:
 	@echo "setERC20GatewayGR               - Set up ERC20 Gateway in Gateway Router"
 	@echo "setRoleManagerMS                - Configure role manager for Messenger"
 	@echo "setRollupMS                     - Set up rollup for Messenger"
-	@echo "setMessageQueueMS               - Set up message queue for Messenger"
+	@echo "setMessageHandlerMS               - Set up message queue for Messenger"
 	@echo "setCounterpartMessengerMS       - Set up counterpart messenger"
 	@echo "setRoleManagerCG                - Configure role manager for Custom ERC20"
 	@echo "setChainIdCG                    - Set Chain Id for Custom ERC20 "
@@ -178,8 +178,8 @@ setupChainIdTwineChain:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setChainIdTC.sh
 
 #setup message queue 
-setupMessageQueueTwineChain:
-	bash script/shell/setups/L1Setups/TwineChainSetup/setMessageQueueTC.sh
+setupMessageHandlerTwineChain:
+	bash script/shell/setups/L1Setups/TwineChainSetup/setMessageHandlerTC.sh
 
 #setup verifier
 setupVerifierTwineChain:
@@ -218,19 +218,19 @@ setChainIdL1ETHGateway:
 
 #setup role manager
 setRoleManagerMQ:
-	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setRoleManagerMQ.sh
+	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setRoleManagerMQ.sh
 
 #setup chain id
 setChainIdMQ:
-	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setChainIdMQ.sh
+	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setChainIdMQ.sh
 
 #setup l1 twine messenger 
 setTwineMessengerMQ:
-	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setTwineMessengerMQ.sh
+	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setTwineMessengerMQ.sh
 
 #setup message queue proxy
 setMessageProxyMQ:
-	bash script/shell/setups/L1Setups/L1MessageQueueSetup/setMessageProxyMQ.sh
+	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setMessageProxyMQ.sh
 
 
 #<-------------L1 GATEWAY ROUTER SETUP------------->
@@ -263,8 +263,8 @@ setRollupMS:
 	bash script/shell/setups/L1Setups/L1MessengerSetup/setRollupMS.sh
 
 #setup message queue
-setMessageQueueMS:
-	bash script/shell/setups/L1Setups/L1MessengerSetup/setMessageQueueMS.sh
+setMessageHandlerMS:
+	bash script/shell/setups/L1Setups/L1MessengerSetup/setMessageHandlerMS.sh
 
 #setup counterpart messenger
 setCounterpartMessengerMS:

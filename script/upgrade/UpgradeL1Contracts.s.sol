@@ -33,7 +33,7 @@ contract UpgradeL1Contracts is Script {
     address roleManagerAddress;
     address l1ETHGatewayAddress;
     address l1ERC20TokenAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
     address l1GatewayRouterAddress;
     address l1XERC20GatewayAddress;
     address twineOperationsHandler;
@@ -82,7 +82,7 @@ contract UpgradeL1Contracts is Script {
             ".Dev1.L1XERC20Gateway"
         );
 
-        l1MessageQueueAddress = vm.parseJsonAddress(
+        l1MessageHandlerAddress = vm.parseJsonAddress(
             deployedJson,
             ".Dev1.L1MessageHandler"
         );
@@ -112,10 +112,10 @@ contract UpgradeL1Contracts is Script {
         //     data
         // );
 
-        L1MessageHandler newMessageQueue = new L1MessageHandler();
-        getProxyAdmin(l1MessageQueueAddress).upgradeAndCall(
-            ITransparentUpgradeableProxy(l1MessageQueueAddress),
-            address(newMessageQueue),
+        L1MessageHandler newMessageHandler = new L1MessageHandler();
+        getProxyAdmin(l1MessageHandlerAddress).upgradeAndCall(
+            ITransparentUpgradeableProxy(l1MessageHandlerAddress),
+            address(newMessageHandler),
             data
         );
 

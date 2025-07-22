@@ -22,7 +22,7 @@ contract L1CustomERC20GatewayTest is Test {
     TwineChain private rollup;
     L1GatewayRouter private router;
     RoleManager private roleManager;
-    L1MessageHandler private messageQueue;
+    L1MessageHandler private messageHandler;
     L1TwineMessenger private l1Messenger;
     L2TwineMessenger private l2Messenger;
     L1CustomERC20Gateway private gateway;
@@ -62,7 +62,7 @@ contract L1CustomERC20GatewayTest is Test {
         );
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
-        address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
+        address L1MessageHandlerAddress = Upgrades.deployTransparentProxy(
             "L1MessageHandler.sol",
             msg.sender,
             abi.encodeCall(
@@ -70,7 +70,7 @@ contract L1CustomERC20GatewayTest is Test {
                 (0, address(0), address(roleManager))
             )
         );
-        messageQueue = L1MessageHandler(L1MessageQueueAddress);
+        messageHandler = L1MessageHandler(L1MessageHandlerAddress);
 
         address L2MessageExecutorAddress = Upgrades.deployTransparentProxy(
             "L2MsgExecutor.sol",
@@ -108,7 +108,7 @@ contract L1CustomERC20GatewayTest is Test {
                 L1TwineMessenger.initialize,
                 (
                     address(l2Messenger),
-                    address(messageQueue),
+                    address(messageHandler),
                     address(0),
                     address(roleManager)
                 )
@@ -146,7 +146,7 @@ contract L1CustomERC20GatewayTest is Test {
         router.setETHGateway(address(gateway));
         router.setDefaultERC20Gateway(address(gateway));
         gateway.setRoleManagerAddress(address(roleManager));
-        messageQueue.setMessengerAddress(address(l1Messenger));
+        messageHandler.setMessengerAddress(address(l1Messenger));
         vm.stopPrank();
     }
     function testSetRoleManagerAddress() public {
@@ -311,7 +311,7 @@ contract L1CustomERC20GatewayTest is Test {
             10,
             new bytes(0)
         );
-        assertEq(messageQueue.messageIndex(), 1);
+        assertEq(messageHandler.messageIndex(), 1);
     }
 
     function addressToString(

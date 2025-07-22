@@ -243,9 +243,9 @@ interface ITwineChain {
     /// @param _roleManagerAddress the address of role manager to set
     function setRoleManagerAddress(address _roleManagerAddress) external;
 
-    /// @notice sets the messager queue address
-    /// @param _messageQueue the address message queue of to set
-    function setMessengerQueueAddress(address _messageQueue) external;
+    /// @notice sets the message handler address
+    /// @param _messageHandler the address message queue of to set
+    function setMessageHandlerAddress(address _messageHandler) external;
 
     /// @notice sets the verifier address
     /// @param _verifier the address of verifier to set

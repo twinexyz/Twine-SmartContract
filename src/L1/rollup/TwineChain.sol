@@ -147,7 +147,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @inheritdoc ITwineChain
-    function setMessengerQueueAddress(
+    function setMessageHandlerAddress(
         address _messageHandler
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         if (_messageHandler == address(0)) {

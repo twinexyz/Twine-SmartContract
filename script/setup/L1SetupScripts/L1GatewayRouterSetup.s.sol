@@ -9,8 +9,8 @@ contract SetRoleManagerAddress is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1GatewayRouter");
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
 
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
@@ -31,8 +31,8 @@ contract SetETHGateway is Script {
     address l1ETHGatewayAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1GatewayRouter");
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
 
         l1ETHGatewayAddress = vm.envAddress("ETH_GATEWAY_ADDRESS");
@@ -53,8 +53,8 @@ contract SetDefaultERC20Gateway is Script {
     address l1CustomERC20GatewayAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1GatewayRouter");
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
 
         l1CustomERC20GatewayAddress = vm.envAddress("CUSTOM_ERC20_GATEWAY_ADDRESS");
@@ -78,8 +78,8 @@ contract SetERC20Gateway is Script {
     uint64 tokenCount;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1GatewayRouter");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1GatewayRouterAddress = vm.parseJsonAddress(deployedJson, ".L1GatewayRouter");
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
 
         string memory tokenStr = vm.envString("TOKENS");

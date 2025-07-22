@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 
 contract SetRoleManager is Script {
     L1MessageHandler l1MessageHandler;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageHandler");
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
-
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
     }
 
@@ -26,15 +25,14 @@ contract SetRoleManager is Script {
 }
 
 contract SetChainId is Script {
- L1MessageHandler l1MessageHandler;
-    address l1MessageQueueAddress;
+    L1MessageHandler l1MessageHandler;
+    address l1MessageHandlerAddress;
     uint64 chainId;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageHandler");
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
-
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
         chainId = uint64(vm.envUint("CHAIN_ID"));
     }
 
@@ -48,15 +46,14 @@ contract SetChainId is Script {
 }
 
 contract SetMessagengerAddress is Script {
- L1MessageHandler l1MessageHandler;
-    address l1MessageQueueAddress;
+    L1MessageHandler l1MessageHandler;
+    address l1MessageHandlerAddress;
     address messengerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageHandler");
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
-
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
         messengerAddress = vm.envAddress("L1_MESSENGER_ADDRESS");
     }
 
@@ -69,16 +66,15 @@ contract SetMessagengerAddress is Script {
     }
 }
 
-contract SetMessageQueueProxy is Script {
- L1MessageHandler l1MessageHandler;
+contract SetMessageHandlerProxy is Script {
+    L1MessageHandler l1MessageHandler;
     address l1MessageHandlerAddress;
     address messageHandlerProxy;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageHandler");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
         l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
-
         messageHandlerProxy = vm.envAddress("MESSAGE_Handler_ADDRESS");
     }
 

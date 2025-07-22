@@ -9,8 +9,8 @@ contract SetRoleManagerAddress is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L1CustomERC20Gateway");
         l1CustomERC20Gateway = L1CustomERC20Gateway(l1CustomERC20GatewayAddress);
 
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
@@ -30,8 +30,8 @@ contract SetGatewayRouter is Script {
     address l1GatewayRouterAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L1CustomERC20Gateway");
         l1CustomERC20Gateway = L1CustomERC20Gateway(l1CustomERC20GatewayAddress);
 
         l1GatewayRouterAddress = vm.envAddress("GATEWAY_ROUTER_ADDRESS");
@@ -51,8 +51,8 @@ contract SetTwineMessenger is Script {
     address l1TwineMessengerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L1CustomERC20Gateway");
         l1CustomERC20Gateway = L1CustomERC20Gateway(l1CustomERC20GatewayAddress);
 
         l1TwineMessengerAddress = vm.envAddress("TWINE_MESSENGER_ADDRESS");
@@ -73,8 +73,8 @@ contract UpdateTokenMapping is Script {
     address l2ERC20TokenAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L1CustomERC20Gateway");
         l1CustomERC20Gateway = L1CustomERC20Gateway(l1CustomERC20GatewayAddress);
 
         l1ERC20TokenAddress = vm.envAddress("L1_TOKEN_ADDRESS");
@@ -97,9 +97,9 @@ contract SetChainId is Script {
     uint256 chainId;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         
-        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1CustomERC20Gateway");
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L1CustomERC20Gateway");
         l1CustomERC20Gateway = L1CustomERC20Gateway(l1CustomERC20GatewayAddress);
 
         // Read parameters dynamically

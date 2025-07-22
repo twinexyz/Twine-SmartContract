@@ -13,7 +13,7 @@ export PRIVATE_KEY
 export MESSAGE_QUEUE_ADDRESS
 
 #Run the forge script with the provided values
-forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetmessageQueueAddress \
+forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetMessageHandlerAddress \
     --fork-url $DEFAULT_FORK_URL  \
     --broadcast \
     -- --env "MESSAGE_QUEUE_ADDRESS=$MESSAGE_QUEUE_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"

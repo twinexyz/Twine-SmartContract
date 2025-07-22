@@ -30,7 +30,7 @@ contract TwineChainTest is Test {
     L1TwineMessenger public l1TwineMessenger;
 
     address public verifier;
-    address public newMessageQueue;
+    address public newMessageHandler;
     address public newVerifierAddress;
     address admin = 0x19B78FF82C94b5E517f2279f3fBF10498B039179;
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
@@ -44,7 +44,7 @@ contract TwineChainTest is Test {
 
     function setUp() public {
         vm.startPrank(admin);
-        newMessageQueue = makeAddr("newMessageQueue");
+        newMessageHandler = makeAddr("newMessageHandler");
         newVerifierAddress = makeAddr("newVerifierAddress");
         finalizeVKey = keccak256("finalizeVKey");
         refundVKey = keccak256("refundVKey");
@@ -75,7 +75,7 @@ contract TwineChainTest is Test {
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
         // setup L1MessageHandler
-        address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
+        address L1MessageHandlerAddress = Upgrades.deployTransparentProxy(
             "L1MessageHandler.sol",
             msg.sender,
             abi.encodeCall(
@@ -84,7 +84,7 @@ contract TwineChainTest is Test {
             )
         );
 
-        messageHandler = L1MessageHandler(L1MessageQueueAddress);
+        messageHandler = L1MessageHandler(L1MessageHandlerAddress);
 
         // setup TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
@@ -163,7 +163,7 @@ contract TwineChainTest is Test {
         // SetUp Twine Chain
         twineChain.setChainId(1700);
         twineChain.setRoleManagerAddress(address(roleManager));
-        twineChain.setMessengerQueueAddress(address(messageHandler));
+        twineChain.setMessageHandlerAddress(address(messageHandler));
         twineChain.setGatewayAddress(address(ethGateway), address(ethGateway));
 
         // SetUp Messenger
@@ -211,21 +211,21 @@ contract TwineChainTest is Test {
         address nonAdminUser = address(0x123);
         vm.startPrank(nonAdminUser);
         vm.expectRevert();
-        twineChain.setMessengerQueueAddress(newMessageQueue);
+        twineChain.setMessageHandlerAddress(newMessageHandler);
         vm.stopPrank();
     }
 
     function testSetMessengerQueueZeroAddressNotAllowed() public {
         vm.startPrank(admin);
         vm.expectRevert(ErrorZeroAddress.selector);
-        twineChain.setMessengerQueueAddress(address(0));
+        twineChain.setMessageHandlerAddress(address(0));
         vm.stopPrank();
     }
 
     function testSetMesseHandlerAddress() public {
         vm.prank(admin);
-        twineChain.setMessengerQueueAddress(newMessageQueue);
-        assertEq(twineChain.messageHandler(), newMessageQueue);
+        twineChain.setMessageHandlerAddress(newMessageHandler);
+        assertEq(twineChain.messageHandler(), newMessageHandler);
     }
 
     function testSetVeriferAddressNonAdminReverts() public {
@@ -309,7 +309,7 @@ contract TwineChainTest is Test {
          * Preparing Input *
          ******************/
         uint64 batchNumber = 1;
-        bytes32 batchHash = 0xec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b23;
+        bytes32 batchHash =  0x8a58ec38439a3ccc22aaf10ee418aca264cd1bc16c5bab8f0378e9697210e8b5;
         bytes32 genesisBlockHash = bytes32(0);
         twineChain.commitGenesisBlock(genesisBlockHash);
         twineChain.commitBatch(batchNumber,batchHash);
@@ -318,14 +318,17 @@ contract TwineChainTest is Test {
     }
     function testFinalizeBatch() public {
         uint64 batchNumber = 1;
-        uint256 totalMsgHandledOnTwine = 2;
-        bytes32 batchHash = 0xec0402a163738d2c8eb41a2a5b8fcd8b312cf6670cca6590fddcb28f38d35b23;
+        uint64 totalEthMsgHandledOnTwine = 3;
+        uint64 totalSolanaMsgHandledOnTwine = 2;
+        bytes32 batchHash =  0x8a58ec38439a3ccc22aaf10ee418aca264cd1bc16c5bab8f0378e9697210e8b5;
         bytes32 genesisBlockHash = bytes32(0);
         bytes memory publicValues = abi.encodePacked(
-            totalMsgHandledOnTwine,
             genesisBlockHash,
-            batchHash
+            batchHash,
+            totalEthMsgHandledOnTwine,
+            totalSolanaMsgHandledOnTwine
         );
+        console.log("public values length",publicValues.length);
         testCommitBatch();
         vm.startPrank(admin);
 

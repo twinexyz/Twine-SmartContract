@@ -57,6 +57,7 @@ contract L1SetupScript is Script {
             deployedL1Json,
             ".L1RoleManager"
         );
+        console.log("Rolemanager",roleManagerAddress);
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
             deployedL1Json,
@@ -170,7 +171,7 @@ contract L1SetupScript is Script {
         //TwineChain setup
         twineChain.setRoleManagerAddress(roleManagerAddress);
         twineChain.setChainId(chainId);
-        twineChain.setMessengerQueueAddress(l1MessageHandlerAddress);
+        twineChain.setMessageHandlerAddress(l1MessageHandlerAddress);
         twineChain.setVeriferAddress(verifierAddress);
         twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
         twineChain.setGatewayAddress(

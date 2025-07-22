@@ -36,7 +36,7 @@ contract L2SetupScript is Script {
     address l1FauxCoinAddress;
     address l1ETHGatewayAddress;
     address l2ERC20TokenAddress;
-    address l2MessageQueueAddress;
+    address l2MessageHandlerAddress;
     address l2GatewayRouterAddress;
     address l2XERC20GatewayAddress;
     address twineOperationsHandler;
