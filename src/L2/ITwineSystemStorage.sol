@@ -40,9 +40,9 @@ interface ITwineSystemStorage {
     /// @param _headerHash The hash of the header whose consensus proof was verified on twine 
     function setLastVerifiedHeaderHash(uint256 _chainId, bytes32 _headerHash) external;
 
-    /// @notice Get receipt root of chain with chain id `_chainId` and height `_height`  
+    /// @notice Get last verified header hash of chain with chain id `_chainId`
     /// @param _chainId The ID of the chain to get nonce
-    /// @return headerHash HeaderHash of chain at height
+    /// @return headerHash HeaderHash of chain 
     function getLastVerifiedHeaderHash(uint256 _chainId) external returns(bytes32);
 
     /// @notice Increments the nonce for a specific transaction type on a specific chain.
