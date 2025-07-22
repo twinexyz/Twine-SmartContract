@@ -9,10 +9,10 @@ contract SetRoleManagerAddress is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.TwineChain"
+            ".TwineChain"
         );
         twineChain = TwineChain(twineChainAddress);
 
@@ -35,10 +35,10 @@ contract SetChainId is Script {
     address twineChainAddress;
     uint256 chainId;
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.TwineChain"
+            ".TwineChain"
         );
         twineChain = TwineChain(twineChainAddress);
 
@@ -59,10 +59,10 @@ contract SetmessageQueueAddress is Script {
     address twineChainAddress;
     address messageQueueAddress;
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.TwineChain"
+            ".TwineChain"
         );
         twineChain = TwineChain(twineChainAddress);
 
@@ -83,10 +83,10 @@ contract SetVerifierAddress is Script {
     address verifier;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.TwineChain"
+            ".TwineChain"
         );
         twineChain = TwineChain(twineChainAddress);
         verifier = vm.envAddress("VERIFIER_ADDRESS");
@@ -109,10 +109,10 @@ contract SetProgramVkey is Script {
     bytes32 withdrawalVkey;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.TwineChain"
+            ".TwineChain"
         );
         twineChain = TwineChain(twineChainAddress);
 
@@ -138,10 +138,10 @@ contract SetGatewayAddress is Script {
     address erc20Gateway;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
             deployedJson,
-            ".Dev1.TwineChain"
+            ".TwineChain"
         );
         twineChain = TwineChain(twineChainAddress);
 
