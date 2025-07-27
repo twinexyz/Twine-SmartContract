@@ -9,8 +9,8 @@ contract SetRoleManager is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
 
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
@@ -31,8 +31,8 @@ contract SetChainId is Script {
     uint64 chainId;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
 
         chainId = uint64(vm.envUint("CHAIN_ID"));
@@ -53,8 +53,8 @@ contract SetMessagengerAddress is Script {
     address messengerAddress;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
 
         messengerAddress = vm.envAddress("L1_MESSENGER_ADDRESS");
@@ -75,8 +75,8 @@ contract SetMessageQueueProxy is Script {
     address messageQueueProxy;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageQueue");
+        string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
+        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
         l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
 
         messageQueueProxy = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
