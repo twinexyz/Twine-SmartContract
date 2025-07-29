@@ -23,8 +23,8 @@ contract L1SetupScript is Script {
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
     uint64 chainId;
-    bytes32 executionVkey;
-    bytes32 inclusionVKey;
+    bytes32 finalizeVKey;
+    bytes32 refundVKey;
     bytes32 withdrawalVKey;
     address tokenAddress;
     address verifierAddress;
@@ -63,20 +63,14 @@ contract L1SetupScript is Script {
             ".L1ETHGateway"
         );
 
-        l1ERC20TokenAddress = vm.parseJsonAddress(
-            deployedL1Json,
-            ".FauxCoin"
-        );
+        l1ERC20TokenAddress = vm.parseJsonAddress(deployedL1Json, ".FauxCoin");
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(
             deployedL1Json,
             ".L1CustomERC20Gateway"
         );
 
-        twineChainAddress = vm.parseJsonAddress(
-            deployedL1Json,
-            ".TwineChain"
-        );
+        twineChainAddress = vm.parseJsonAddress(deployedL1Json, ".TwineChain");
 
         l1GatewayRouterAddress = vm.parseJsonAddress(
             deployedL1Json,
@@ -105,28 +99,13 @@ contract L1SetupScript is Script {
 
         verifierAddress = vm.parseJsonAddress(deployedL1Json, ".Verifier");
 
-        executionVkey = vm.parseJsonBytes32(
-            deployedL1Json,
-            ".executionVkey"
-        );
-        inclusionVKey = vm.parseJsonBytes32(
-            deployedL1Json,
-            ".inclusionVkey"
-        );
-        withdrawalVKey = vm.parseJsonBytes32(
-            deployedL1Json,
-            ".withdrawalVkey"
-        );
+        finalizeVKey = vm.parseJsonBytes32(deployedL1Json, ".finalizeVkey");
+        refundVKey = vm.parseJsonBytes32(deployedL1Json, ".refundVkey");
+        withdrawalVKey = vm.parseJsonBytes32(deployedL1Json, ".withdrawalVkey");
 
-        l2ERC20TokenAddress = vm.parseJsonAddress(
-            deployedL2Json,
-            ".FauxCoin"
-        );
+        l2ERC20TokenAddress = vm.parseJsonAddress(deployedL2Json, ".FauxCoin");
 
-        l2ETHTokenAddress = vm.parseJsonAddress(
-            deployedL2Json,
-            ".ETHToken"
-        );
+        l2ETHTokenAddress = vm.parseJsonAddress(deployedL2Json, ".ETHToken");
 
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
             deployedL2Json,
@@ -193,7 +172,7 @@ contract L1SetupScript is Script {
         twineChain.setChainId(chainId);
         twineChain.setMessengerQueueAddress(l1MessageQueueAddress);
         twineChain.setVeriferAddress(verifierAddress);
-        twineChain.setProgramVKey(executionVkey, inclusionVKey, withdrawalVKey);
+        twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
         twineChain.setGatewayAddress(
             l1ETHGatewayAddress,
             l1CustomERC20GatewayAddress
@@ -239,7 +218,7 @@ contract L1SetupScript is Script {
         );
         l1CustomERC20Gateway.setChainId(chainId);
 
-        console.logBytes32(twineChain.executionVKey());
+        console.logBytes32(twineChain.finalizeVKey());
 
         // Stop broadcasting transactions
         vm.stopBroadcast();

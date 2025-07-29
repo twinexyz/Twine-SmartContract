@@ -48,6 +48,29 @@ interface IL1MessageQueue {
         bytes message
     );
 
+    /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
+    /// @param txnType The transaction type in L1.
+    /// @param nonce The nonce of the message.
+    /// @param chainId Chain Id of this L1.
+    /// @param blockNumber The block number in which this transaction occured.
+    /// @param amount The amount of token to send.
+    /// @param l1Token Address of token to send from L1.
+    /// @param l2Token address of token to receive on L2.
+    /// @param toTwineAddress The address of receiver.
+
+    event QueueTransaction(
+        TransactionType txnType,
+        uint64 nonce,
+        uint64 chainId,
+        uint64 blockNumber,
+        address l1Token,
+        address l2Token,
+        address from,
+        address toTwineAddress,
+        uint256 amount,
+        bytes message
+    );
+
     /**********
      * Errors *
      **********/
@@ -58,6 +81,14 @@ interface IL1MessageQueue {
     /**********
      * Struct *
      **********/
+
+    /// @notice Transaction type in L1
+    /// @param deposit the deposit transaction type
+    /// @param forcedWithdraw the forced withdrawal transaction type
+    enum TransactionType {
+        Deposit,
+        Withdraw
+    }
 
     /// @notice Deposit message stored data
     /// @param nonce the nonce of the message
@@ -127,6 +158,9 @@ interface IL1MessageQueue {
     function getExecutionMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory);
+
+    /// @notice Returns the message hash.
+    function getMessageHash(uint256 messageIndex) external view returns(bytes32);
 
     /*****************************
      * Public Mutating Functions *

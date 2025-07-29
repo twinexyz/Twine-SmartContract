@@ -15,6 +15,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
      * Variables *
      *************/
     uint64 chainId;
+    uint64 public messageIndex;
     uint64 public depositMessageIndex;
     uint64 public withdrawalMessageIndex;
     address public messenger;
@@ -36,9 +37,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /// @notice The list of queued transactions that are ready for execution.
     MessageData[] public executionMessageQueue;
 
-    mapping(uint256 => bytes32) private depositRollingHashes;
-
-    mapping(uint256 => bytes32) private withdrawRollingHashes;
+    mapping(uint256 => bytes32) private messageRollingHashes;
 
     /// @dev The storage slots reserved for future usage.
     uint256[46] private __gap;
@@ -151,6 +150,17 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             "Invalid index"
         );
         return executionMessageQueue[queueIndex];
+    }
+
+    /// @inheritdoc IL1MessageQueue
+    function getMessageHash(
+        uint256 messageNonce
+    ) external view returns (bytes32) {
+        require(
+            messageIndex >= messageNonce,
+            "Invalid index"
+        );
+        return messageRollingHashes[messageNonce];
     }
 
     /*****************************
@@ -337,10 +347,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint256 amount,
         bytes memory message
     ) internal {
-        ++depositMessageIndex;
+        ++messageIndex;
 
         MessageData memory depositMessageData = MessageData({
-            nonce: depositMessageIndex,
+            nonce: messageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
             fromAddress: from.addressToString(),
@@ -358,15 +368,16 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         bytes32 calculatedRollingHash = keccak256(
             abi.encodePacked(
                 particularTransactionHash,
-                depositRollingHashes[depositMessageIndex - 1]
+                messageRollingHashes[messageIndex - 1]
             )
         );
 
-        depositRollingHashes[depositMessageIndex] = calculatedRollingHash;
+        messageRollingHashes[messageIndex] = calculatedRollingHash;
 
         // emit deposit event
-        emit QueueDepositTransaction(
-            depositMessageIndex,
+        emit QueueTransaction(
+            TransactionType.Deposit,
+            messageIndex,
             chainId,
             uint64(block.number),
             l1Token,
@@ -386,10 +397,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         uint256 amount,
         bytes memory message
     ) internal {
-        ++withdrawalMessageIndex;
+        ++messageIndex;
 
         MessageData memory withdrawMessageData = MessageData({
-            nonce: withdrawalMessageIndex,
+            nonce: messageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
             fromAddress: from.addressToString(),
@@ -407,15 +418,16 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         bytes32 calculatedRollingHash = keccak256(
             abi.encodePacked(
                 particularTransactionHash,
-                withdrawRollingHashes[withdrawalMessageIndex - 1]
+                messageRollingHashes[messageIndex - 1]
             )
         );
 
-        withdrawRollingHashes[withdrawalMessageIndex] = calculatedRollingHash;
+        messageRollingHashes[messageIndex] = calculatedRollingHash;
 
         // emit event
-        emit QueueWithdrawalTransaction(
-            withdrawalMessageIndex,
+        emit QueueTransaction(
+            TransactionType.Withdraw,
+            messageIndex,
             chainId,
             uint64(block.number),
             l1Token,
