@@ -83,11 +83,13 @@ interface IL1MessageQueue {
      **********/
 
     /// @notice Transaction type in L1
-    /// @param deposit the deposit transaction type
-    /// @param forcedWithdraw the forced withdrawal transaction type
+    /// @param Deposit the deposit transaction type
+    /// @param Withdraw the forced withdrawal transaction type
+    /// @param Message the normal message type
     enum TransactionType {
         Deposit,
-        Withdraw
+        Withdraw,
+        Message
     }
 
     /// @notice Deposit message stored data
@@ -99,6 +101,7 @@ interface IL1MessageQueue {
     /// @param amount amount of token to deposit
     /// @param blockNumber block number on which deposit occured
     struct MessageData {
+        TransactionType txnType;
         uint64 nonce;
         uint64 chainId;
         uint64 blockNumber;
@@ -114,53 +117,17 @@ interface IL1MessageQueue {
      * Public View Functions *
      *************************/
 
-    /// @notice Return the index of next appended message.
-    /// @dev Also the total number of appended messages.
-    function nextCrossDomainDepositMessageIndex()
-        external
-        view
-        returns (uint256);
+    /// @notice Returns the message hash.
+    function getMessageHash(uint256 messageIndex) external view returns(bytes32);
 
-    /// @notice Return the index of next appended message.
-    /// @dev Also the total number of appended messages.
-    function nextCrossDomainWithdrawalMessageIndex()
-        external
-        view
-        returns (uint256);
-
-    /// @notice Return the index of next appended message.
-    /// @dev Also the total number of appended messages.
-    function nextCrossDomainExecutionMessageIndex()
-        external
-        view
-        returns (uint256);
-
-    /// @notice Return the deposit message of in `queueIndex`.
-    /// @param queueIndex The index to query.
-    function getCrossDomainDepositMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory);
-
-    /// @notice Return the withdraw message of in `queueIndex`.
-    /// @param queueIndex The index to query.
-    function getCrossDomainWithdrawalMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory);
-
-    /// @notice Return the layer zero message in `queueIndex`.
+      /// @notice Return the layer zero message in `queueIndex`.
     /// @param queueIndex The index to query.
     function getCrossDomainLayerZeroMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory);
 
-    /// @notice Return the execution message in `queueIndex`.
-    /// @param queueIndex The index to query.
-    function getExecutionMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory);
-
-    /// @notice Returns the message hash.
-    function getMessageHash(uint256 messageIndex) external view returns(bytes32);
+    /// @return Message index The index of the messages
+    function messageIndex() external view returns (uint64);
 
     /*****************************
      * Public Mutating Functions *
@@ -181,28 +148,6 @@ interface IL1MessageQueue {
     /// @notice set the proxy Address of MessageQueue
     /// @param _proxyAddress message queue proxy address to set
     function setMessageQueueProxy(address _proxyAddress) external;
-
-    /// @notice Checks if the nonce provided is present in execution message queue or not
-    /// @param nonce Nonce to check
-    function isNonceInExecutionQueue(
-        uint256 nonce
-    ) external view returns (bool);
-
-    /// @notice Remove message with the given nonce from the execution message queue
-    /// @param nonce The nonce of the message to be removed
-    function removeExecutionMessage(uint256 nonce) external;
-
-    /// @notice Removes the first N message from the Deposit Queue
-    /// @param n number of deposit message to pop
-    function popFirstNDepositElement(uint256 n) external;
-
-    /// @notice Removes the first N message from the Withdrawal Queue
-    /// @param n number of withdraw message  to pop
-    function popFirstNWithdrawalElement(uint256 n) external;
-
-    /// @notice Removes the first N message from the Layer Zero Queue
-    /// @param n number of lz message to pop
-    function popFirstNLayerZeroElement(uint256 n) external;
 
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on Twine
@@ -229,27 +174,6 @@ interface IL1MessageQueue {
         address l1Token,
         address l2Token,
         uint256 amount,
-        bytes memory message
-    ) external;
-
-    /// @notice Append message that are ready for execution
-    /// @param nonce the nonce of the message
-    /// @param chainId chain Id of L1
-    /// @param blockNumber L2 block number in which this transaction was present
-    /// @param from the sender address
-    /// @param to the receiver address
-    /// @param l1Token adress of token to be received on l1
-    /// @param l2Token adress of token withdrawan from Twine
-    /// @param amount amount to be received on L1
-    function appendExecutionMessage(
-        uint64 nonce,
-        uint64 chainId,
-        uint64 blockNumber,
-        string memory from,
-        string memory to,
-        string memory l1Token,
-        string memory l2Token,
-        string memory amount,
         bytes memory message
     ) external;
 }

@@ -201,7 +201,7 @@ contract L1ETHGatewayTest is Test {
         vm.startPrank(initialOwner);
         vm.deal(initialOwner, 1 ether);
         gateway.forcedWithdrawalETH(initialOwner, 100000, 10, new bytes(0));
-        assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+        assertEq(messageQueue.messageIndex(), 1);
     }
 
     function addressToString(

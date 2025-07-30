@@ -15,9 +15,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
      * Variables *
      *************/
     uint64 chainId;
-    uint64 public messageIndex;
-    uint64 public depositMessageIndex;
-    uint64 public withdrawalMessageIndex;
+    uint64 public override messageIndex;
     address public messenger;
     address public roleManager;
     address public messageQueueProxy;
@@ -84,56 +82,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /*************************
      * Public View Functions *
      *************************/
-
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainDepositMessageIndex()
-        public
-        view
-        returns (uint256)
-    {
-        return depositMessageQueue.length;
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainWithdrawalMessageIndex()
-        public
-        view
-        returns (uint256)
-    {
-        return withdrawalMessageQueue.length;
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function nextCrossDomainExecutionMessageIndex()
-        public
-        view
-        returns (uint256)
-    {
-        return executionMessageQueue.length;
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function getCrossDomainDepositMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory) {
-        require(
-            nextCrossDomainDepositMessageIndex() > queueIndex,
-            "Invalid index"
-        );
-        return depositMessageQueue[queueIndex];
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function getCrossDomainWithdrawalMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory) {
-        require(
-            nextCrossDomainWithdrawalMessageIndex() > queueIndex,
-            "Invalid index"
-        );
-        return withdrawalMessageQueue[queueIndex];
-    }
-
     /// @inheritdoc IL1MessageQueue
     function getCrossDomainLayerZeroMessage(
         uint256 queueIndex
@@ -142,24 +90,10 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function getExecutionMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory) {
-        require(
-            nextCrossDomainExecutionMessageIndex() > queueIndex,
-            "Invalid index"
-        );
-        return executionMessageQueue[queueIndex];
-    }
-
-    /// @inheritdoc IL1MessageQueue
     function getMessageHash(
         uint256 messageNonce
     ) external view returns (bytes32) {
-        require(
-            messageIndex >= messageNonce,
-            "Invalid index"
-        );
+        require(messageIndex >= messageNonce, "Invalid index");
         return messageRollingHashes[messageNonce];
     }
 
@@ -231,55 +165,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     }
 
     /// @inheritdoc IL1MessageQueue
-    function popFirstNDepositElement(
-        uint256 n
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        uint256 len = depositMessageQueue.length;
-        require(n <= nextCrossDomainDepositMessageIndex(), "Invalid index");
-        // Shift elements
-        for (uint256 i = 0; i < len - n; i++) {
-            depositMessageQueue[i] = depositMessageQueue[i + n];
-        }
-
-        // Remove the last n elements by reducing the array length
-        for (uint256 i = 0; i < n; i++) {
-            depositMessageQueue.pop();
-        }
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function popFirstNWithdrawalElement(
-        uint256 n
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        uint256 len = withdrawalMessageQueue.length;
-        require(n <= nextCrossDomainWithdrawalMessageIndex(), "Invalid index");
-        // Shift elements
-        for (uint256 i = 0; i < len - n; i++) {
-            withdrawalMessageQueue[i] = withdrawalMessageQueue[i + n];
-        }
-
-        // Remove the last n elements by reducing the array length
-        for (uint256 i = 0; i < n; i++) {
-            withdrawalMessageQueue.pop();
-        }
-    }
-
-    /// @inheritdoc IL1MessageQueue
-    function popFirstNLayerZeroElement(
-        uint256 n
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        uint256 len = layerZeroMessageQueue.length;
-        for (uint256 i = 0; i < len - n; i++) {
-            layerZeroMessageQueue[i] = layerZeroMessageQueue[i + n];
-        }
-
-        // Remove the last n elements by reducing the array length
-        for (uint256 i = 0; i < n; i++) {
-            layerZeroMessageQueue.pop();
-        }
-    }
-
-    /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
         address from,
         address to,
@@ -310,31 +195,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         );
     }
 
-    /// @inheritdoc IL1MessageQueue
-    function appendExecutionMessage(
-        uint64 nonce,
-        uint64 chainId_,
-        uint64 blockNumber,
-        string memory from,
-        string memory to,
-        string memory l1Token,
-        string memory l2Token,
-        string memory amount,
-        bytes memory message
-    ) external override onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        _queueExecutionTransaction(
-            nonce,
-            chainId_,
-            blockNumber,
-            from,
-            to,
-            l1Token,
-            l2Token,
-            amount,
-            message
-        );
-    }
-
     /**********************
      * Internal Functions *
      **********************/
@@ -350,6 +210,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         ++messageIndex;
 
         MessageData memory depositMessageData = MessageData({
+            txnType: TransactionType.Deposit,
             nonce: messageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
@@ -400,6 +261,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         ++messageIndex;
 
         MessageData memory withdrawMessageData = MessageData({
+            txnType: TransactionType.Withdraw,
             nonce: messageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
@@ -439,38 +301,13 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         );
     }
 
-    function _queueExecutionTransaction(
-        uint64 nonce,
-        uint64 chainId_,
-        uint64 blockNumber,
-        string memory from,
-        string memory to,
-        string memory l1Token,
-        string memory l2Token,
-        string memory amount,
-        bytes memory message
-    ) internal {
-        MessageData memory executionMessageData = MessageData({
-            nonce: nonce,
-            chainId: chainId_,
-            blockNumber: blockNumber,
-            fromAddress: from,
-            toAddress: to,
-            l1Token: l1Token,
-            l2Token: l2Token,
-            amount: amount,
-            message: message
-        });
-
-        executionMessageQueue.push(executionMessageData);
-    }
-
     function computeTransactionHash(
         MessageData memory transactionData
     ) public pure returns (bytes32) {
         return
             keccak256(
                 abi.encodePacked(
+                    transactionData.txnType,
                     transactionData.nonce,
                     transactionData.chainId,
                     transactionData.blockNumber,

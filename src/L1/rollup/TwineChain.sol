@@ -163,21 +163,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @inheritdoc ITwineChain
     function setProgramVKey(
-        bytes32 _executionVKey,
-        bytes32 _inclusionVKey,
+        bytes32 _finalizeVKey,
+        bytes32 _refundVKey,
         bytes32 _withdrawalVKey
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(
-            _executionVKey != bytes32(0) &&
-                _inclusionVKey != bytes32(0) &&
+            _finalizeVKey != bytes32(0) &&
+               _refundVKey != bytes32(0) &&
                 _withdrawalVKey != bytes32(0),
             "Keys can not be zero"
         );
-        refundVKey = _executionVKey;
-        finalizeVKey = _inclusionVKey;
+        finalizeVKey = _finalizeVKey;
+        refundVKey = _refundVKey;
         withdrawalVKey = _withdrawalVKey;
 
-        emit SetProgramVkey(_executionVKey, _inclusionVKey, _withdrawalVKey);
+        emit SetProgramVkey(_finalizeVKey, _refundVKey, _withdrawalVKey);
     }
 
     /// @inheritdoc ITwineChain
@@ -206,6 +206,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         require(!isGenesisBlockCommitted, "Genesis Block already committed");
         require(lastFinalizedBatchNumber == 0, "Not at genesis");
         lastFinalizedBatchHash = genesisBlockHash;
+        lastCommittedBatchNumber = 0;
         isGenesisBlockCommitted = true;
     }
 
@@ -278,6 +279,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         );
     }
 
+    /* -------------------------------------------------------------------------- */
+    /*                               Refund Deposit                               */
+    /* -------------------------------------------------------------------------- */
     function refundDeposit(
         bytes calldata publicValues,
         bytes calldata refundProof
@@ -318,6 +322,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
     }
 
+    /* -------------------------------------------------------------------------- */
+    /*                               Execute Withdraw                             */
+    /* -------------------------------------------------------------------------- */
     function executeWithdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
@@ -467,10 +474,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 messageValue.message
             )
         );
-        bytes32 finalHashedMessage =  keccak256(
+        bytes32 finalHashedMessage = keccak256(
             abi.encodePacked(
                 particularMessageHash,
-                IL1MessageQueue(messageQueue).getMessageHash(messageValue.nonce-1)
+                IL1MessageQueue(messageQueue).getMessageHash(
+                    messageValue.nonce - 1
+                )
             )
         );
         if (

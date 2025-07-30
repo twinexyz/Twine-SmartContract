@@ -309,7 +309,7 @@ contract L1CustomERC20GatewayTest is Test {
             10,
             new bytes(0)
         );
-        assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+        assertEq(messageQueue.messageIndex(), 1);
     }
 
     function addressToString(
