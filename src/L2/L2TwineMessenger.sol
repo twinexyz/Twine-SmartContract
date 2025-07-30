@@ -15,7 +15,11 @@ import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
-contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompressor {
+contract L2TwineMessenger is
+    TwineL2MessengerBase,
+    IL2TwineMessenger,
+    ZstdCompressor
+{
     using TypeConversionLib for address;
 
     /// @notice SP1 Verifier Address
@@ -38,6 +42,9 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
 
     /// @notice Mapping to store consensus verification keys of L1s
     mapping(uint256 => bytes32) public vKeys;
+
+    /// @notice Mapping of message index to message hash
+    mapping(uint256 => bytes32) public messageHash;
 
     /***************
      * Constructor *
@@ -243,7 +250,15 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
                 ITwineSystemStorage.L1TxnType.Deposit
             );
 
-            try this.mintAndCall(chainType, token, to, amount, l1Txn.contractCallData) {
+            try
+                this.mintAndCall(
+                    chainType,
+                    token,
+                    to,
+                    amount,
+                    l1Txn.contractCallData
+                )
+            {
                 // success
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
@@ -296,14 +311,16 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         ITwineERC20(token).mint(to, amount);
 
         if (contractCallData.length > 0) {
-            if ( chainType == ChainType.Solana ) {
+            if (chainType == ChainType.Solana) {
                 bytes memory output = _decompress(contractCallData);
                 contractCallData = output;
             }
 
-            ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
+            ContractCall[] memory contractCallsArray = abi.decode(
+                contractCallData,
+                (ContractCall[])
+            );
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
-
         }
     }
 
@@ -343,6 +360,18 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         uint256 gasLimit
     ) internal {
         ++messageCount;
+        messageHash[messageCount] = computeTransactionHash(
+            from,
+            l2Token,
+            to,
+            l1Token,
+            amount,
+            value,
+            messageCount,
+            chainId,
+            block.number,
+            gasLimit
+        );
         emit SentMessage(
             from,
             l2Token,
@@ -378,5 +407,34 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
             );
         }
         emit ConsensusVerified(consensusProof);
+    }
+
+    function computeTransactionHash(
+        address from,
+        address l2Token,
+        string memory to,
+        string memory l1Token,
+        uint256 amount,
+        uint256 value,
+        uint256 messageCount,
+        uint256 chainId,
+        uint256 blockNumber,
+        uint256 gasLimit
+    ) public pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    from,
+                    l2Token,
+                    to,
+                    l1Token,
+                    amount,
+                    value,
+                    messageCount,
+                    chainId,
+                    blockNumber,
+                    gasLimit
+                )
+            );
     }
 }

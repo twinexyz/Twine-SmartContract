@@ -51,11 +51,16 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         uint256 gasLimit
     );
 
-     /// @notice Emitted when a deposit or withdraw handling is failed.
-      /// @param reason The reason of failure
+    /// @notice Emitted when a deposit or withdraw handling is failed.
+    /// @param reason The reason of failure
     event TransactionFailed(bytes reason);
 
-    event L1TransactionsHandled(uint256 chainId, uint8 status, uint256 nonce, bytes transactionOutput);
+    event L1TransactionsHandled(
+        uint256 chainId,
+        uint8 status,
+        uint256 nonce,
+        bytes transactionOutput
+    );
 
     /// @notice Emitted when consensus verificiation is successful
     event ConsensusVerified(bytes consensusProof);
@@ -102,7 +107,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes memory consensusProof,
         bytes memory ethereumTransactions
     ) external;
-    
+
     /// @notice verify the layerzero payload
     /// @param lzPayload layerzero payload
     /// @param payloadProof  proof of payload
