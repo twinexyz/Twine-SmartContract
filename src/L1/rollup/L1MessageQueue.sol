@@ -23,11 +23,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /**********
      * Queues *
      **********/
-    /// @notice The list of queued cross domain messages.
-    MessageData[] public depositMessageQueue;
-
-    /// @notice The list of queued cross domain Withdrawal messages.
-    MessageData[] public withdrawalMessageQueue;
 
     /// @notice The list of queued layer zero messages.
     MessageData[] public layerZeroMessageQueue;
@@ -226,14 +221,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             depositMessageData
         );
 
-        bytes32 calculatedRollingHash = keccak256(
-            abi.encodePacked(
-                particularTransactionHash,
-                messageRollingHashes[messageIndex - 1]
-            )
-        );
-
-        messageRollingHashes[messageIndex] = calculatedRollingHash;
+        messageRollingHashes[messageIndex] = particularTransactionHash;
 
         // emit deposit event
         emit QueueTransaction(
@@ -277,14 +265,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
             withdrawMessageData
         );
 
-        bytes32 calculatedRollingHash = keccak256(
-            abi.encodePacked(
-                particularTransactionHash,
-                messageRollingHashes[messageIndex - 1]
-            )
-        );
-
-        messageRollingHashes[messageIndex] = calculatedRollingHash;
+        messageRollingHashes[messageIndex] = particularTransactionHash;
 
         // emit event
         emit QueueTransaction(
