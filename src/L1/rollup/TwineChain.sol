@@ -9,6 +9,7 @@ import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {FinalizeBatchDecoder} from "../../libraries/decoders/FinalizeBatchDecoder.sol";
 import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
@@ -235,13 +236,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata executionProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         (
-            uint64 executedMessageCount,
             bytes32 previousBatchHash,
-            bytes32 currentBatchHash
-        ) = decodeBatchValues(publicValues);
+            bytes32 currentBatchHash,
+            uint64 executedMessageCount
+        )  = FinalizeBatchDecoder.decodePacked(publicValues);
 
         require(
-            lastCommittedBatchNumber == batchNumber,
+            lastFinalizedBatchNumber == batchNumber + 1,
             "Batch must be finalized sequencially"
         );
         require(
