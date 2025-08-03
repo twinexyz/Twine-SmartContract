@@ -242,7 +242,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         )  = FinalizeBatchDecoder.decodePacked(publicValues);
 
         require(
-            lastFinalizedBatchNumber == batchNumber + 1,
+            lastFinalizedBatchNumber == batchNumber - 1,
             "Batch must be finalized sequencially"
         );
         require(
