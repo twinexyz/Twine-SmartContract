@@ -15,7 +15,7 @@ library FinalizeBatchDecoder {
             uint64  ethMsgCount
         )
     {
-        require(blob.length == 96, "invalid length");
+        require(blob.length == 80, "invalid length");
 
         assembly {
             // blob is calldata: offset 0x20 skips the length word

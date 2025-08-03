@@ -219,7 +219,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32 batchHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(
-            batchNumber == lastFinalizedBatchNumber + 1,
+            batchNumber == lastCommittedBatchNumber + 1,
             "Invalid batch sequence or message count"
         );
         committedBatch[batchNumber] = batchHash;
