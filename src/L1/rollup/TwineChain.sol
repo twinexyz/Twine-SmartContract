@@ -206,6 +206,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(!isGenesisBlockCommitted, "Genesis Block already committed");
         require(lastFinalizedBatchNumber == 0, "Not at genesis");
+        committedBatch[0] = genesisBlockHash;
         lastFinalizedBatchHash = genesisBlockHash;
         lastCommittedBatchNumber = 0;
         isGenesisBlockCommitted = true;
@@ -247,18 +248,18 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         );
         require(
             committedBatch[batchNumber] == currentBatchHash,
-            "Batch Hash Mismatch"
+            "Batch Hash Mismatch: commited batch"
         );
         require(
             committedBatch[batchNumber - 1] == previousBatchHash,
-            "Batch Hash Mismatch"
+            "Batch Hash Mismatch: prev comited batch"
         );
         require(
             previousBatchHash == lastFinalizedBatchHash,
-            "Batch Hash mismatch"
+            "Batch Hash mismatch: last finalized batch hash"
         );
         require(
-            totalMsgHandledOnTwine < executedMessageCount,
+            totalMsgHandledOnTwine <= executedMessageCount,
             "Invalid message count"
         );
         if (!skipVerification) {
