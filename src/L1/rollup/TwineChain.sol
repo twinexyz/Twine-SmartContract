@@ -9,6 +9,7 @@ import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {FinalizeBatchDecoder} from "../../libraries/decoders/FinalizeBatchDecoder.sol";
 import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
@@ -205,6 +206,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(!isGenesisBlockCommitted, "Genesis Block already committed");
         require(lastFinalizedBatchNumber == 0, "Not at genesis");
+        committedBatch[0] = genesisBlockHash;
         lastFinalizedBatchHash = genesisBlockHash;
         lastCommittedBatchNumber = 0;
         isGenesisBlockCommitted = true;
@@ -218,7 +220,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32 batchHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         require(
-            batchNumber == lastFinalizedBatchNumber + 1,
+            batchNumber == lastCommittedBatchNumber + 1,
             "Invalid batch sequence or message count"
         );
         committedBatch[batchNumber] = batchHash;
@@ -235,29 +237,29 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata executionProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         (
-            uint64 executedMessageCount,
             bytes32 previousBatchHash,
-            bytes32 currentBatchHash
-        ) = decodeBatchValues(publicValues);
+            bytes32 currentBatchHash,
+            uint64 executedMessageCount
+        )  = FinalizeBatchDecoder.decodePacked(publicValues);
 
         require(
-            lastCommittedBatchNumber == batchNumber,
+            lastFinalizedBatchNumber == batchNumber - 1,
             "Batch must be finalized sequencially"
         );
         require(
             committedBatch[batchNumber] == currentBatchHash,
-            "Batch Hash Mismatch"
+            "Batch Hash Mismatch: commited batch"
         );
         require(
             committedBatch[batchNumber - 1] == previousBatchHash,
-            "Batch Hash Mismatch"
+            "Batch Hash Mismatch: prev comited batch"
         );
         require(
             previousBatchHash == lastFinalizedBatchHash,
-            "Batch Hash mismatch"
+            "Batch Hash mismatch: last finalized batch hash"
         );
         require(
-            totalMsgHandledOnTwine < executedMessageCount,
+            totalMsgHandledOnTwine <= executedMessageCount,
             "Invalid message count"
         );
         if (!skipVerification) {
