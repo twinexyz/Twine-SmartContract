@@ -9,50 +9,70 @@ library TwineChainDecoder {
     /// @return prevBatchHash    bytes32 previous batch hash
     /// @return batchHash        bytes32 current batch hash
     /// @return ethMsgCount      uint64  ethereum message count
-    function decodeBatchValues(bytes calldata publicValues)
+    function decodeBatchValues(
+        bytes calldata publicValues
+    )
         internal
         pure
-        returns (
-            bytes32 prevBatchHash,
-            bytes32 batchHash,
-            uint64  ethMsgCount
-        )
+        returns (bytes32 prevBatchHash, bytes32 batchHash, uint64 ethMsgCount)
     {
         require(publicValues.length == 80, "invalid length");
 
         assembly {
             // blob is calldata: offset 0x20 skips the length word
-            prevBatchHash := calldataload(publicValues.offset)      
-            batchHash     := calldataload(add(publicValues.offset, 0x20)) 
-            ethMsgCount   := shr(192, calldataload(add(publicValues.offset, 0x40))) 
+            prevBatchHash := calldataload(publicValues.offset)
+            batchHash := calldataload(add(publicValues.offset, 0x20))
+            ethMsgCount := shr(
+                192,
+                calldataload(add(publicValues.offset, 0x40))
+            )
         }
     }
 
     function decodeL2WithdrawValues(
-        bytes memory publicValues
-    ) internal pure returns (ITwineChain.L2WithdrawValues memory) {
-        (
-            uint64 batchNumber,
-            uint64 nonce,
-            bytes32 batchHash,
-            string memory to,
-            string memory l1Token,
-            string memory l2Token,
-            string memory amount
-        ) = abi.decode(
-                publicValues,
-                (uint64, uint64, bytes32, string, string, string, string)
-            );
+        bytes calldata publicValues
+    )
+        external
+        pure
+        returns (ITwineChain.L2WithdrawValues memory withdrawValues)
+    {
+        require(publicValues.length >= 168, "data too short");
+        withdrawValues.batchNumber = uint64(bytes8(publicValues[0:8]));
+        withdrawValues.nonce = uint64(bytes8(publicValues[8:16]));
+        withdrawValues.batchHash = bytes32(publicValues[16:48]);
+        withdrawValues.to = string(publicValues[48:88]);
+        withdrawValues.l1Token = string(publicValues[88:128]);
+        withdrawValues.l2Token = string(publicValues[128:168]);
+        withdrawValues.amount = string(publicValues[168:]);
+    }
 
-        return
-            ITwineChain.L2WithdrawValues({
-                batchNumber: batchNumber,
-                nonce: nonce,
-                batchHash: batchHash,
-                to: to,
-                l1Token: l1Token,
-                l2Token: l2Token,
-                amount: amount
-            });
+    function slice(
+        bytes memory data,
+        uint256 start,
+        uint256 length
+    ) internal pure returns (bytes memory) {
+        require(data.length >= start + length, "Invalid slice range");
+
+        bytes memory result = new bytes(length);
+
+        assembly {
+            // Get the pointer to the result's data
+            let resultPtr := add(result, 0x20)
+            // Get the pointer to the start position in the input data
+            let dataPtr := add(add(data, 0x20), start)
+
+            // Copy the data
+            for {
+                let i := 0
+            } lt(i, length) {
+                i := add(i, 0x20)
+            } {
+                mstore(add(resultPtr, i), mload(add(dataPtr, i)))
+            }
+        }
+
+        return result;
     }
 }
+
+

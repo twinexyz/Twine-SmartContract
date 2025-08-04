@@ -369,6 +369,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         L2WithdrawValues memory withdrawValues = TwineChainDecoder
             .decodeL2WithdrawValues(publicValues);
         isBatchFinalized(withdrawValues.batchNumber);
+         require(
+           withdrawValues.batchHash == finalizedBatch[withdrawValues.batchNumber],
+            "Given Batch hash mismatch"
+        );
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
                 refundVKey,
