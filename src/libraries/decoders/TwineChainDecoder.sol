@@ -32,7 +32,7 @@ library TwineChainDecoder {
     function decodeL2WithdrawValues(
         bytes calldata publicValues
     )
-        external
+        internal
         pure
         returns (ITwineChain.L2WithdrawValues memory withdrawValues)
     {
