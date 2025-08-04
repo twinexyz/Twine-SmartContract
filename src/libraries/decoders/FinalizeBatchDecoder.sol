@@ -3,6 +3,8 @@ pragma solidity 0.8.24;
 
 library FinalizeBatchDecoder {
     /// @dev Decode the execution proofs of a batch
+    /// @dev (32 + 32 + 8 + 8) is the message length of public values
+    /// @dev the last 8 bytes can be ignored as it represents solana message count
     /// @return prevBatchHash    bytes32 previous batch hash
     /// @return batchHash        bytes32 current batch hash
     /// @return ethMsgCount      uint64  ethereum message count
