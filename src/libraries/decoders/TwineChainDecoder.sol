@@ -29,6 +29,8 @@ library TwineChainDecoder {
         }
     }
 
+    /// @dev Decode public values for l2 withdrawals zk proof
+    /// @notice It expects address to have `0x` prefix
     function decodeL2WithdrawValues(
         bytes calldata publicValues
     )
@@ -36,14 +38,14 @@ library TwineChainDecoder {
         pure
         returns (ITwineChain.L2WithdrawValues memory withdrawValues)
     {
-        require(publicValues.length >= 168, "data too short");
+        require(publicValues.length >= 174, "data too short");
         withdrawValues.batchNumber = uint64(bytes8(publicValues[0:8]));
         withdrawValues.nonce = uint64(bytes8(publicValues[8:16]));
         withdrawValues.batchHash = bytes32(publicValues[16:48]);
-        withdrawValues.to = string(publicValues[48:88]);
-        withdrawValues.l1Token = string(publicValues[88:128]);
-        withdrawValues.l2Token = string(publicValues[128:168]);
-        withdrawValues.amount = string(publicValues[168:]);
+        withdrawValues.to = string(publicValues[48:90]);
+        withdrawValues.l1Token = string(publicValues[90:132]);
+        withdrawValues.l2Token = string(publicValues[132:174]);
+        withdrawValues.amount = string(publicValues[174:]);
     }
 
     function slice(
