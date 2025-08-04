@@ -203,7 +203,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         bytes memory message
     ) internal {
         ++messageIndex;
-
+        
         MessageData memory depositMessageData = MessageData({
             txnType: TransactionType.Deposit,
             nonce: messageIndex,

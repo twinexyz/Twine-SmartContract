@@ -19,6 +19,15 @@ interface ITwineChain {
         bytes32 batchHash
     );
 
+    event L2WithdrawExecuted(
+        uint64 nonce,
+        string indexed l1Token,
+        string l2Token,
+        string indexed receiver,
+        string indexed amount,
+        uint256 blockNumber
+    );
+
     /// @notice Emitted when a batch is finalized
     /// @param batchNumber The number of the batch
     /// @param messagesHandledOnTwine The total messages of L1 handled on twine
@@ -48,13 +57,13 @@ interface ITwineChain {
      * Enums  *
      **********/
     /// @notice Types of transactions stored in the queue
-    /// @param deposit Deposit Transactions
-    /// @param withdraw Withdraw Transactions
-    /// @param layerZero layer zero transactions
+    /// @param Deposit Deposit Transactions
+    /// @param Withdraw Withdraw Transactions
+    /// @param LayerZero layer zero transactions
     enum TransactionType {
-        deposit,
-        withdraw,
-        layerZero
+        Deposit,
+        Withdraw,
+        LayerZero
     }
 
     /************
@@ -79,18 +88,40 @@ interface ITwineChain {
         bytes32 prevBatchHash;
         bytes32 merkleRoot;
     }
-
     struct MessageValues {
         uint64 nonce;
         uint64 chainId;
         uint64 blockNumber;
-        uint256 batchNumber;
         string fromAddress;
         string toAddress;
         string l1Token;
         string l2Token;
         string amount;
         bytes message;
+    }
+    struct RefundValues {
+        bytes32 batchHash;
+        uint64 batchNumber;
+        uint64 nonce;
+        uint64 chainId;
+        uint64 blockNumber;
+        TransactionType txnType;
+        string fromAddress;
+        string toAddress;
+        string l1Token;
+        string l2Token;
+        string amount;
+        bytes message;
+    }
+
+    struct L2WithdrawValues {
+        bytes32 batchHash;
+        uint64 batchNumber;
+        uint64 nonce;
+        string to;
+        string l1Token;
+        string l2Token;
+        string amount;
     }
 
     /// @notice Chain Specific data from the corresponding 120 bytes of transaction data commitment
@@ -150,10 +181,10 @@ interface ITwineChain {
     /*****************************
      * Public Mutating Functions *
      *****************************/
-     /// @return BatchNumber The batch number of latest committed batch
+    /// @return BatchNumber The batch number of latest committed batch
     function lastCommittedBatchNumber() external view returns (uint256);
 
-     /// @return BlatchNumber The batch number of latest finalized batch
+    /// @return BlatchNumber The batch number of latest finalized batch
     function lastFinalizedBatchNumber() external view returns (uint256);
 
     /// @notice sets the chain id
@@ -222,7 +253,7 @@ interface ITwineChain {
     ///      to authorize and process the withdrawal.
     /// @param publicValues Encoded public input data required to verify the withdrawal proof.
     /// @param withdrawProof Zero-knowledge proof or cryptographic proof validating the withdrawal request.
-    function executeWithdraw(
+    function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
     ) external;

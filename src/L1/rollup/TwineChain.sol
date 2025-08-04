@@ -9,7 +9,7 @@ import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {FinalizeBatchDecoder} from "../../libraries/decoders/FinalizeBatchDecoder.sol";
+import {TwineChainDecoder} from "../../libraries/decoders/TwineChainDecoder.sol";
 import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
@@ -170,7 +170,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         require(
             _finalizeVKey != bytes32(0) &&
-               _refundVKey != bytes32(0) &&
+                _refundVKey != bytes32(0) &&
                 _withdrawalVKey != bytes32(0),
             "Keys can not be zero"
         );
@@ -240,7 +240,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             bytes32 previousBatchHash,
             bytes32 currentBatchHash,
             uint64 executedMessageCount
-        )  = FinalizeBatchDecoder.decodePacked(publicValues);
+        ) = TwineChainDecoder.decodeBatchValues(publicValues);
 
         require(
             lastFinalizedBatchNumber == batchNumber - 1,
@@ -288,13 +288,30 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata refundProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        MessageValues memory refundValues;
-        (refundValues) = decodeMessageValues(publicValues);
+        (
+            uint64 batchNumber,
+            bytes32 batchHash,
+            TransactionType txnType,
+            uint64 messageNonce
+        ) = abi.decode(
+                publicValues,
+                (uint64, bytes32, TransactionType, uint64)
+            );
+        require(isBatchFinalized(batchNumber), "Batch is not finalized yet");
         require(
-            isBatchFinalized(refundValues.batchNumber),
-            "Batch is not finlized yet"
+            batchHash == finalizedBatch[batchNumber],
+            "Given Batch hash mismatch"
         );
-        require(checkMessageHash(refundValues), "Message hash doesn't exist");
+
+        require(
+            txnType == TransactionType.Deposit,
+            "Transaction must be deposit type"
+        );
+        // message hash of the particular trandaction is checked
+        require(
+            checkMessageHash(messageNonce, keccak256(bytes(publicValues[40:]))),
+            "Message hash doesn't exist"
+        );
 
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
@@ -303,7 +320,83 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 refundProof
             );
         }
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            string memory fromAddress,
+            ,
+            string memory l1Token,
+            string memory l2Token,
+            string memory amount,
 
+        ) = abi.decode(
+                publicValues,
+                (
+                    uint64,
+                    bytes32,
+                    TransactionType,
+                    uint64,
+                    uint64,
+                    uint64,
+                    string,
+                    string,
+                    string,
+                    string,
+                    string,
+                    bytes
+                )
+            );
+        _executeTokenWithdrawal(
+            messageNonce,
+            l1Token,
+            l2Token,
+            fromAddress,
+            amount
+        );
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                               Execute Withdraw                             */
+    /* -------------------------------------------------------------------------- */
+    function executeL2Withdraw(
+        bytes calldata publicValues,
+        bytes calldata withdrawProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        L2WithdrawValues memory withdrawValues = TwineChainDecoder
+            .decodeL2WithdrawValues(publicValues);
+        isBatchFinalized(withdrawValues.batchNumber);
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                refundVKey,
+                publicValues,
+                withdrawProof
+            );
+        }
+        _executeTokenWithdrawal(
+            withdrawValues.nonce,
+            withdrawValues.l1Token,
+            withdrawValues.l2Token,
+            withdrawValues.to,
+            withdrawValues.amount
+        );
+        emit L2WithdrawExecuted(
+            withdrawValues.nonce,
+            withdrawValues.l1Token,
+            withdrawValues.l2Token,
+            withdrawValues.to,
+            withdrawValues.amount,
+            block.number
+        );
+    }
+
+    /**********************
+     * Internal Functions *
+     **********************/
+    function _finalizeWithdrawal(RefundValues memory refundValues) internal {
         if (refundValues.l1Token.stringToAddress() == address(0)) {
             IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
                 refundValues.l1Token,
@@ -313,7 +406,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 refundValues.nonce
             );
         } else {
-            // ERC20 withdrawal
             IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
                 refundValues.l1Token,
                 refundValues.l2Token,
@@ -324,173 +416,50 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
     }
 
-    /* -------------------------------------------------------------------------- */
-    /*                               Execute Withdraw                             */
-    /* -------------------------------------------------------------------------- */
-    function executeWithdraw(
-        bytes calldata publicValues,
-        bytes calldata withdrawProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        MessageValues memory withdrawValues;
-        (withdrawValues) = decodeMessageValues(publicValues);
-        isBatchFinalized(withdrawValues.batchNumber);
-        require(checkMessageHash(withdrawValues), "Message hash doesn't exist");
-        if (!skipVerification) {
-            SP1Verifier(verifier).verifyProof(
-                refundVKey,
-                publicValues,
-                withdrawProof
-            );
-        }
-
-        if (withdrawValues.l1Token.stringToAddress() == address(0)) {
-            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
-                withdrawValues.l1Token,
-                withdrawValues.l2Token,
-                withdrawValues.toAddress,
-                withdrawValues.amount,
-                withdrawValues.nonce
-            );
-        } else {
-            // ERC20 withdrawal
-            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
-                withdrawValues.l1Token,
-                withdrawValues.l2Token,
-                withdrawValues.toAddress,
-                withdrawValues.amount,
-                withdrawValues.nonce
-            );
-        }
-    }
-
-    /**********************
-     * Internal Functions *
-     **********************/
-
-    function decodeBatchValues(
-        bytes calldata batchPublicValues
-    )
-        internal
-        pure
-        returns (
-            uint64 executedMessageCount,
-            bytes32 previousBatchHash,
-            bytes32 currentBatchHash
-        )
-    {
-        // 8 + 32 + 32 = 96
-        require(batchPublicValues.length == 96, "INVALID_LENGTH");
-
-        assembly {
-            // Pointer to the first payload byte in calldata
-            let ptr := batchPublicValues.offset
-            executedMessageCount := and(calldataload(ptr), 0xffffffffffffffff)
-
-            previousBatchHash := calldataload(add(ptr, 0x20))
-            currentBatchHash := calldataload(add(ptr, 0x40))
-        }
-    }
-
-    function decodeMessageValues(
-        bytes memory publicValues
-    ) internal pure returns (MessageValues memory) {
-        (
-            uint64 nonce,
-            uint64 _chainId,
-            uint64 blockNumber,
-            uint256 batchNumber,
-            string memory fromAddress,
-            string memory toAddress,
-            string memory l1Token,
-            string memory l2Token,
-            string memory amount,
-            bytes memory message
-        ) = abi.decode(
-                publicValues,
-                (
-                    uint64,
-                    uint64,
-                    uint64,
-                    uint256,
-                    string,
-                    string,
-                    string,
-                    string,
-                    string,
-                    bytes
-                )
-            );
-
-        return
-            MessageValues({
-                nonce: nonce,
-                chainId: _chainId,
-                blockNumber: blockNumber,
-                batchNumber: batchNumber,
-                fromAddress: fromAddress,
-                toAddress: toAddress,
-                l1Token: l1Token,
-                l2Token: l2Token,
-                amount: amount,
-                message: message
-            });
-    }
-
-    function encodeBatchHashData(
-        BatchHashData memory batchHashData
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    batchHashData.domainId,
-                    batchHashData.prevBatchHash,
-                    batchHashData.merkleRoot
-                )
-            );
-    }
-
-    function encodeBatchInfo(
-        BatchInfo memory info
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encode(
-                info.batchNumber,
-                info.executedMessageCount,
-                info.batchHash
-            );
-    }
-
     function checkMessageHash(
-        MessageValues memory messageValue
+        uint64 messageNonce,
+        bytes32 particularMessageHash
     ) internal view returns (bool status) {
-        bytes32 particularMessageHash = keccak256(
-            abi.encodePacked(
-                messageValue.nonce,
-                messageValue.chainId,
-                messageValue.blockNumber,
-                messageValue.fromAddress,
-                messageValue.toAddress,
-                messageValue.l1Token,
-                messageValue.l2Token,
-                messageValue.amount,
-                messageValue.message
-            )
-        );
         bytes32 finalHashedMessage = keccak256(
             abi.encodePacked(
                 particularMessageHash,
-                IL1MessageQueue(messageQueue).getMessageHash(
-                    messageValue.nonce - 1
-                )
+                IL1MessageQueue(messageQueue).getMessageHash(messageNonce - 1)
             )
         );
         if (
-            IL1MessageQueue(messageQueue).getMessageHash(messageValue.nonce) ==
+            IL1MessageQueue(messageQueue).getMessageHash(messageNonce) ==
             finalHashedMessage
         ) {
             return true;
         } else {
             return false;
+        }
+    }
+
+    function _executeTokenWithdrawal(
+        uint64 nonce,
+        string memory l1Token,
+        string memory l2Token,
+        string memory receiver,
+        string memory amount
+    ) internal {
+        if (l1Token.stringToAddress() == address(0)) {
+            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
+                l1Token,
+                l2Token,
+                receiver,
+                amount,
+                nonce
+            );
+        } else {
+            // ERC20 withdrawal
+            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
+                l1Token,
+                l2Token,
+                receiver,
+                amount,
+                nonce
+            );
         }
     }
 }
