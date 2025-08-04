@@ -76,7 +76,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The mapping of batchNumber => batchHash
     mapping(uint64 => bytes32) public finalizedBatch;
     /// @notice Mapping of executed withdraw hash to a boolean value
-    mapping(bytes32 => bool) public isWithdrawExecuted;
+    mapping(bytes => bool) public isWithdrawExecuted;
 
     /**********************
      * Function Modifiers *
@@ -366,6 +366,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata withdrawProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(!isWithdrawExecuted[publicValues],"Withdrawal already processed");
         L2WithdrawValues memory withdrawValues = TwineChainDecoder
             .decodeL2WithdrawValues(publicValues);
         isBatchFinalized(withdrawValues.batchNumber);
@@ -387,6 +388,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawValues.to,
             withdrawValues.amount
         );
+        isWithdrawExecuted[publicValues] = true;
         emit L2WithdrawExecuted(
             withdrawValues.nonce,
             withdrawValues.l1Token,
