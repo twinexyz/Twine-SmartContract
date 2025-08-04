@@ -272,6 +272,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         lastFinalizedBatchNumber = batchNumber;
         totalMsgHandledOnTwine = executedMessageCount;
         lastFinalizedBatchHash = currentBatchHash;
+        finalizedBatch[batchNumber] = currentBatchHash;
         emit FinalizedBatch(
             batchNumber,
             executedMessageCount,
