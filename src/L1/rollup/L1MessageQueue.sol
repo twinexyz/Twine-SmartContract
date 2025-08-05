@@ -6,11 +6,10 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 import {IL1MessageQueue} from "./IL1MessageQueue.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
-
 contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     using TypeConversionLib for string;
     using TypeConversionLib for address;
-    // using TypeConversionLib for uint256;
+
     /*************
      * Variables *
      *************/
@@ -26,9 +25,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     /// @notice The list of queued layer zero messages.
     MessageData[] public layerZeroMessageQueue;
-
-    /// @notice The list of queued transactions that are ready for execution.
-    MessageData[] public executionMessageQueue;
 
     mapping(uint256 => bytes32) private messageRollingHashes;
 
@@ -133,32 +129,6 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         messageQueueProxy = _proxyAddress;
     }
 
-    function isNonceInExecutionQueue(
-        uint256 nonce
-    ) external view returns (bool) {
-        uint256 len = executionMessageQueue.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (executionMessageQueue[i].nonce == nonce) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function removeExecutionMessage(
-        uint256 nonce
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_CHAIN()) {
-        uint256 len = executionMessageQueue.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (executionMessageQueue[i].nonce == nonce) {
-                for (uint256 j = i; j < len - 1; j++) {
-                    executionMessageQueue[j] = executionMessageQueue[j + 1];
-                }
-                executionMessageQueue.pop();
-            }
-        }
-    }
-
     /// @inheritdoc IL1MessageQueue
     function appendCrossDomainDepositMessage(
         address from,
@@ -203,7 +173,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         bytes memory message
     ) internal {
         ++messageIndex;
-        
+
         MessageData memory depositMessageData = MessageData({
             txnType: TransactionType.Deposit,
             nonce: messageIndex,
@@ -284,7 +254,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
 
     function computeTransactionHash(
         MessageData memory transactionData
-    ) public pure returns (bytes32) {
+    ) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encodePacked(
@@ -297,7 +267,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
                     transactionData.l1Token,
                     transactionData.l2Token,
                     transactionData.amount,
-                    transactionData.message
+                    keccak256(transactionData.message)
                 )
             );
     }
