@@ -20,5 +20,5 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -H "Authorization: Bearer ${{ secrets.TRIGGER_GH_PAT }}" \
-            https://api.github.com/repos/$ORG/$REPO/dispatches \
-            -d '{"event_type":"run-external-pipeline"}'
+            https://api.github.com/repos/${{ env.ORG }}/${{ env.REPO }}/dispatches \
+            -d '{"event_type":"trigger_changes"}'
