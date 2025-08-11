@@ -1,0 +1,23 @@
+name: Trigger Weaver Workflow
+
+on:
+  push:
+    branches:
+      - feat/ci-fixes
+      - main
+
+env:
+  REPO: weaver
+  ORG: ${{ github.repository_owner }}
+
+jobs:
+  trigger:
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: Trigger Weaver workflow
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GH_ACTINO_PAT }}" \
+            https://api.github.com/repos/$ORG/$REPO/dispatches \
+            -d '{"event_type":"run-external-pipeline"}'
