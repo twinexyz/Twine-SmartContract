@@ -76,7 +76,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The mapping of batchNumber => batchHash
     mapping(uint64 => bytes32) public finalizedBatch;
     /// @notice Mapping of executed withdraw hash to a boolean value
-    mapping(bytes => bool) public isWithdrawExecuted;
+    mapping(bytes => bool) public isL2WithdrawExecuted;
+    /// @notice Mapping of executed withdraw hash to a boolean value
+    mapping(bytes => bool) public isForcedWithdrawExecuted;
+     /// @notice Mapping of executed refubd hash to a boolean value
+    mapping(bytes => bool) public isRefundExecuted;
 
     /**********************
      * Function Modifiers *
@@ -289,28 +293,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata refundProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        (
-            uint64 batchNumber,
-            bytes32 batchHash,
-            TransactionType txnType,
-            uint64 messageNonce
-        ) = abi.decode(
-                publicValues,
-                (uint64, bytes32, TransactionType, uint64)
-            );
-        require(isBatchFinalized(batchNumber), "Batch is not finalized yet");
+        require(!isRefundExecuted[publicValues],"Refund already processed");
+        TransactionValues memory refundValues = TwineChainDecoder
+            .decodeTransactionValues(publicValues);
         require(
-            batchHash == finalizedBatch[batchNumber],
-            "Given Batch hash mismatch"
-        );
-
-        require(
-            txnType == TransactionType.Deposit,
+            refundValues.txnType == TransactionType.Deposit,
             "Transaction must be deposit type"
+        );
+        require(isBatchFinalized(refundValues.batchNumber), "Batch is not finalized yet");
+        require(
+            refundValues.batchHash == finalizedBatch[refundValues.batchNumber],
+            "Given Batch hash mismatch"
         );
         // message hash of the particular trandaction is checked
         require(
-            checkMessageHash(messageNonce, keccak256(bytes(publicValues[40:]))),
+            checkMessageHash(refundValues.nonce, keccak256(bytes(publicValues[40:]))),
             "Message hash doesn't exist"
         );
 
@@ -321,53 +318,64 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 refundProof
             );
         }
-        (
-            ,
-            ,
-            ,
-            ,
-            ,
-            ,
-            string memory fromAddress,
-            ,
-            string memory l1Token,
-            string memory l2Token,
-            string memory amount,
-
-        ) = abi.decode(
-                publicValues,
-                (
-                    uint64,
-                    bytes32,
-                    TransactionType,
-                    uint64,
-                    uint64,
-                    uint64,
-                    string,
-                    string,
-                    string,
-                    string,
-                    string,
-                    bytes
-                )
-            );
+       
         _executeTokenWithdrawal(
-            messageNonce,
-            l1Token,
-            l2Token,
-            fromAddress,
-            amount
+            refundValues.nonce,
+            refundValues.l1Token,
+            refundValues.l2Token,
+            refundValues.fromAddress,
+            refundValues.amount
         );
+        isRefundExecuted[publicValues] = true;
     }
 
     /* -------------------------------------------------------------------------- */
     /*                               Execute Withdraw                             */
     /* -------------------------------------------------------------------------- */
+    function executeForcedWithdrawal(
+        bytes calldata publicValues,
+        bytes calldata refundProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        require(!isRefundExecuted[publicValues],"Refund already processed");
+        TransactionValues memory withdrawValues = TwineChainDecoder
+            .decodeTransactionValues(publicValues);
+        require(
+            withdrawValues.txnType == TransactionType.Withdraw,
+            "Transaction must be deposit type"
+        );
+        require(isBatchFinalized(withdrawValues.batchNumber), "Batch is not finalized yet");
+        require(
+            withdrawValues.batchHash == finalizedBatch[withdrawValues.batchNumber],
+            "Given Batch hash mismatch"
+        );
+        // message hash of the particular trandaction is checked
+        require(
+            checkMessageHash(withdrawValues.nonce, keccak256(bytes(publicValues[40:]))),
+            "Message hash doesn't exist"
+        );
+
+        if (!skipVerification) {
+            SP1Verifier(verifier).verifyProof(
+                refundVKey,
+                publicValues,
+                refundProof
+            );
+        }
+       
+        _executeTokenWithdrawal(
+            withdrawValues.nonce,
+            withdrawValues.l1Token,
+            withdrawValues.l2Token,
+            withdrawValues.fromAddress,
+            withdrawValues.amount
+        );
+        isForcedWithdrawExecuted[publicValues] = true;
+    }
     function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        require(!isWithdrawExecuted[publicValues],"Withdrawal already processed");
+        require(!isL2WithdrawExecuted[publicValues],"Withdrawal already processed");
         L2WithdrawValues memory withdrawValues = TwineChainDecoder
             .decodeL2WithdrawValues(publicValues);
         isBatchFinalized(withdrawValues.batchNumber);
@@ -389,7 +397,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawValues.to,
             withdrawValues.amount
         );
-        isWithdrawExecuted[publicValues] = true;
+        isL2WithdrawExecuted[publicValues] = true;
         emit L2WithdrawExecuted(
             withdrawValues.nonce,
             withdrawValues.l1Token,
@@ -403,25 +411,6 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /**********************
      * Internal Functions *
      **********************/
-    function _finalizeWithdrawal(RefundValues memory refundValues) internal {
-        if (refundValues.l1Token.stringToAddress() == address(0)) {
-            IL1ETHGateway(ethGateway).finalizeTokenWithdrawal(
-                refundValues.l1Token,
-                refundValues.l2Token,
-                refundValues.toAddress,
-                refundValues.amount,
-                refundValues.nonce
-            );
-        } else {
-            IL1ERC20Gateway(ERC20Gateway).finalizeTokenWithdrawal(
-                refundValues.l1Token,
-                refundValues.l2Token,
-                refundValues.toAddress,
-                refundValues.amount,
-                refundValues.nonce
-            );
-        }
-    }
 
     function checkMessageHash(
         uint64 messageNonce,

@@ -28,6 +28,28 @@ library TwineChainDecoder {
             )
         }
     }
+    /// @dev Decode public values for refund
+    /// @notice It expects address to have `0x` prefix
+    function decodeTransactionValues(
+        bytes calldata publicValues
+    ) internal pure returns (ITwineChain.TransactionValues memory transactionValues) {
+        require(publicValues.length >= 265, "data too short");
+
+        transactionValues.batchHash = bytes32(publicValues[0:32]);
+        transactionValues.batchNumber = uint64(bytes8(publicValues[32:40]));
+        transactionValues.txnType = ITwineChain.TransactionType(
+            uint8(publicValues[40])
+        );
+        transactionValues.nonce = uint64(bytes8(publicValues[41:49]));
+        transactionValues.chainId = uint64(bytes8(publicValues[49:57]));
+        transactionValues.blockNumber = uint64(bytes8(publicValues[57:65]));
+        transactionValues.fromAddress = string(publicValues[65:107]);
+        transactionValues.toAddress = string(publicValues[107:149]);
+        transactionValues.l1Token = string(publicValues[149:191]);
+        transactionValues.l2Token = string(publicValues[191:233]);
+        transactionValues.amount = string(publicValues[233:265]);
+        transactionValues.message = publicValues[265:];
+    }
 
     /// @dev Decode public values for l2 withdrawals zk proof
     /// @notice It expects address to have `0x` prefix
@@ -76,5 +98,3 @@ library TwineChainDecoder {
         return result;
     }
 }
-
-

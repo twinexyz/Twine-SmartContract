@@ -99,13 +99,13 @@ interface ITwineChain {
         string amount;
         bytes message;
     }
-    struct RefundValues {
+    struct TransactionValues {
         bytes32 batchHash;
         uint64 batchNumber;
+        TransactionType txnType;
         uint64 nonce;
         uint64 chainId;
         uint64 blockNumber;
-        TransactionType txnType;
         string fromAddress;
         string toAddress;
         string l1Token;
@@ -115,9 +115,9 @@ interface ITwineChain {
     }
 
     struct L2WithdrawValues {
-        bytes32 batchHash;
         uint64 batchNumber;
         uint64 nonce;
+        bytes32 batchHash;
         string to;
         string l1Token;
         string l2Token;
