@@ -3,7 +3,7 @@ name: Trigger Weaver Workflow
 on:
   push:
     branches:
-      - feat/wor
+      - feat/repository-dispatch
       - main
 env:
   REPO: weaver
