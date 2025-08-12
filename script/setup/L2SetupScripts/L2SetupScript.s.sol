@@ -138,7 +138,6 @@ contract L2SetupScript is Script {
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        
         // setup twine messenger address
         twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
 
@@ -165,7 +164,22 @@ contract L2SetupScript is Script {
             keccak256("TWINE_MESSENGER"),
             l2TwineMessengerAddress
         );
-
+        roleManager.grantRole(
+            keccak256("TWINE_TOKENS_MINTER"),
+            l2TwineMessengerAddress
+        );
+        roleManager.checkRole(
+            keccak256("TWINE_TOKENS_MINTER"),
+            l2TwineMessengerAddress
+        );
+        roleManager.grantRole(
+            keccak256("TWINE_TOKENS_BURNER"),
+            l2CustomERC20GatewayAddress
+        );
+        roleManager.checkRole(
+            keccak256("TWINE_TOKENS_BURNER"),
+            l2CustomERC20GatewayAddress
+        );
 
         //L2ETHGateway setup
         l2ETHGateway.setRoleManagerAddress(roleManagerAddress);
