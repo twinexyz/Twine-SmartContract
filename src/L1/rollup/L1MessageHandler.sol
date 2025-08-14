@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
-import {IL1MessageQueue} from "./IL1MessageQueue.sol";
+import {IL1MessageHandler} from "./IL1MessageHandler.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
-contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
+contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     using TypeConversionLib for string;
     using TypeConversionLib for address;
 
@@ -56,7 +56,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         _disableInitializers();
     }
 
-    // @notice Initialize the storage of L1MessageQueue.
+    // @notice Initialize the storage of L1MessageHandler.
     /// @param _chainId The chain id of L1.
     /// @param _messenger The address of L1TwineMessenger in L1.
     /// @param _roleManager The address of roleManager Contract.
@@ -73,14 +73,14 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
     /*************************
      * Public View Functions *
      *************************/
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function getCrossDomainLayerZeroMessage(
         uint256 queueIndex
     ) external view returns (MessageData memory) {
         return layerZeroMessageQueue[queueIndex];
     }
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function getMessageHash(
         uint256 messageNonce
     ) external view returns (bytes32) {
@@ -92,7 +92,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
      * Public Mutating Functions *
      *****************************/
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function setMessengerAddress(
         address _messenger
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -102,14 +102,14 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         messenger = _messenger;
     }
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function setChainId(
         uint64 _chainId
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         chainId = _chainId;
     }
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function setRoleManager(
         address _roleManager
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -119,7 +119,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         roleManager = _roleManager;
     }
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function setMessageQueueProxy(
         address _proxyAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -129,7 +129,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         messageQueueProxy = _proxyAddress;
     }
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function appendCrossDomainDepositMessage(
         address from,
         address to,
@@ -141,7 +141,7 @@ contract L1MessageQueue is ContextUpgradeable, IL1MessageQueue {
         _queueDepositTransaction(from, to, l1Token, l2Token, amount, message);
     }
 
-    /// @inheritdoc IL1MessageQueue
+    /// @inheritdoc IL1MessageHandler
     function appendCrossDomainWithdrawalMessage(
         address from,
         address to,

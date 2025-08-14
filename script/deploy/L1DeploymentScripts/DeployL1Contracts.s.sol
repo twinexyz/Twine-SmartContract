@@ -8,7 +8,7 @@ import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 
 import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
-import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
@@ -63,12 +63,12 @@ contract DeployL1Contracts is Script {
             )
         );
 
-        // Deploying an upgradeable proxy for L1MessageQueue
+        // Deploying an upgradeable proxy for L1MessageHandler
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
-            "L1MessageQueue.sol",
+            "L1MessageHandler.sol",
             initialOwner,
             abi.encodeCall(
-                L1MessageQueue.initialize,
+                L1MessageHandler.initialize,
                 (0, address(0), roleManagerAddress)
             )
         );
@@ -102,7 +102,7 @@ contract DeployL1Contracts is Script {
         vm.serializeAddress(twineObject, "TwineChain", TwineChainAddress);
         vm.serializeAddress(twineObject, "L1ETHGateway", L1ETHGatewayAddress);
         vm.serializeAddress(twineObject, "L1RoleManager",roleManagerAddress );
-        vm.serializeAddress(twineObject, "L1MessageQueue", L1MessageQueueAddress);
+        vm.serializeAddress(twineObject, "L1MessageHandler", L1MessageQueueAddress);
         vm.serializeAddress(twineObject, "L1GatewayRouter", L1GatewayRouterAddress);
         vm.serializeAddress(twineObject, "L1TwineMessenger", L1TwineMessengerAddress);
         vm.serializeAddress(twineObject, "L1CustomERC20Gateway", L1CustomERC20GatewayAddress);

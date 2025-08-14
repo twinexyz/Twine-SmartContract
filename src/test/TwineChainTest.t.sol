@@ -11,9 +11,9 @@ import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {ITwineChain} from "../L1/rollup/ITwineChain.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
-import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../L1/rollup/L1MessageHandler.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
-import {IL1MessageQueue} from "../L1/rollup/IL1MessageQueue.sol";
+import {IL1MessageHandler} from "../L1/rollup/IL1MessageHandler.sol";
 import {IL1ETHGateway, L1ETHGateway} from "../L1/gateways/L1ETHGateway.sol";
 import {IL2ETHGateway, L2ETHGateway} from "../L2/gateways/L2ETHGateway.sol";  
 import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
@@ -25,7 +25,7 @@ contract TwineChainTest is Test {
     TwineChain public twineChain;
     L1ETHGateway private ethGateway;
     L1GatewayRouter private router;
-    L1MessageQueue public messageQueue;
+    L1MessageHandler public messageQueue;
     L1CustomERC20Gateway private erc20Gateway;
     L1TwineMessenger public l1TwineMessenger;
 
@@ -74,17 +74,17 @@ contract TwineChainTest is Test {
         );
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
-        // setup L1MessageQueue
+        // setup L1MessageHandler
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
-            "L1MessageQueue.sol",
+            "L1MessageHandler.sol",
             msg.sender,
             abi.encodeCall(
-                L1MessageQueue.initialize,
+                L1MessageHandler.initialize,
                 (0, address(0), address(roleManager))
             )
         );
 
-        messageQueue = L1MessageQueue(L1MessageQueueAddress);
+        messageQueue = L1MessageHandler(L1MessageQueueAddress);
 
         // setup TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
@@ -353,7 +353,7 @@ contract TwineChainTest is Test {
 //         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
 
 //         console.log("ETH DEPOSIT MESSAGE");
-//         L1MessageQueue.MessageData memory deposit = messageQueue
+//         L1MessageHandler.MessageData memory deposit = messageQueue
 //             .getCrossDomainDepositMessage(0);
 //         console.log("nonce", deposit.nonce);
 //         console.log("chainId", deposit.chainId);
@@ -382,7 +382,7 @@ contract TwineChainTest is Test {
 //         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
 
 //         console.log("ETH WITHDRAW MESSAGE");
-//         L1MessageQueue.MessageData memory withdraw = messageQueue
+//         L1MessageHandler.MessageData memory withdraw = messageQueue
 //             .getCrossDomainWithdrawalMessage(0);
 //         console.log("nonce", withdraw.nonce);
 //         console.log("chainId", withdraw.chainId);
@@ -478,7 +478,7 @@ contract TwineChainTest is Test {
 //         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
 
 //         console.log("ETH DEPOSIT MESSAGE");
-//         L1MessageQueue.MessageData memory deposit = messageQueue
+//         L1MessageHandler.MessageData memory deposit = messageQueue
 //             .getCrossDomainDepositMessage(0);
 //         console.log("nonce", deposit.nonce);
 //         console.log("chainId", deposit.chainId);
@@ -506,7 +506,7 @@ contract TwineChainTest is Test {
 //         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
 
 //         console.log("ETH WITHDRAW MESSAGE");
-//         L1MessageQueue.MessageData memory withdraw = messageQueue
+//         L1MessageHandler.MessageData memory withdraw = messageQueue
 //             .getCrossDomainWithdrawalMessage(0);
 //         console.log("nonce", withdraw.nonce);
 //         console.log("chainId", withdraw.chainId);

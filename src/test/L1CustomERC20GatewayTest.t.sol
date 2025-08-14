@@ -10,7 +10,7 @@ import {L2MsgExecutor} from "../L2/L2MsgExecutor.sol";
 import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
-import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../L1/rollup/L1MessageHandler.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 import {IL1ERC20Gateway, L1CustomERC20Gateway} from "../L1/gateways/L1CustomERC20Gateway.sol";
@@ -22,7 +22,7 @@ contract L1CustomERC20GatewayTest is Test {
     TwineChain private rollup;
     L1GatewayRouter private router;
     RoleManager private roleManager;
-    L1MessageQueue private messageQueue;
+    L1MessageHandler private messageQueue;
     L1TwineMessenger private l1Messenger;
     L2TwineMessenger private l2Messenger;
     L1CustomERC20Gateway private gateway;
@@ -61,14 +61,14 @@ contract L1CustomERC20GatewayTest is Test {
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
         address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
-            "L1MessageQueue.sol",
+            "L1MessageHandler.sol",
             msg.sender,
             abi.encodeCall(
-                L1MessageQueue.initialize,
+                L1MessageHandler.initialize,
                 (0, address(0), address(roleManager))
             )
         );
-        messageQueue = L1MessageQueue(L1MessageQueueAddress);
+        messageQueue = L1MessageHandler(L1MessageQueueAddress);
 
         address L2MessageExecutorAddress = Upgrades.deployTransparentProxy(
             "L2MsgExecutor.sol",

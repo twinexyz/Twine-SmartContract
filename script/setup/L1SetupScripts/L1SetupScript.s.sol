@@ -7,7 +7,7 @@ import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
 import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
-import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
@@ -17,7 +17,7 @@ contract L1SetupScript is Script {
     TwineChain twineChain;
     RoleManager roleManager;
     L1ETHGateway l1ETHGateway;
-    L1MessageQueue l1MessageQueue;
+    L1MessageHandler l1MessageHandler;
     L1GatewayRouter l1GatewayRouter;
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
@@ -84,7 +84,7 @@ contract L1SetupScript is Script {
 
         l1MessageQueueAddress = vm.parseJsonAddress(
             deployedL1Json,
-            ".L1MessageQueue"
+            ".L1MessageHandler"
         );
 
         l1TwineMessengerAddress = vm.parseJsonAddress(
@@ -125,7 +125,7 @@ contract L1SetupScript is Script {
         roleManager = RoleManager(roleManagerAddress);
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
-        l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
         token = MockERC20(tokenAddress);
         chainId = 17000; //holesky chain Id
@@ -185,11 +185,11 @@ contract L1SetupScript is Script {
         l1ETHGateway.setL2TokenAddress(l2ETHTokenAddress);
         l1ETHGateway.setChainId(chainId);
 
-        //L1MessageQueue setup
-        l1MessageQueue.setRoleManager(roleManagerAddress);
-        l1MessageQueue.setChainId(chainId);
-        l1MessageQueue.setMessengerAddress(l1TwineMessengerAddress);
-        l1MessageQueue.setMessageQueueProxy(l1MessageQueueAddress);
+        //L1MessageHandler setup
+        l1MessageHandler.setRoleManager(roleManagerAddress);
+        l1MessageHandler.setChainId(chainId);
+        l1MessageHandler.setMessengerAddress(l1TwineMessengerAddress);
+        l1MessageHandler.setMessageQueueProxy(l1MessageQueueAddress);
 
         //L1GatewayRouter setup
         l1GatewayRouter.setRoleManagerAddress(roleManagerAddress);
