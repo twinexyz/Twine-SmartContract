@@ -25,7 +25,7 @@ contract TwineChainTest is Test {
     TwineChain public twineChain;
     L1ETHGateway private ethGateway;
     L1GatewayRouter private router;
-    L1MessageHandler public messageQueue;
+    L1MessageHandler public messageHandler;
     L1CustomERC20Gateway private erc20Gateway;
     L1TwineMessenger public l1TwineMessenger;
 
@@ -84,7 +84,7 @@ contract TwineChainTest is Test {
             )
         );
 
-        messageQueue = L1MessageHandler(L1MessageQueueAddress);
+        messageHandler = L1MessageHandler(L1MessageQueueAddress);
 
         // setup TwineChain
         address TwineChainAddress = Upgrades.deployTransparentProxy(
@@ -92,7 +92,7 @@ contract TwineChainTest is Test {
             msg.sender,
             abi.encodeCall(
                 TwineChain.initialize,
-                (address(messageQueue), verifier, address(roleManager))
+                (address(messageHandler), verifier, address(roleManager))
             )
         );
 
@@ -106,7 +106,7 @@ contract TwineChainTest is Test {
                 L1TwineMessenger.initialize,
                 (
                     address(0),
-                    address(messageQueue),
+                    address(messageHandler),
                     TwineChainAddress,
                     roleManagerAddress
                 )
@@ -156,18 +156,18 @@ contract TwineChainTest is Test {
         ethGateway.setRoleManagerAddress(address(roleManager));
 
         // SetUp Message Qeueue
-        messageQueue.setMessengerAddress(address(l1TwineMessenger));
-        messageQueue.setChainId(1700);
-        messageQueue.setRoleManager(address(roleManager));
+        messageHandler.setMessengerAddress(address(l1TwineMessenger));
+        messageHandler.setChainId(1700);
+        messageHandler.setRoleManager(address(roleManager));
 
         // SetUp Twine Chain
         twineChain.setChainId(1700);
         twineChain.setRoleManagerAddress(address(roleManager));
-        twineChain.setMessengerQueueAddress(address(messageQueue));
+        twineChain.setMessengerQueueAddress(address(messageHandler));
         twineChain.setGatewayAddress(address(ethGateway), address(ethGateway));
 
         // SetUp Messenger
-        l1TwineMessenger.setMessengerQueueAddress(address(messageQueue));
+        l1TwineMessenger.setMessageHandlerAddress(address(messageHandler));
         l1TwineMessenger.setRollupAddress(address(twineChain));
 
         roleManager.grantRole(TWINE_GATEWAYS, address(ethGateway));
@@ -222,10 +222,10 @@ contract TwineChainTest is Test {
         vm.stopPrank();
     }
 
-    function testSetMessengerQueueAddress() public {
+    function testSetMesseHandlerAddress() public {
         vm.prank(admin);
         twineChain.setMessengerQueueAddress(newMessageQueue);
-        assertEq(twineChain.messageQueue(), newMessageQueue);
+        assertEq(twineChain.messageHandler(), newMessageQueue);
     }
 
     function testSetVeriferAddressNonAdminReverts() public {
@@ -338,7 +338,7 @@ contract TwineChainTest is Test {
 //         /******************
 //          * Depositing ETH *
 //          *****************/
-//         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainDepositMessageIndex(), 0);
 //         assertEq(address(ethGateway).balance, 0 ether);
 
 //         vm.startPrank(admin);
@@ -350,10 +350,10 @@ contract TwineChainTest is Test {
 //         );
 
 //         assertEq(address(ethGateway).balance, 5 ether);
-//         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
+//         assertEq(messageHandler.nextCrossDomainDepositMessageIndex(), 1);
 
 //         console.log("ETH DEPOSIT MESSAGE");
-//         L1MessageHandler.MessageData memory deposit = messageQueue
+//         L1MessageHandler.MessageData memory deposit = messageHandler
 //             .getCrossDomainDepositMessage(0);
 //         console.log("nonce", deposit.nonce);
 //         console.log("chainId", deposit.chainId);
@@ -368,7 +368,7 @@ contract TwineChainTest is Test {
 //         /**************************
 //          * Force Withdrawaing ETH *
 //          *************************/
-//         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainWithdrawalMessageIndex(), 0);
 
 //         vm.startPrank(admin);
 //         uint256 withdrawAmount = 1 ether;
@@ -379,10 +379,10 @@ contract TwineChainTest is Test {
 //             new bytes(0)
 //         );
 
-//         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+//         assertEq(messageHandler.nextCrossDomainWithdrawalMessageIndex(), 1);
 
 //         console.log("ETH WITHDRAW MESSAGE");
-//         L1MessageHandler.MessageData memory withdraw = messageQueue
+//         L1MessageHandler.MessageData memory withdraw = messageHandler
 //             .getCrossDomainWithdrawalMessage(0);
 //         console.log("nonce", withdraw.nonce);
 //         console.log("chainId", withdraw.chainId);
@@ -454,16 +454,16 @@ contract TwineChainTest is Test {
 //             executionProof
 //         );
 
-//         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
-//         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
-//         assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
+//         assertEq(messageHandler.nextCrossDomainDepositMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainWithdrawalMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainExecutionMessageIndex(), 1);
 //     }
 
 //     function testTheSplTokenWithdrawalFinalization() public {
 //        /******************
 //          * Depositing ETH *
 //          *****************/
-//         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainDepositMessageIndex(), 0);
 //         assertEq(address(ethGateway).balance, 0 ether);
 
 //         vm.startPrank(admin);
@@ -475,10 +475,10 @@ contract TwineChainTest is Test {
 //         );
 
 //         assertEq(address(ethGateway).balance, 5 ether);
-//         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 1);
+//         assertEq(messageHandler.nextCrossDomainDepositMessageIndex(), 1);
 
 //         console.log("ETH DEPOSIT MESSAGE");
-//         L1MessageHandler.MessageData memory deposit = messageQueue
+//         L1MessageHandler.MessageData memory deposit = messageHandler
 //             .getCrossDomainDepositMessage(0);
 //         console.log("nonce", deposit.nonce);
 //         console.log("chainId", deposit.chainId);
@@ -492,7 +492,7 @@ contract TwineChainTest is Test {
 //         /**************************
 //          * Force Withdrawaing ETH *
 //          *************************/
-//         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainWithdrawalMessageIndex(), 0);
 
 //         vm.startPrank(admin);
 //         uint256 withdrawAmount = 1 ether;
@@ -503,10 +503,10 @@ contract TwineChainTest is Test {
 //             new bytes(0)
 //         );
 
-//         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+//         assertEq(messageHandler.nextCrossDomainWithdrawalMessageIndex(), 1);
 
 //         console.log("ETH WITHDRAW MESSAGE");
-//         L1MessageHandler.MessageData memory withdraw = messageQueue
+//         L1MessageHandler.MessageData memory withdraw = messageHandler
 //             .getCrossDomainWithdrawalMessage(0);
 //         console.log("nonce", withdraw.nonce);
 //         console.log("chainId", withdraw.chainId);
@@ -577,9 +577,9 @@ contract TwineChainTest is Test {
 //             executionProof
 //         );
 
-//         assertEq(messageQueue.nextCrossDomainDepositMessageIndex(), 0);
-//         assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 0);
-//         assertEq(messageQueue.nextCrossDomainExecutionMessageIndex(), 1);
+//         assertEq(messageHandler.nextCrossDomainDepositMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainWithdrawalMessageIndex(), 0);
+//         assertEq(messageHandler.nextCrossDomainExecutionMessageIndex(), 1);
 //     }
 
 //     function testfinalizeWithdrawalNativeToken() public {

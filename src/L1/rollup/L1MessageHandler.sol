@@ -14,17 +14,10 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
      * Variables *
      *************/
     uint64 chainId;
-    uint64 public override messageIndex;
     address public messenger;
     address public roleManager;
-    address public messageQueueProxy;
-
-    /**********
-     * Queues *
-     **********/
-
-    /// @notice The list of queued layer zero messages.
-    MessageData[] public layerZeroMessageQueue;
+    address public messageHandlerProxy;
+    uint64 public override messageIndex;
 
     mapping(uint256 => bytes32) private messageRollingHashes;
 
@@ -35,10 +28,9 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
      * Function Modifiers *
      **********************/
     modifier onlyMessenger() {
-        require(
-            _msgSender() == messenger,
-            "Only callable by the L1TwineMessenger"
-        );
+        if (_msgSender() != messenger) {
+            revert OnlyMessenger();
+        }
         _;
     }
 
@@ -74,17 +66,12 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
      * Public View Functions *
      *************************/
     /// @inheritdoc IL1MessageHandler
-    function getCrossDomainLayerZeroMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory) {
-        return layerZeroMessageQueue[queueIndex];
-    }
-
-    /// @inheritdoc IL1MessageHandler
     function getMessageHash(
         uint256 messageNonce
     ) external view returns (bytes32) {
-        require(messageIndex >= messageNonce, "Invalid index");
+        if (messageIndex < messageNonce) {
+            revert InvalidIndex();
+        }
         return messageRollingHashes[messageNonce];
     }
 
@@ -99,14 +86,19 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         if (_messenger == address(0)) {
             revert ErrorZeroAddress();
         }
+        address oldMessenger = messenger;
         messenger = _messenger;
+        emit MessengerAddressUpdated(oldMessenger, _messenger);
     }
 
     /// @inheritdoc IL1MessageHandler
     function setChainId(
         uint64 _chainId
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_chainId == 0) revert InvalidChainId();
+        uint64 oldChainId = chainId;
         chainId = _chainId;
+        emit ChainIdUpdated(oldChainId, _chainId);
     }
 
     /// @inheritdoc IL1MessageHandler
@@ -116,17 +108,21 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         if (_roleManager == address(0)) {
             revert ErrorZeroAddress();
         }
+        address oldRoleManager = roleManager;
         roleManager = _roleManager;
+        emit RoleManagerUpdated(oldRoleManager, _roleManager);
     }
 
     /// @inheritdoc IL1MessageHandler
-    function setMessageQueueProxy(
+    function setMessageHandlerProxy(
         address _proxyAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         if (_proxyAddress == address(0)) {
             revert ErrorZeroAddress();
         }
-        messageQueueProxy = _proxyAddress;
+        address oldProxy = messageHandlerProxy;
+        messageHandlerProxy = _proxyAddress;
+        emit MessageHandlerProxyUpdated(oldProxy, _proxyAddress);
     }
 
     /// @inheritdoc IL1MessageHandler
@@ -138,7 +134,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         uint256 amount,
         bytes memory message
     ) external override onlyMessenger {
-        _queueDepositTransaction(from, to, l1Token, l2Token, amount, message);
+        _handleDepositTransaction(from, to, l1Token, l2Token, amount, message);
     }
 
     /// @inheritdoc IL1MessageHandler
@@ -150,7 +146,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         uint256 amount,
         bytes memory message
     ) external override onlyMessenger {
-        _queueWithdrawalTransaction(
+        _handleWithdrawalTransaction(
             from,
             to,
             l1Token,
@@ -164,7 +160,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
      * Internal Functions *
      **********************/
 
-    function _queueDepositTransaction(
+    function _handleDepositTransaction(
         address from,
         address to,
         address l1Token,
@@ -172,7 +168,9 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         uint256 amount,
         bytes memory message
     ) internal {
-        ++messageIndex;
+        unchecked {
+            ++messageIndex;
+        }
 
         MessageData memory depositMessageData = MessageData({
             txnType: TransactionType.Deposit,
@@ -194,7 +192,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         messageRollingHashes[messageIndex] = particularTransactionHash;
 
         // emit deposit event
-        emit QueueTransaction(
+        emit MessageTransaction(
             TransactionType.Deposit,
             messageIndex,
             chainId,
@@ -208,7 +206,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         );
     }
 
-    function _queueWithdrawalTransaction(
+    function _handleWithdrawalTransaction(
         address from,
         address to,
         address l1Token,
@@ -216,7 +214,9 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         uint256 amount,
         bytes memory message
     ) internal {
-        ++messageIndex;
+        unchecked {
+            ++messageIndex;
+        }
 
         MessageData memory withdrawMessageData = MessageData({
             txnType: TransactionType.Withdraw,
@@ -238,7 +238,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         messageRollingHashes[messageIndex] = particularTransactionHash;
 
         // emit event
-        emit QueueTransaction(
+        emit MessageTransaction(
             TransactionType.Withdraw,
             messageIndex,
             chainId,

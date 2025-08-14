@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IL1TwineMessenger} from "./IL1TwineMessenger.sol";
-import {IL1MessageQueue} from "./rollup/IL1MessageQueue.sol";
+import {IL1MessageHandler} from "./rollup/IL1MessageHandler.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {TwineL1MessengerBase} from "../libraries/messenger/TwineL1MessengerBase.sol";
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
@@ -12,19 +12,11 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
      * Variables *
      *************/
 
-    /// @notice The address of L1MessageQueue contract.
-    address public messageQueue;
+    /// @notice The address of L1MessageHandler contract.
+    address public messageHandler;
 
     /// @notice The address of Rollup contract.
     address public rollup;
-
-    //gateway address of eth, can be removed
-    //gateway address of eth, can be removed
-    address public ethGateway;
-
-    //gateway address of erc20 gateway,can be removed
-    //gateway address of erc20 gateway,can be removed
-    address public ERC20Gateway;
 
     /*************
      * Mappings  *
@@ -43,31 +35,31 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
 
     /// @notice Initialize the storage of L1TwineMessenger.
     /// @param _counterpart The address of L2TwineMessenger in L2.
-    /// @param _messageQueue The address of `L1MessageQueue` contract.
+    /// @param _messageHandler The address of `L1MessageHandler` contract.
     /// @param _rollup The address of rollup contract.
     function initialize(
         address _counterpart,
-        address _messageQueue,
+        address _messageHandler,
         address _rollup,
         address _roleManager
     ) external initializer {
         __TwineMessengerBase_init(_counterpart, _roleManager);
 
-        messageQueue = _messageQueue;
+        messageHandler = _messageHandler;
         rollup = _rollup;
     }
 
     /*****************************
      * Public Mutating Functions *
      *****************************/
-    
-    function setMessengerQueueAddress(
-        address _messageQueue
+
+    function setMessageHandlerAddress(
+        address _messageHandler
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        if (_messageQueue == address(0)) {
+        if (_messageHandler == address(0)) {
             revert ErrorZeroAddress();
         }
-        messageQueue = _messageQueue;
+        messageHandler = _messageHandler;
     }
 
     function setRollupAddress(
@@ -95,7 +87,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_GATEWAYS())
     {
-        _sendMessage(txnType, from, to, l1Token, l2Token,amount,message);
+        _sendMessage(txnType, from, to, l1Token, l2Token, amount, message);
     }
 
     /**********************
@@ -113,8 +105,7 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
     ) internal {
         // If transaction type is Deposit
         if (txnType == TransactionType.deposit) {
-            // append message to L1 depositMessageQueue
-            IL1MessageQueue(messageQueue).appendCrossDomainDepositMessage(
+            IL1MessageHandler(messageHandler).appendCrossDomainDepositMessage(
                 from,
                 to,
                 l1Token,
@@ -123,15 +114,15 @@ contract L1TwineMessenger is TwineL1MessengerBase, IL1TwineMessenger {
                 message
             );
         } else {
-            // append message to L1 withdrawalMessageQueue
-            IL1MessageQueue(messageQueue).appendCrossDomainWithdrawalMessage(
-                from,
-                to,
-                l1Token,
-                l2Token,
-                amount,
-                message
-            );
+            IL1MessageHandler(messageHandler)
+                .appendCrossDomainWithdrawalMessage(
+                    from,
+                    to,
+                    l1Token,
+                    l2Token,
+                    amount,
+                    message
+                );
         }
     }
 }

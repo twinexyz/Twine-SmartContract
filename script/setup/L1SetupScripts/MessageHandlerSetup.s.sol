@@ -71,22 +71,22 @@ contract SetMessagengerAddress is Script {
 
 contract SetMessageQueueProxy is Script {
  L1MessageHandler l1MessageHandler;
-    address l1MessageQueueAddress;
-    address messageQueueProxy;
+    address l1MessageHandlerAddress;
+    address messageHandlerProxy;
 
     function setUp() public {
         string memory deployedJson = vm.readFile("./script/utils/deployedContracts.json");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageHandler");
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".Dev1.L1MessageHandler");
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
-        messageQueueProxy = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
+        messageHandlerProxy = vm.envAddress("MESSAGE_Handler_ADDRESS");
     }
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
-        l1MessageHandler.setMessageQueueProxy(messageQueueProxy);
+        l1MessageHandler.setMessageHandlerProxy(messageHandlerProxy);
         vm.stopBroadcast();
     }
 }

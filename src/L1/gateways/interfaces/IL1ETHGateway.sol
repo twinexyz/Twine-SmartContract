@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-
-
 interface IL1ETHGateway {
+    /***********
+     * Events  *
+     ***********/
     /// @notice Emitted when someone deposit ETH from L1 to L2.
     /// @param from The address of sender in L1.
     /// @param to The address of recipient in L2.
@@ -33,14 +34,28 @@ interface IL1ETHGateway {
         uint256 blockNumber
     );
 
-    ///@notice Emmitted when L2TokenAddress  is set
-    ///@param l2TokenAddress The L2 address of the token
+    /// @notice Emitted when L2TokenAddress is set
+    /// @param l2TokenAddress The L2 address of the token
     event L2TokenSET(address l2TokenAddress);
+
+    /*****************
+     * Custom Errors *
+     *****************/
+    /// @notice Thrown when wrong L2 token specified
+    error WrongL2Token();
+
+    /// @notice Thrown when contract has insufficient balance
+    error InsufficientContractBalance();
+
+    /// @notice Thrown when ETH transfer fails
+    error ETHTransferFailed();
+
+    /// @notice Thrown when value is less than message value
+    error LessThanMessageValue();
 
     /*****************************
      * Public Mutating Functions *
      *****************************/
-
     /// @notice Deposit ETH to some recipient's account in L2.
     /// @param to The address of recipient's account on L2.
     /// @param amount The amount of ETH to be deposited.

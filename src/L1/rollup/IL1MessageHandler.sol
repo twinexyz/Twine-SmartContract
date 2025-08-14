@@ -2,86 +2,9 @@
 pragma solidity ^0.8.24;
 
 interface IL1MessageHandler {
-    /**********
-     * Events *
-     **********/
-
-    /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
-    /// @param nonce The nonce of the message.
-    /// @param chainId Chain Id of this L1.
-    /// @param blockNumber The block number in which this transaction occured.
-    /// @param amount The amount of token to send.
-    /// @param l1Token Address of token to send from L1.
-    /// @param l2Token address of token to receive on L2.
-    /// @param toTwineAddress The address of receiver.
-
-    event QueueDepositTransaction(
-        uint64 nonce,
-        uint64 chainId,
-        uint64 blockNumber,
-        address l1Token,
-        address l2Token,
-        address from,
-        address toTwineAddress,
-        uint256 amount,
-        bytes message
-    );
-
-    /// @notice Emitted when a new L1 => L2 forced withdrawal transaction is appended to the queue.
-    /// @param nonce The nonce of the message.
-    /// @param chainId Chain Id of this L1.
-    /// @param blockNumber The block number in which this transaction occured.
-    /// @param amount The amount of token to send.
-    /// @param l1Token Address of token to receive on L1.
-    /// @param l2Token address of token to send from L2.
-    /// @param toTwineAddress The address of receiver.
-
-    event QueueWithdrawalTransaction(
-        uint64 nonce,
-        uint64 chainId,
-        uint64 blockNumber,
-        address l1Token,
-        address l2Token,
-        address from,
-        address toTwineAddress,
-        uint256 amount,
-        bytes message
-    );
-
-    /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
-    /// @param txnType The transaction type in L1.
-    /// @param nonce The nonce of the message.
-    /// @param chainId Chain Id of this L1.
-    /// @param blockNumber The block number in which this transaction occured.
-    /// @param amount The amount of token to send.
-    /// @param l1Token Address of token to send from L1.
-    /// @param l2Token address of token to receive on L2.
-    /// @param toTwineAddress The address of receiver.
-
-    event QueueTransaction(
-        TransactionType txnType,
-        uint64 nonce,
-        uint64 chainId,
-        uint64 blockNumber,
-        address l1Token,
-        address l2Token,
-        address from,
-        address toTwineAddress,
-        uint256 amount,
-        bytes message
-    );
-
-    /**********
-     * Errors *
-     **********/
-
-    /// @dev Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-
-    /**********
-     * Struct *
-     **********/
-
+    /***********
+     * Enums   *
+     ***********/
     /// @notice Transaction type in L1
     /// @param Deposit the deposit transaction type
     /// @param Withdraw the forced withdrawal transaction type
@@ -92,6 +15,9 @@ interface IL1MessageHandler {
         Message
     }
 
+    /************
+     * Structs  *
+     ************/
     /// @notice Deposit message stored data
     /// @param nonce the nonce of the message
     /// @param toAddress the Twine address to deposit into
@@ -113,18 +39,82 @@ interface IL1MessageHandler {
         bytes message;
     }
 
+    /***********
+     * Events  *
+     ***********/
+    /// @notice Emitted when a new L1 => L2  deposit transaction is appended to the queue.
+    /// @param txnType The transaction type in L1.
+    /// @param nonce The nonce of the message.
+    /// @param chainId Chain Id of this L1.
+    /// @param blockNumber The block number in which this transaction occured.
+    /// @param amount The amount of token to send.
+    /// @param l1Token Address of token to send from L1.
+    /// @param l2Token address of token to receive on L2.
+    /// @param toTwineAddress The address of receiver.
+    event MessageTransaction(
+        TransactionType txnType,
+        uint64 nonce,
+        uint64 chainId,
+        uint64 blockNumber,
+        address l1Token,
+        address l2Token,
+        address from,
+        address toTwineAddress,
+        uint256 amount,
+        bytes message
+    );
+
+    /// @notice Emitted when the messenger address is updated
+    /// @param oldMessenger The previous messenger address that was replaced
+    /// @param newMessenger The new messenger address
+    event MessengerAddressUpdated(
+        address indexed oldMessenger,
+        address indexed newMessenger
+    );
+
+    /// @notice Emitted when the chain ID is updated
+    /// @param oldChainId The previous chain ID value
+    /// @param newChainId The new chain ID
+    event ChainIdUpdated(uint64 indexed oldChainId, uint64 indexed newChainId);
+
+    /// @notice Emitted when the role manager contract address is updated
+    /// @param oldRoleManager The previous role manager contract address
+    /// @param newRoleManager The new role manager contract address
+    event RoleManagerUpdated(
+        address indexed oldRoleManager,
+        address indexed newRoleManager
+    );
+
+    /// @notice Emitted when the message queue proxy address is updated by an admin
+    /// @param oldProxy The previous message queue proxy address
+    /// @param newProxy The new message queue proxy address
+    event MessageHandlerProxyUpdated(
+        address indexed oldProxy,
+        address indexed newProxy
+    );
+
+     /*****************
+     * Custom Errors *
+     *****************/
+    /// @notice Thrown when a function is called by an address other than the authorized messenger
+    error OnlyMessenger();
+
+    /// @notice Thrown when attempting to access a message with an invalid or non-existent index
+    error InvalidIndex();
+
+    /// @notice Thrown when an invalid chain ID is provided
+    error InvalidChainId();
+
+    /// @notice Thrown when a zero address (0x0) is provided
+    error ErrorZeroAddress();
+
     /*************************
      * Public View Functions *
      *************************/
-
     /// @notice Returns the message hash.
-    function getMessageHash(uint256 messageIndex) external view returns(bytes32);
-
-      /// @notice Return the layer zero message in `queueIndex`.
-    /// @param queueIndex The index to query.
-    function getCrossDomainLayerZeroMessage(
-        uint256 queueIndex
-    ) external view returns (MessageData memory);
+    function getMessageHash(
+        uint256 messageIndex
+    ) external view returns (bytes32);
 
     /// @return Message index The index of the messages
     function messageIndex() external view returns (uint64);
@@ -132,7 +122,6 @@ interface IL1MessageHandler {
     /*****************************
      * Public Mutating Functions *
      *****************************/
-
     /// @notice Sets the messenger address
     /// @param _messenger messenger address to set
     function setMessengerAddress(address _messenger) external;
@@ -145,9 +134,9 @@ interface IL1MessageHandler {
     /// @param _roleManager role manager address to set
     function setRoleManager(address _roleManager) external;
 
-    /// @notice set the proxy Address of MessageQueue
-    /// @param _proxyAddress message queue proxy address to set
-    function setMessageQueueProxy(address _proxyAddress) external;
+    /// @notice set the proxy Address of MessageHandler
+    /// @param _proxyAddress message handler proxy address to set
+    function setMessageHandlerProxy(address _proxyAddress) external;
 
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on Twine

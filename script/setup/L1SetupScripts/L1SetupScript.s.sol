@@ -34,7 +34,7 @@ contract L1SetupScript is Script {
     address l1ERC20TokenAddress;
     address l2ERC20TokenAddress;
     address l2ETHGatewayAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
     address l1GatewayRouterAddress;
     address l1XERC20GatewayAddress;
     address twineOperationsHandler;
@@ -82,7 +82,7 @@ contract L1SetupScript is Script {
             ".L1XERC20Gateway"
         );
 
-        l1MessageQueueAddress = vm.parseJsonAddress(
+        l1MessageHandlerAddress = vm.parseJsonAddress(
             deployedL1Json,
             ".L1MessageHandler"
         );
@@ -125,7 +125,7 @@ contract L1SetupScript is Script {
         roleManager = RoleManager(roleManagerAddress);
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
-        l1MessageHandler = L1MessageHandler(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
         token = MockERC20(tokenAddress);
         chainId = 17000; //holesky chain Id
@@ -170,7 +170,7 @@ contract L1SetupScript is Script {
         //TwineChain setup
         twineChain.setRoleManagerAddress(roleManagerAddress);
         twineChain.setChainId(chainId);
-        twineChain.setMessengerQueueAddress(l1MessageQueueAddress);
+        twineChain.setMessengerQueueAddress(l1MessageHandlerAddress);
         twineChain.setVeriferAddress(verifierAddress);
         twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
         twineChain.setGatewayAddress(
@@ -189,7 +189,7 @@ contract L1SetupScript is Script {
         l1MessageHandler.setRoleManager(roleManagerAddress);
         l1MessageHandler.setChainId(chainId);
         l1MessageHandler.setMessengerAddress(l1TwineMessengerAddress);
-        l1MessageHandler.setMessageQueueProxy(l1MessageQueueAddress);
+        l1MessageHandler.setMessageHandlerProxy(l1MessageHandlerAddress);
 
         //L1GatewayRouter setup
         l1GatewayRouter.setRoleManagerAddress(roleManagerAddress);
@@ -205,7 +205,7 @@ contract L1SetupScript is Script {
         //L1TwineMessenger setup
         l1TwineMessenger.setRoleManager(roleManagerAddress);
         l1TwineMessenger.setRollupAddress(twineChainAddress);
-        l1TwineMessenger.setMessengerQueueAddress(l1MessageQueueAddress);
+        l1TwineMessenger.setMessageHandlerAddress(l1MessageHandlerAddress);
         l1TwineMessenger.setCounterpartMessenger(l2TwineMessengerAddress);
 
         //L1CustomERC20Gateway setup

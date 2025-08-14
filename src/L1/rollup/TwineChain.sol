@@ -6,13 +6,13 @@ import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 import {ITwineChain} from "./ITwineChain.sol";
-import {IL1MessageQueue} from "./IL1MessageQueue.sol";
+import {IL1MessageHandler} from "./IL1MessageHandler.sol";
 import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import {TwineChainDecoder} from "../../libraries/decoders/TwineChainDecoder.sol";
 import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {TwineChainDecoder} from "../../libraries/decoders/TwineChainDecoder.sol";
 
 /// @title TwineChain
 /// @notice This contract maintains the data for Meta Rollup.
@@ -53,8 +53,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     //gateway address of erc20 gateway
     address public ERC20Gateway;
 
-    /// @notice The address of L1MessageQueue contract.
-    address public messageQueue;
+    /// @notice The address of L1MessageHandler contract.
+    address public messageHandler;
 
     /// @notice The address of RollupVerifier.
     address public verifier;
@@ -79,7 +79,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     mapping(bytes => bool) public isL2WithdrawExecuted;
     /// @notice Mapping of executed withdraw hash to a boolean value
     mapping(bytes => bool) public isForcedWithdrawExecuted;
-     /// @notice Mapping of executed refubd hash to a boolean value
+    /// @notice Mapping of executed refubd hash to a boolean value
     mapping(bytes => bool) public isRefundExecuted;
 
     /**********************
@@ -101,14 +101,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /// @notice Initialize the storage of TwineChain.
-    /// @param _messageQueue The address of `L1MessageQueue` contract.
+    /// @param _messageHandler The address of `L1MessageHandler` contract.
     /// @param _verifier The address of zkevm verifier contract.
     function initialize(
-        address _messageQueue,
+        address _messageHandler,
         address _verifier,
         address _roleManager
     ) external initializer {
-        messageQueue = _messageQueue;
+        messageHandler = _messageHandler;
         verifier = _verifier;
         roleManager = _roleManager;
         skipVerification = true;
@@ -148,12 +148,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
     /// @inheritdoc ITwineChain
     function setMessengerQueueAddress(
-        address _messageQueue
+        address _messageHandler
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        if (_messageQueue == address(0)) {
+        if (_messageHandler == address(0)) {
             revert ErrorZeroAddress();
         }
-        messageQueue = _messageQueue;
+        messageHandler = _messageHandler;
     }
 
     /// @inheritdoc ITwineChain
@@ -172,16 +172,17 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32 _refundVKey,
         bytes32 _withdrawalVKey
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(
-            _finalizeVKey != bytes32(0) &&
-                _refundVKey != bytes32(0) &&
-                _withdrawalVKey != bytes32(0),
-            "Keys can not be zero"
-        );
+        if (
+            _finalizeVKey == bytes32(0) ||
+            _refundVKey == bytes32(0) ||
+            _withdrawalVKey == bytes32(0)
+        ) {
+            revert InvalidVerificationKeys();
+        }
+
         finalizeVKey = _finalizeVKey;
         refundVKey = _refundVKey;
         withdrawalVKey = _withdrawalVKey;
-
         emit SetProgramVkey(_finalizeVKey, _refundVKey, _withdrawalVKey);
     }
 
@@ -208,8 +209,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function commitGenesisBlock(
         bytes32 genesisBlockHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        require(!isGenesisBlockCommitted, "Genesis Block already committed");
-        require(lastFinalizedBatchNumber == 0, "Not at genesis");
+        if (isGenesisBlockCommitted) revert GenesisBlockAlreadyCommitted();
+        if (lastFinalizedBatchNumber != 0) revert NotAtGenesis();
         committedBatch[0] = genesisBlockHash;
         lastFinalizedBatchHash = genesisBlockHash;
         lastCommittedBatchNumber = 0;
@@ -223,10 +224,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         uint64 batchNumber,
         bytes32 batchHash
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        require(
-            batchNumber == lastCommittedBatchNumber + 1,
-            "Invalid batch sequence or message count"
-        );
+        if (batchNumber != lastCommittedBatchNumber + 1) {
+            revert InvalidBatchSequence();
+        }
         committedBatch[batchNumber] = batchHash;
         lastCommittedBatchNumber = batchNumber;
         emit CommitedBatch(batchNumber, chainId, block.number, batchHash);
@@ -246,26 +246,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             uint64 executedMessageCount
         ) = TwineChainDecoder.decodeBatchValues(publicValues);
 
-        require(
-            lastFinalizedBatchNumber == batchNumber - 1,
-            "Batch must be finalized sequencially"
-        );
-        require(
-            committedBatch[batchNumber] == currentBatchHash,
-            "Batch Hash Mismatch: commited batch"
-        );
-        require(
-            committedBatch[batchNumber - 1] == previousBatchHash,
-            "Batch Hash Mismatch: prev comited batch"
-        );
-        require(
-            previousBatchHash == lastFinalizedBatchHash,
-            "Batch Hash mismatch: last finalized batch hash"
-        );
-        require(
-            totalMsgHandledOnTwine <= executedMessageCount,
-            "Invalid message count"
-        );
+        if (lastFinalizedBatchNumber != batchNumber - 1) {
+            revert BatchMustBeFinalizedSequentially();
+        }
+        if (committedBatch[batchNumber] != currentBatchHash) {
+            revert CommittedBatchHashMismatch();
+        }
+        if (committedBatch[batchNumber - 1] != previousBatchHash) {
+            revert PreviousBatchHashMismatch();
+        }
+        if (previousBatchHash != lastFinalizedBatchHash) {
+            revert LastFinalizedBatchHashMismatch();
+        }
+        if (totalMsgHandledOnTwine > executedMessageCount) {
+            revert InvalidMessageCount();
+        }
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
                 finalizeVKey,
@@ -273,10 +268,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 executionProof
             );
         }
+
         lastFinalizedBatchNumber = batchNumber;
         totalMsgHandledOnTwine = executedMessageCount;
         lastFinalizedBatchHash = currentBatchHash;
         finalizedBatch[batchNumber] = currentBatchHash;
+
         emit FinalizedBatch(
             batchNumber,
             executedMessageCount,
@@ -293,23 +290,30 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata refundProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        require(!isRefundExecuted[publicValues],"Refund already processed");
+        if (isRefundExecuted[publicValues]) revert RefundAlreadyProcessed();
+
         TransactionValues memory refundValues = TwineChainDecoder
             .decodeTransactionValues(publicValues);
-        require(
-            refundValues.txnType == TransactionType.Deposit,
-            "Transaction must be deposit type"
-        );
-        require(isBatchFinalized(refundValues.batchNumber), "Batch is not finalized yet");
-        require(
-            refundValues.batchHash == finalizedBatch[refundValues.batchNumber],
-            "Given Batch hash mismatch"
-        );
-        // message hash of the particular trandaction is checked
-        require(
-            checkMessageHash(refundValues.nonce, keccak256(bytes(publicValues[40:]))),
-            "Message hash doesn't exist"
-        );
+
+        if (refundValues.txnType != TransactionType.Deposit) {
+            revert TransactionMustBeDepositType();
+        }
+        if (!isBatchFinalized(refundValues.batchNumber)) {
+            revert BatchNotFinalizedYet();
+        }
+        if (
+            refundValues.batchHash != finalizedBatch[refundValues.batchNumber]
+        ) {
+            revert BatchHashMismatch();
+        }
+        if (
+            !checkMessageHash(
+                refundValues.nonce,
+                keccak256(bytes(publicValues[40:]))
+            )
+        ) {
+            revert MessageHashNotFound();
+        }
 
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
@@ -318,8 +322,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 refundProof
             );
         }
-       
-        _executeTokenWithdrawal(
+
+        executeTokenWithdrawal(
             refundValues.nonce,
             refundValues.l1Token,
             refundValues.l2Token,
@@ -334,35 +338,41 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /* -------------------------------------------------------------------------- */
     function executeForcedWithdrawal(
         bytes calldata publicValues,
-        bytes calldata refundProof
+        bytes calldata withdrawalProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        require(!isRefundExecuted[publicValues],"Refund already processed");
+        if (isForcedWithdrawExecuted[publicValues])
+            revert WithdrawalAlreadyProcessed();
         TransactionValues memory withdrawValues = TwineChainDecoder
             .decodeTransactionValues(publicValues);
-        require(
-            withdrawValues.txnType == TransactionType.Withdraw,
-            "Transaction must be deposit type"
-        );
-        require(isBatchFinalized(withdrawValues.batchNumber), "Batch is not finalized yet");
-        require(
-            withdrawValues.batchHash == finalizedBatch[withdrawValues.batchNumber],
-            "Given Batch hash mismatch"
-        );
-        // message hash of the particular trandaction is checked
-        require(
-            checkMessageHash(withdrawValues.nonce, keccak256(bytes(publicValues[40:]))),
-            "Message hash doesn't exist"
-        );
-
+        if (withdrawValues.txnType != TransactionType.Withdraw) {
+            revert TransactionMustBeWithdrawType();
+        }
+        if (!isBatchFinalized(withdrawValues.batchNumber)) {
+            revert BatchNotFinalizedYet();
+        }
+        bytes32 cachedFinalizedBatch = finalizedBatch[
+            withdrawValues.batchNumber
+        ];
+        if (withdrawValues.batchHash != cachedFinalizedBatch) {
+            revert BatchHashMismatch();
+        }
+        if (
+            !checkMessageHash(
+                withdrawValues.nonce,
+                keccak256(bytes(publicValues[40:]))
+            )
+        ) {
+            revert MessageHashNotFound();
+        }
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
-                refundVKey,
+                withdrawalVKey,
                 publicValues,
-                refundProof
+                withdrawalProof
             );
         }
-       
-        _executeTokenWithdrawal(
+
+        executeTokenWithdrawal(
             withdrawValues.nonce,
             withdrawValues.l1Token,
             withdrawValues.l2Token,
@@ -375,14 +385,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata withdrawProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        require(!isL2WithdrawExecuted[publicValues],"Withdrawal already processed");
+        if (isL2WithdrawExecuted[publicValues])
+            revert WithdrawalAlreadyProcessed();
+
         L2WithdrawValues memory withdrawValues = TwineChainDecoder
             .decodeL2WithdrawValues(publicValues);
-        isBatchFinalized(withdrawValues.batchNumber);
-         require(
-           withdrawValues.batchHash == finalizedBatch[withdrawValues.batchNumber],
-            "Given Batch hash mismatch"
-        );
+
+        if (!isBatchFinalized(withdrawValues.batchNumber))
+            revert BatchNotFinalizedYet();
+        if (
+            withdrawValues.batchHash !=
+            finalizedBatch[withdrawValues.batchNumber]
+        ) {
+            revert BatchHashMismatch();
+        }
+
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
                 refundVKey,
@@ -390,7 +407,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 withdrawProof
             );
         }
-        _executeTokenWithdrawal(
+        executeTokenWithdrawal(
             withdrawValues.nonce,
             withdrawValues.l1Token,
             withdrawValues.l2Token,
@@ -419,11 +436,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes32 finalHashedMessage = keccak256(
             abi.encodePacked(
                 particularMessageHash,
-                IL1MessageQueue(messageQueue).getMessageHash(messageNonce - 1)
+                IL1MessageHandler(messageHandler).getMessageHash(
+                    messageNonce - 1
+                )
             )
         );
         if (
-            IL1MessageQueue(messageQueue).getMessageHash(messageNonce) ==
+            IL1MessageHandler(messageHandler).getMessageHash(messageNonce) ==
             finalHashedMessage
         ) {
             return true;
@@ -432,7 +451,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
     }
 
-    function _executeTokenWithdrawal(
+    function executeTokenWithdrawal(
         uint64 nonce,
         string memory l1Token,
         string memory l2Token,

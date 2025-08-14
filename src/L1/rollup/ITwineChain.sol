@@ -4,58 +4,9 @@ pragma solidity ^0.8.24;
 /// @title ITwineChain
 /// @notice The interface for TwineChain
 interface ITwineChain {
-    /**********
-     * Events *
-     **********/
-
-    /// @notice Emitted when a new batch is committed
-    /// @param batchNumber The number of the batch
-    /// @param chainId The id of the chain
-    /// @param batchHash The hash of the batch
-    event CommitedBatch(
-        uint64 indexed batchNumber,
-        uint64 chainId,
-        uint256 blockNumber,
-        bytes32 batchHash
-    );
-
-    event L2WithdrawExecuted(
-        uint64 nonce,
-        string indexed l1Token,
-        string l2Token,
-        string indexed receiver,
-        string indexed amount,
-        uint256 blockNumber
-    );
-
-    /// @notice Emitted when a batch is finalized
-    /// @param batchNumber The number of the batch
-    /// @param messagesHandledOnTwine The total messages of L1 handled on twine
-    /// @param batchHash The hash of the batch
-    event FinalizedBatch(
-        uint64 indexed batchNumber,
-        uint64 indexed messagesHandledOnTwine,
-        uint64 chainId,
-        uint256 blockNumber,
-        bytes32 batchHash
-    );
-
-    /// @notice Emitted when vkeys are set
-    event SetProgramVkey(
-        bytes32 executionVKey,
-        bytes32 inclusionVKey,
-        bytes32 withdrawalVKey
-    );
-    /**********
-     * Errors *
-     **********/
-
-    /// @dev Thrown when the given address is `address(0)`.
-    error ErrorZeroAddress();
-
-    /**********
-     * Enums  *
-     **********/
+    /***********
+     * Enums   *
+     ***********/
     /// @notice Types of transactions stored in the queue
     /// @param Deposit Deposit Transactions
     /// @param Withdraw Withdraw Transactions
@@ -88,6 +39,7 @@ interface ITwineChain {
         bytes32 prevBatchHash;
         bytes32 merkleRoot;
     }
+
     struct MessageValues {
         uint64 nonce;
         uint64 chainId;
@@ -99,6 +51,7 @@ interface ITwineChain {
         string amount;
         bytes message;
     }
+
     struct TransactionValues {
         bytes32 batchHash;
         uint64 batchNumber;
@@ -170,23 +123,118 @@ interface ITwineChain {
         string amount;
     }
 
+    /***********
+     * Events  *
+     ***********/
+    /// @notice Emitted when a new batch is committed
+    /// @param batchNumber The number of the batch
+    /// @param chainId The id of the chain
+    /// @param batchHash The hash of the batch
+    event CommitedBatch(
+        uint64 indexed batchNumber,
+        uint64 chainId,
+        uint256 blockNumber,
+        bytes32 batchHash
+    );
+
+    event L2WithdrawExecuted(
+        uint64 nonce,
+        string indexed l1Token,
+        string l2Token,
+        string indexed receiver,
+        string indexed amount,
+        uint256 blockNumber
+    );
+
+    /// @notice Emitted when a batch is finalized
+    /// @param batchNumber The number of the batch
+    /// @param messagesHandledOnTwine The total messages of L1 handled on twine
+    /// @param batchHash The hash of the batch
+    event FinalizedBatch(
+        uint64 indexed batchNumber,
+        uint64 indexed messagesHandledOnTwine,
+        uint64 chainId,
+        uint256 blockNumber,
+        bytes32 batchHash
+    );
+
+    /// @notice Emitted when vkeys are set
+    event SetProgramVkey(
+        bytes32 executionVKey,
+        bytes32 inclusionVKey,
+        bytes32 withdrawalVKey
+    );
+
+     /*****************
+     * Custom Errors *
+     *****************/
+    /// @notice Thrown when the given address is `address(0)`.
+    error ErrorZeroAddress();
+
+    /// @notice Thrown when verification keys are zero
+    error InvalidVerificationKeys();
+
+    /// @notice Thrown when genesis block is already committed
+    error GenesisBlockAlreadyCommitted();
+
+    /// @notice Thrown when not at genesis state
+    error NotAtGenesis();
+
+    /// @notice Thrown when batch sequence is invalid
+    error InvalidBatchSequence();
+
+    /// @notice Thrown when batch must be finalized sequentially
+    error BatchMustBeFinalizedSequentially();
+
+    /// @notice Thrown when committed batch hash doesn't match
+    error CommittedBatchHashMismatch();
+
+    /// @notice Thrown when previous batch hash doesn't match
+    error PreviousBatchHashMismatch();
+
+    /// @notice Thrown when last finalized batch hash doesn't match
+    error LastFinalizedBatchHashMismatch();
+
+    /// @notice Thrown when message count is invalid
+    error InvalidMessageCount();
+
+    /// @notice Thrown when refund is already processed
+    error RefundAlreadyProcessed();
+
+    /// @notice Thrown when withdrawal is already processed
+    error WithdrawalAlreadyProcessed();
+
+    /// @notice Thrown when transaction is not deposit type
+    error TransactionMustBeDepositType();
+
+    /// @notice Thrown when transaction is not withdraw type
+    error TransactionMustBeWithdrawType();
+
+    /// @notice Thrown when batch is not finalized yet
+    error BatchNotFinalizedYet();
+
+    /// @notice Thrown when batch hash doesn't match finalized batch
+    error BatchHashMismatch();
+
+    /// @notice Thrown when message hash doesn't exist
+    error MessageHashNotFound();
+
     /*************************
      * Public View Functions *
      *************************/
-
     /// @param batchNumber The id of the batch.
     /// @return IsFinalized weather the provided batch is finalized or not
     function isBatchFinalized(uint256 batchNumber) external view returns (bool);
 
-    /*****************************
-     * Public Mutating Functions *
-     *****************************/
     /// @return BatchNumber The batch number of latest committed batch
     function lastCommittedBatchNumber() external view returns (uint256);
 
     /// @return BlatchNumber The batch number of latest finalized batch
     function lastFinalizedBatchNumber() external view returns (uint256);
 
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
     /// @notice sets the chain id
     /// @param _chainId the chain id to set
     function setChainId(uint64 _chainId) external;
@@ -246,6 +294,16 @@ interface ITwineChain {
     function refundDeposit(
         bytes calldata publicValues,
         bytes calldata refundProof
+    ) external;
+
+    /// @notice Executes a forced withdrawal operation after validating the provided evidence.
+    /// @dev The function validates the given zk-proof (`withdrawProof`) against the public input (`publicValues`)
+    ///      to determine withdraw eligibility
+    /// @param publicValues Encoded public input data required to verify the withdrawal proof.
+    /// @param withdrawalProof Zero-knowledge proof validating the forced withdrawal request.
+    function executeForcedWithdrawal(
+        bytes calldata publicValues,
+        bytes calldata withdrawalProof
     ) external;
 
     /// @notice Executes a withdrawal operation after validating the provided evidence.

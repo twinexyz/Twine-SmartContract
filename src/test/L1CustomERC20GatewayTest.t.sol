@@ -33,6 +33,8 @@ contract L1CustomERC20GatewayTest is Test {
     bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
     bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
 
+    error ZeroAddress();
+
     function setUp() public {
         vm.startPrank(initialOwner);
         // Deploy tokens
@@ -157,7 +159,7 @@ contract L1CustomERC20GatewayTest is Test {
 
     function testSetRoleManagerAddressZeroAddress() public {
         vm.startPrank(initialOwner);
-        vm.expectRevert("value cann't be zero");
+        vm.expectRevert(ZeroAddress.selector);
         gateway.setRoleManagerAddress(address(0));
         vm.stopPrank();
     }
@@ -180,7 +182,7 @@ contract L1CustomERC20GatewayTest is Test {
 
     function testSetGatewayRouterZeroAddress() public {
         vm.startPrank(initialOwner);
-        vm.expectRevert("value cann't be zero");
+        vm.expectRevert(ZeroAddress.selector);
         gateway.setGatewayRouter(address(0));
         vm.stopPrank();
     }
@@ -203,7 +205,7 @@ contract L1CustomERC20GatewayTest is Test {
 
     function testSetTwineMessengerZeroAddress() public {
         vm.startPrank(initialOwner);
-        vm.expectRevert("value cann't be zero");
+        vm.expectRevert(ZeroAddress.selector);
         gateway.setTwineMessenger(address(0));
         vm.stopPrank();
     }
