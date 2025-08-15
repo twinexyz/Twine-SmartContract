@@ -101,12 +101,9 @@ contract L2TwineMessenger is
     }
 
     function setSP1Helios(
-        address _sp1Helios 
+        address _sp1Helios
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(
-            _sp1Helios != address(0),
-            "_sp1Helios address cannot be zero"
-        );
+        require(_sp1Helios != address(0), "_sp1Helios address cannot be zero");
         sp1Helios = _sp1Helios;
     }
 
@@ -239,15 +236,17 @@ contract L2TwineMessenger is
 
         bytes memory precompile_input = abi.encode(
             chainId,
-            executionHeight,
-            stateRoot,
-            messageData,
-            serializedProof
+            abi.encode(executionHeight, stateRoot, messageData, serializedProof)
         );
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(precompile_input);
         require(txnSuccess, "Ethereum Transactions failed!");
-        handleBridgeTransactions(chainId, ChainType.Ethereum, ethMessageHash, txnOutput);
+        handleBridgeTransactions(
+            chainId,
+            ChainType.Ethereum,
+            ethMessageHash,
+            txnOutput
+        );
     }
 
     function handleBridgeTransactions(
@@ -264,10 +263,7 @@ contract L2TwineMessenger is
         bool shouldMint = l1Txn.tokenTxn.deposit;
 
         if (shouldMint) {
-            _checkAndUpdateNonce(
-                chainId,
-                nonce
-            );
+            _checkAndUpdateNonce(chainId, nonce);
 
             try
                 this.mintAndCall(
@@ -279,21 +275,22 @@ contract L2TwineMessenger is
                 )
             {
                 // success
-                ITwineSystemStorage(systemStorageContract).setMessageExecuted(bridgeMessageHash);
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash
+                );
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;
             }
         } else {
-            _checkAndUpdateNonce(
-                chainId,
-                nonce
-            );
+            _checkAndUpdateNonce(chainId, nonce);
 
             try ITwineERC20(token).burn(to, amount) {
                 // Success
-                ITwineSystemStorage(systemStorageContract).setMessageExecuted(bridgeMessageHash);
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash
+                );
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
@@ -304,17 +301,12 @@ contract L2TwineMessenger is
         emit L1TransactionsHandled(chainId, 1, nonce, precompileOutput);
     }
 
-    function _checkAndUpdateNonce(
-        uint256 chainId,
-        uint256 nonce
-    ) internal {
+    function _checkAndUpdateNonce(uint256 chainId, uint256 nonce) internal {
         uint256 expectedNonce = ITwineSystemStorage(systemStorageContract)
             .getLastMessageExecuted(chainId);
         require(expectedNonce + 1 == nonce, "Invalid nonce");
 
-        ITwineSystemStorage(systemStorageContract).increaseNonce(
-            chainId
-        );
+        ITwineSystemStorage(systemStorageContract).increaseNonce(chainId);
     }
 
     function mintAndCall(
