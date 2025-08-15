@@ -5,6 +5,7 @@ import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
+import {ISP1Helios} from "./ISP1Helios.sol";
 import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
@@ -39,6 +40,9 @@ contract L2TwineMessenger is
 
     /// @notice The address of bridging Precompile
     address public bridgingPrecompileAddress;
+
+    /// @notice Address of sp1 helios
+    address public sp1Helios;
 
     /// @notice Mapping to store consensus verification keys of L1s
     mapping(uint256 => bytes32) public vKeys;
@@ -94,6 +98,16 @@ contract L2TwineMessenger is
         bool status
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         skipVerification = status;
+    }
+
+    function setSP1Helios(
+        address _sp1Helios 
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            _sp1Helios != address(0),
+            "_sp1Helios address cannot be zero"
+        );
+        sp1Helios = _sp1Helios;
     }
 
     function setSp1VerifierAddress(
@@ -199,41 +213,47 @@ contract L2TwineMessenger is
 
     function handleEthereumProofAndTransactions(
         uint256 chainId,
-        uint256 height,
-        bytes32 receiptRoot,
-        bytes memory consensusProof,
-        bytes memory ethereumTransactions
+        uint256 executionHeight,
+        bytes memory messageData,
+        bytes memory serializedProof
     )
         external
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        // For testing purposes only. TODO: Remove before deploying to production.
-        if (skipVerification) {
-            ITwineSystemStorage(systemStorageContract).setBlockReceipts(
-                chainId,
-                height,
-                receiptRoot
-            );
-        }
-        if (consensusProof.length > 0) {
-            _verifyConsensusProof(chainId, consensusProof);
-        }
+        uint256 latest_block = ISP1Helios(sp1Helios)
+            .latestExecutionBlockNumber();
+        require(latest_block >= executionHeight, "Block not yet provable");
 
-        if (ethereumTransactions.length > 0) {
-            bytes memory data = abi.encode(chainId, ethereumTransactions);
-            (
-                bool txnSuccess,
-                bytes memory txnOutput
-            ) = bridgingPrecompileAddress.call(data);
-            require(txnSuccess, "Ethereum Transactions failed!");
-            handleBridgeTransactions(chainId, ChainType.Ethereum, txnOutput);
-        }
+        bytes32 messageHash = keccak256(messageData);
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
+                messageHash
+            ),
+            "Message already executed"
+        );
+
+        bytes32 stateRoot = ISP1Helios(sp1Helios).executionStateRoots(
+            executionHeight
+        );
+
+        bytes memory precompile_input = abi.encode(
+            chainId,
+            executionHeight,
+            stateRoot,
+            messageData,
+            serializedProof
+        );
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(data);
+        require(txnSuccess, "Ethereum Transactions failed!");
+        handleBridgeTransactions(chainId, ChainType.Ethereum, messageHash, txnOutput);
     }
 
     function handleBridgeTransactions(
         uint256 chainId,
         ChainType chainType,
+        bytes32 messageHash,
         bytes memory precompileOutput
     ) internal {
         L1Txns memory l1Txn = abi.decode(precompileOutput, (L1Txns));
@@ -260,6 +280,7 @@ contract L2TwineMessenger is
                 )
             {
                 // success
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(messageHash);
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
@@ -274,6 +295,7 @@ contract L2TwineMessenger is
 
             try ITwineERC20(token).burn(to, amount) {
                 // Success
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(messageHash);
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
