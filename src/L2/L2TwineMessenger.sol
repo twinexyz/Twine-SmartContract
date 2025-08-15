@@ -208,7 +208,7 @@ contract L2TwineMessenger is
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(output);
         require(txnSuccess, "Failed executing transactions");
-        handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
+        // handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
     }
 
     function handleEthereumProofAndTransactions(
@@ -225,10 +225,10 @@ contract L2TwineMessenger is
             .latestExecutionBlockNumber();
         require(latest_block >= executionHeight, "Block not yet provable");
 
-        bytes32 messageHash = keccak256(messageData);
+        bytes32 ethMessageHash = keccak256(messageData);
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
-                messageHash
+                ethMessageHash
             ),
             "Message already executed"
         );
@@ -245,15 +245,15 @@ contract L2TwineMessenger is
             serializedProof
         );
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
-            .call(data);
+            .call(precompile_input);
         require(txnSuccess, "Ethereum Transactions failed!");
-        handleBridgeTransactions(chainId, ChainType.Ethereum, messageHash, txnOutput);
+        handleBridgeTransactions(chainId, ChainType.Ethereum, ethMessageHash, txnOutput);
     }
 
     function handleBridgeTransactions(
         uint256 chainId,
         ChainType chainType,
-        bytes32 messageHash,
+        bytes32 bridgeMessageHash,
         bytes memory precompileOutput
     ) internal {
         L1Txns memory l1Txn = abi.decode(precompileOutput, (L1Txns));
@@ -266,8 +266,7 @@ contract L2TwineMessenger is
         if (shouldMint) {
             _checkAndUpdateNonce(
                 chainId,
-                nonce,
-                ITwineSystemStorage.L1TxnType.Deposit
+                nonce
             );
 
             try
@@ -280,7 +279,7 @@ contract L2TwineMessenger is
                 )
             {
                 // success
-                ITwineSystemStorage(systemStorageContract).setMessageExecuted(messageHash);
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(bridgeMessageHash);
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
@@ -289,13 +288,12 @@ contract L2TwineMessenger is
         } else {
             _checkAndUpdateNonce(
                 chainId,
-                nonce,
-                ITwineSystemStorage.L1TxnType.ForcedWithdraw
+                nonce
             );
 
             try ITwineERC20(token).burn(to, amount) {
                 // Success
-                ITwineSystemStorage(systemStorageContract).setMessageExecuted(messageHash);
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(bridgeMessageHash);
             } catch (bytes memory lowLevelError) {
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
@@ -308,16 +306,14 @@ contract L2TwineMessenger is
 
     function _checkAndUpdateNonce(
         uint256 chainId,
-        uint256 nonce,
-        ITwineSystemStorage.L1TxnType txnType
+        uint256 nonce
     ) internal {
         uint256 expectedNonce = ITwineSystemStorage(systemStorageContract)
-            .getLastMessageExecuted(chainId, txnType);
+            .getLastMessageExecuted(chainId);
         require(expectedNonce + 1 == nonce, "Invalid nonce");
 
         ITwineSystemStorage(systemStorageContract).increaseNonce(
-            chainId,
-            txnType
+            chainId
         );
     }
 
