@@ -253,19 +253,13 @@ contract L2TwineMessenger is
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        require(
-            messageData.txnType == TransactionType.Deposit,
-            "Transaction should be deposit type"
-        );
         bytes32 calculatedMessageHash = keccak256(abi.encode(messageData));
-        if (messageData.chainId != 900) {
-            require(
-                !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
-                    calculatedMessageHash
-                ),
-                "Message already executed"
-            );
-        }
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
+                calculatedMessageHash
+            ),
+            "Message already executed"
+        );
         bytes memory txnOutput = abi.encode(createL1Txns(messageData));
 
         handleBridgeTransactions(
