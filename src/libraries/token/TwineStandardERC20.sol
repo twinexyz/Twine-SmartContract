@@ -120,7 +120,7 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
         external 
         notZeroAddress(_from)
         notZeroAmount(_amount) 
-        onlyRole(roleManager.TWINE_TOKENS_MINTER())
+        onlyRole(roleManager.TWINE_TOKENS_BURNER())
     {
         _burn(_from, _amount);
         emit TokensBurned(_from, _amount, _msgSender());
