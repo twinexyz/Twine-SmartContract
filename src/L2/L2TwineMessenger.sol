@@ -21,6 +21,7 @@ contract L2TwineMessenger is
     IL2TwineMessenger,
     ZstdCompressor
 {
+    using TypeConversionLib for string;
     using TypeConversionLib for address;
 
     /// @notice SP1 Verifier Address
@@ -202,9 +203,9 @@ contract L2TwineMessenger is
             );
         }
 
-        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
-            .call(output);
-        require(txnSuccess, "Failed executing transactions");
+        // (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+        //     .call(output);
+        // require(txnSuccess, "Failed executing transactions");
         // handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
     }
 
@@ -241,17 +242,41 @@ contract L2TwineMessenger is
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(precompile_input);
         require(txnSuccess, "Ethereum Transactions failed!");
+        handleBridgeTransactions(chainId, ethMessageHash, txnOutput);
+    }
+
+    /// @notice This function is exclusively for mock testing and should never be deployed
+    function handleChainTransactions(
+        MessageData memory messageData
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        require(
+            messageData.txnType == TransactionType.Deposit,
+            "Transaction should be deposit type"
+        );
+        bytes32 calculatedMessageHash = keccak256(abi.encode(messageData));
+        if (messageData.chainId != 900) {
+            require(
+                !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
+                    calculatedMessageHash
+                ),
+                "Message already executed"
+            );
+        }
+        bytes memory txnOutput = abi.encode(createL1Txns(messageData));
+
         handleBridgeTransactions(
-            chainId,
-            ChainType.Ethereum,
-            ethMessageHash,
+            messageData.chainId,
+            calculatedMessageHash,
             txnOutput
         );
     }
 
     function handleBridgeTransactions(
         uint256 chainId,
-        ChainType chainType,
         bytes32 bridgeMessageHash,
         bytes memory precompileOutput
     ) internal {
@@ -265,15 +290,7 @@ contract L2TwineMessenger is
         if (shouldMint) {
             _checkAndUpdateNonce(chainId, nonce);
 
-            try
-                this.mintAndCall(
-                    chainType,
-                    token,
-                    to,
-                    amount,
-                    l1Txn.contractCallData
-                )
-            {
+            try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
                 // success
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
                     bridgeMessageHash
@@ -310,7 +327,6 @@ contract L2TwineMessenger is
     }
 
     function mintAndCall(
-        ChainType chainType,
         address token,
         address to,
         uint256 amount,
@@ -321,10 +337,8 @@ contract L2TwineMessenger is
         ITwineERC20(token).mint(to, amount);
 
         if (contractCallData.length > 0) {
-            if (chainType == ChainType.Solana) {
-                bytes memory output = _decompress(contractCallData);
-                contractCallData = output;
-            }
+            bytes memory output = _decompress(contractCallData);
+            contractCallData = output;
 
             ContractCall[] memory contractCallsArray = abi.decode(
                 contractCallData,
@@ -446,5 +460,26 @@ contract L2TwineMessenger is
                     gasLimit
                 )
             );
+    }
+
+    function createL1Txns(
+        MessageData memory messageData
+    ) internal pure returns (L1Txns memory) {
+        return
+            L1Txns({
+                nonce: messageData.nonce,
+                tokenTxn: TokenTxn({
+                    token: messageData.l2Token.stringToAddress(),
+                    receiver: messageData.toAddress.stringToAddress(),
+                    deposit: true,
+                    amount: messageData.amount.stringToUint()
+                }),
+                l1Metadata: L1Metadata({
+                    blockHeight: messageData.blockNumber,
+                    fromAddress: messageData.fromAddress,
+                    l1Token: messageData.l1Token
+                }),
+                contractCallData: messageData.message
+            });
     }
 }
