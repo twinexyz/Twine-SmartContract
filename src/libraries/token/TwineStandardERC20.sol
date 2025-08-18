@@ -10,17 +10,15 @@ import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/
  * @dev Upgradeable ERC20 token
  */
 contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
-    
     /*************
      * Variables *
      *************/
-    
+
     /// @notice Number of decimal places for the token
     uint8 public decimals_;
-    
+
     /// @notice Address of the role manager contract
     IRoleManager public roleManager;
-
 
     /***********
      * Errors  *
@@ -30,7 +28,7 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
 
     /// @notice Thrown when a zero address is provided where not allowed
     error ZeroAddress();
-    
+
     /// @notice Thrown when a zero amount is provided where not allowed
     error ZeroAmount();
 
@@ -38,7 +36,7 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
      * Function Modifiers *
      **********************/
 
-     /**
+    /**
      * @notice Restricts function access to addresses with specific roles
      * @param role The role hash required to call the function
      */
@@ -47,7 +45,7 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
         _;
     }
 
-     /**
+    /**
      * @notice Validates that an address is not zero
      * @param addr The address to validate
      */
@@ -65,6 +63,11 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        // Disable initializers in the implementation contract
+        _disableInitializers();
+    }
 
     /***********************
      * Initialize Function *
@@ -81,7 +84,7 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
     function initialize(
         string memory _name,
         string memory _symbol,
-        uint8 _decimals, 
+        uint8 _decimals,
         address _roleManager
     ) external initializer {
         // Validate inputs
@@ -90,36 +93,33 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
         }
         if (_roleManager == address(0)) revert ZeroAddress();
         decimals_ = _decimals;
-        roleManager = IRoleManager(_roleManager);  
+        roleManager = IRoleManager(_roleManager);
         __ERC20_init(_name, _symbol);
-         // Disable initializers in the implementation contract
-        _disableInitializers();
     }
 
     /**********************
      * External Functions *
      **********************/
     function mint(
-        address _to, 
+        address _to,
         uint256 _amount
-    ) 
-        external 
+    )
+        external
         notZeroAddress(_to)
         notZeroAmount(_amount)
         onlyRole(roleManager.TWINE_TOKENS_MINTER())
-        
     {
         _mint(_to, _amount);
         emit TokensMinted(_to, _amount, _msgSender());
     }
 
     function burn(
-        address _from, 
+        address _from,
         uint256 _amount
-    ) 
-        external 
+    )
+        external
         notZeroAddress(_from)
-        notZeroAmount(_amount) 
+        notZeroAmount(_amount)
         onlyRole(roleManager.TWINE_TOKENS_BURNER())
     {
         _burn(_from, _amount);
