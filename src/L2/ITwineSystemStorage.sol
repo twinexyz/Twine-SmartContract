@@ -2,6 +2,13 @@
 pragma solidity ^0.8.24;
 
 interface ITwineSystemStorage {
+    /// @notice Status of L1 Message
+    enum L1MessageStatus {
+        Unprocessed,
+        Executed,
+        Failed
+    }
+
     /// @notice Get current nonce for chain id and message type
     /// @param _chainId The ID of the chain to get nonce
     /// @return nonce Nonce for that chainId and txnType
@@ -34,14 +41,22 @@ interface ITwineSystemStorage {
     /// @param chainId The ID of the chain for which the nonce is being incremented.
     function increaseNonce(uint256 chainId) external;
 
+    /// @notice Get status of a message on Twine
+    /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
+    /// @return L1MessageStatus  The status of messageHash
+    function getMessageStatus(
+        bytes32 messageHash
+    ) external view returns (L1MessageStatus);
+
     /// @notice Check if a L1 message was executed on Twine
     /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
-    /// @return bool If the `L1` message with `messageHash` was executed
-    function isMessageExecuted(
+    /// @return bool If the message with hash `messageHash` was executed, successfully or execution failed on twine
+    function isMessageHandled(
         bytes32 messageHash
     ) external view returns (bool);
 
     /// @notice Set Message Executed
     /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
-    function setMessageExecuted(bytes32 messageHash) external;
+    /// @param status The status of message, if it was executed or failed
+    function setMessageExecuted(bytes32 messageHash, L1MessageStatus status) external;
 }

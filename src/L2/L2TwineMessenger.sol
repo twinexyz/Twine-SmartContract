@@ -225,7 +225,7 @@ contract L2TwineMessenger is
 
         bytes32 ethMessageHash = keccak256(messageData);
         require(
-            !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 ethMessageHash
             ),
             "Message already executed"
@@ -257,7 +257,7 @@ contract L2TwineMessenger is
             messageData
         );
         require(
-            !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 calculatedMessageHash
             ),
             "Message already executed"
@@ -289,9 +289,12 @@ contract L2TwineMessenger is
             try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
                 // success
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
-                    bridgeMessageHash
+                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Executed
                 );
             } catch (bytes memory lowLevelError) {
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Failed
+                );
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;
@@ -302,9 +305,12 @@ contract L2TwineMessenger is
             try ITwineERC20(token).burn(to, amount) {
                 // Success
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
-                    bridgeMessageHash
+                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Executed
                 );
             } catch (bytes memory lowLevelError) {
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Failed
+                );
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;

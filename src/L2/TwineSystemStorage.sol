@@ -24,7 +24,7 @@ contract TwineSystemStorage is ITwineSystemStorage {
 
     /// @notice Mapping to track if a L1 message was executed
     /// @dev The hash of the message sent from L1 is the key
-    mapping(bytes32 => bool) private l1MessageExecuted;
+    mapping(bytes32 => L1MessageStatus) private l1MessageExecuted;
 
     /// @notice Mapping to store the bank hashes for each slot number on each chain.
     /// @notice This is done for solana or solana like chains, not needed for ethereum
@@ -56,19 +56,14 @@ contract TwineSystemStorage is ITwineSystemStorage {
         twineMessenger = _twineMessenger;
     }
 
-    /// @notice Get current nonce for chain id and message type
-    /// @param _chainId The ID of the chain to get nonce
-    /// @return nonce Nonce for that chainId and txnType
+    /// @inheritdoc ITwineSystemStorage
     function getLastMessageExecuted(
         uint256 _chainId
     ) external view returns (uint256) {
         return l1MessageExecutedCount[_chainId];
     }
 
-    /// @notice Get bank hash of chain with chain id `_chainId` and height `_slot`
-    /// @param _chainId The ID of the chain to get nonce
-    /// @param _slot The block height to fetch bank hash at
-    /// @return bankHash Bank Hash of chain at slot
+    /// @inheritdoc ITwineSystemStorage
     function getBankHash(
         uint256 _chainId,
         uint256 _slot
@@ -76,11 +71,7 @@ contract TwineSystemStorage is ITwineSystemStorage {
         return bankHashes[_chainId][_slot];
     }
 
-    /// @notice Sets the bank hash for a specific slot on a specific chain.
-    /// @dev Can only be called by the authorized `twineMessenger`.
-    /// @param _chainId The ID of the chain for which the bank hash is being stored.
-    /// @param _slot Slot for which the bank hash is being stored.
-    /// @param _bankHash The bank hash for slot
+    /// @inheritdoc ITwineSystemStorage
     function setBankHash(
         uint256 _chainId,
         uint256 _slot,
@@ -89,27 +80,31 @@ contract TwineSystemStorage is ITwineSystemStorage {
         bankHashes[_chainId][_slot] = _bankHash;
     }
 
-    /// @notice Increments the nonce for a specific transaction type on a specific chain.
-    /// @dev Can only be called by the authorized `twineMessenger`.
-    /// @param _chainId The ID of the chain for which the nonce is being incremented.
+    /// @inheritdoc ITwineSystemStorage
     function increaseNonce(uint256 _chainId) external onlyTwineMessenger {
         l1MessageExecutedCount[_chainId] += 1;
     }
 
-    /// @notice Check if a L1 message was executed on Twine
-    /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
-    /// @return bool If the `L1` message with `messageHash` was executed
-    function isMessageExecuted(
+    /// @inheritdoc ITwineSystemStorage
+    function getMessageStatus(
         bytes32 messageHash
-    ) external view returns (bool) {
+    ) external view returns (L1MessageStatus) {
         return l1MessageExecuted[messageHash];
     }
 
-    /// @notice Set Message Executed
-    /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
-    function setMessageExecuted(
+    /// @inheritdoc ITwineSystemStorage
+    function isMessageHandled(
         bytes32 messageHash
+    ) external view returns (bool) {
+        bool unprocessed = l1MessageExecuted[messageHash] == L1MessageStatus.Unprocessed;
+        return !unprocessed;
+    }
+
+    /// @inheritdoc ITwineSystemStorage
+    function setMessageExecuted(
+        bytes32 messageHash,
+        L1MessageStatus status
     ) external onlyTwineMessenger {
-        l1MessageExecuted[messageHash] = true;
+        l1MessageExecuted[messageHash] = status;
     }
 }
