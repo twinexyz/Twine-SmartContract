@@ -253,7 +253,9 @@ contract L2TwineMessenger is
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        bytes32 calculatedMessageHash = keccak256(abi.encode(messageData));
+        bytes32 calculatedMessageHash = computeChainTransactionHash(
+            messageData
+        );
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageExecuted(
                 calculatedMessageHash
@@ -475,5 +477,24 @@ contract L2TwineMessenger is
                 }),
                 contractCallData: messageData.message
             });
+    }
+    function computeChainTransactionHash(
+        MessageData memory messageData
+    ) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    messageData.txnType,
+                    messageData.nonce,
+                    messageData.chainId,
+                    messageData.blockNumber,
+                    messageData.fromAddress,
+                    messageData.toAddress,
+                    messageData.l1Token,
+                    messageData.l2Token,
+                    messageData.amount,
+                    keccak256(messageData.message)
+                )
+            );
     }
 }
