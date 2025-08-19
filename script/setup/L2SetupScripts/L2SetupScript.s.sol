@@ -13,6 +13,7 @@ import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
 import {TwineSystemStorage} from "../../../src/L2/TwineSystemStorage.sol";
+import {TwineStandardERC20} from "../../../src/libraries/token/TwineStandardERC20.sol";
 
 contract L2SetupScript is Script {
     RoleManager roleManager;
@@ -22,8 +23,8 @@ contract L2SetupScript is Script {
     L2CustomERC20Gateway l2CustomERC20Gateway;
     TwineSystemStorage twineSystemStorage;
     MockERC20_9Decimals solToken;
-    MockERC20 ethToken;
-    MockERC20 fauxCoin;
+    TwineStandardERC20 ethToken;
+    TwineStandardERC20 fauxCoin;
 
     uint256 chainIdEth;
     uint256 chainIdSolana;
@@ -122,8 +123,8 @@ contract L2SetupScript is Script {
         l2GatewayRouter = L2GatewayRouter(l2GatewayRouterAddress);
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
         solToken = MockERC20_9Decimals(solTokenAddress);
-        ethToken = MockERC20(ethTokenAddress);
-        fauxCoin = MockERC20(fauxCoinAddress);
+        ethToken = TwineStandardERC20(ethTokenAddress);
+        fauxCoin = TwineStandardERC20(fauxCoinAddress);
         consensusPrecompileAddress = address(0x15);
         bridgingPrecompileAddress = address(0x16);
         twineSystemStorageAddress = address(0x17);
@@ -164,22 +165,12 @@ contract L2SetupScript is Script {
             keccak256("TWINE_MESSENGER"),
             l2TwineMessengerAddress
         );
-        roleManager.grantRole(
-            keccak256("TWINE_TOKENS_MINTER"),
-            l2TwineMessengerAddress
-        );
-        roleManager.checkRole(
-            keccak256("TWINE_TOKENS_MINTER"),
-            l2TwineMessengerAddress
-        );
-        roleManager.grantRole(
-            keccak256("TWINE_TOKENS_BURNER"),
-            l2CustomERC20GatewayAddress
-        );
-        roleManager.checkRole(
-            keccak256("TWINE_TOKENS_BURNER"),
-            l2CustomERC20GatewayAddress
-        );
+        bytes32 tokensMinterRole = roleManager.TWINE_TOKENS_MINTER();
+        roleManager.grantRole(tokensMinterRole, l2TwineMessengerAddress);
+        roleManager.checkRole(tokensMinterRole, l2TwineMessengerAddress);
+        bytes32 tokensBurnerRole = roleManager.TWINE_TOKENS_BURNER();
+        roleManager.grantRole(tokensBurnerRole, l2CustomERC20GatewayAddress);
+        roleManager.checkRole(tokensBurnerRole, l2CustomERC20GatewayAddress);
 
         //L2ETHGateway setup
         l2ETHGateway.setRoleManagerAddress(roleManagerAddress);
