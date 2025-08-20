@@ -292,8 +292,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         if (isRefundExecuted[publicValues]) revert RefundAlreadyProcessed();
 
-        TransactionValues memory refundValues = TwineChainDecoder
-            .decodeTransactionValues(publicValues);
+        L1OriginTxPublicValues memory refundValues = TwineChainDecoder
+            .decodeL1OriginTxnPublicValues(publicValues);
 
         if (refundValues.txnType != TransactionType.Deposit) {
             revert TransactionMustBeDepositType();
@@ -342,8 +342,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         if (isForcedWithdrawExecuted[publicValues])
             revert WithdrawalAlreadyProcessed();
-        TransactionValues memory withdrawValues = TwineChainDecoder
-            .decodeTransactionValues(publicValues);
+        L1OriginTxPublicValues memory withdrawValues = TwineChainDecoder
+            .decodeL1OriginTxnPublicValues(publicValues);
         if (withdrawValues.txnType != TransactionType.Withdraw) {
             revert TransactionMustBeWithdrawType();
         }

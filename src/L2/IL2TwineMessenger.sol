@@ -3,11 +3,6 @@ pragma solidity ^0.8.24;
 
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
-    enum TransactionType {
-        Deposit,
-        Withdraw,
-        Message
-    }
     struct TokenTxn {
         address token;
         address receiver;
@@ -29,18 +24,6 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         TokenTxn tokenTxn;
         L1Metadata l1Metadata;
         bytes contractCallData;
-    }
-    struct MessageData {
-        TransactionType txnType;
-        uint64 nonce;
-        uint64 chainId;
-        uint64 blockNumber;
-        string fromAddress;
-        string toAddress;
-        string l1Token;
-        string l2Token;
-        string amount;
-        bytes message;
     }
 
     enum ChainType {

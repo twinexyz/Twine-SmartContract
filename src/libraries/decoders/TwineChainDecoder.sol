@@ -28,11 +28,11 @@ library TwineChainDecoder {
             )
         }
     }
-    /// @dev Decode public values for refund
+    /// @dev Decode public values for refund and forced withdrawals
     /// @notice It expects address to have `0x` prefix
-    function decodeTransactionValues(
+    function decodeL1OriginTxnPublicValues(
         bytes calldata publicValues
-    ) internal pure returns (ITwineChain.TransactionValues memory transactionValues) {
+    ) internal pure returns (ITwineChain.L1OriginTxPublicValues memory transactionValues) {
         require(publicValues.length >= 265, "data too short");
 
         transactionValues.batchHash = bytes32(publicValues[0:32]);
