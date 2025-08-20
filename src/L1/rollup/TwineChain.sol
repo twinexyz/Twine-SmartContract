@@ -309,7 +309,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if (
             !checkMessageHash(
                 refundValues.nonce,
-                keccak256(bytes(publicValues[40:]))
+                computeTransactionHash(refundValues)
             )
         ) {
             revert MessageHashNotFound();
@@ -359,7 +359,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if (
             !checkMessageHash(
                 withdrawValues.nonce,
-                keccak256(bytes(publicValues[40:]))
+                computeTransactionHash(withdrawValues)
             )
         ) {
             revert MessageHashNotFound();
@@ -476,5 +476,25 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                 nonce
             );
         }
+    }
+
+    function computeTransactionHash(
+        L1OriginTxPublicValues memory transactionValues
+    ) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    transactionValues.txnType,
+                    transactionValues.nonce,
+                    transactionValues.chainId,
+                    transactionValues.blockNumber,
+                    transactionValues.fromAddress,
+                    transactionValues.toAddress,
+                    transactionValues.l1Token,
+                    transactionValues.l2Token,
+                    transactionValues.amount,
+                    keccak256(transactionValues.message)
+                )
+            );
     }
 }
