@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import { TwineTypes } from "../../libraries/types/Types.sol";
+import { TwineTypes } from "../../libraries/types/TwineTypes.sol";
 
 interface IL1MessageHandler {
     /***********

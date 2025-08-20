@@ -10,7 +10,7 @@ import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
-import {TwineTypes} from "../libraries/types/Types.sol";
+import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";

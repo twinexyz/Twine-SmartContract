@@ -5,7 +5,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 import {IL1MessageHandler} from "./IL1MessageHandler.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import { TwineTypes } from "../../libraries/types/Types.sol";
+import { TwineTypes } from "../../libraries/types/TwineTypes.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     using TypeConversionLib for string;
