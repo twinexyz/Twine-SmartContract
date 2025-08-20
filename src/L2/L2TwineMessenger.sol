@@ -10,6 +10,7 @@ import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {TwineTypes} from "../libraries/types/Types.sol";
 import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
@@ -247,7 +248,7 @@ contract L2TwineMessenger is
 
     /// @notice This function is exclusively for mock testing and should never be deployed
     function handleChainTransactions(
-        MessageData memory messageData
+        TwineTypes.MessageData memory messageData
     )
         external
         nonReentrant
@@ -465,7 +466,7 @@ contract L2TwineMessenger is
     }
 
     function createL1Txns(
-        MessageData memory messageData
+        TwineTypes.MessageData memory messageData
     ) internal pure returns (L1Txns memory) {
         return
             L1Txns({
@@ -485,7 +486,7 @@ contract L2TwineMessenger is
             });
     }
     function computeChainTransactionHash(
-        MessageData memory messageData
+        TwineTypes.MessageData memory messageData
     ) internal pure returns (bytes32) {
         return
             keccak256(

@@ -5,6 +5,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 import {IL1MessageHandler} from "./IL1MessageHandler.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import { TwineTypes } from "../../libraries/types/Types.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     using TypeConversionLib for string;
@@ -172,8 +173,8 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
             ++messageIndex;
         }
 
-        MessageData memory depositMessageData = MessageData({
-            txnType: TransactionType.Deposit,
+        TwineTypes.MessageData memory depositMessageData = TwineTypes.MessageData({
+            txnType: TwineTypes.TransactionType.Deposit,
             nonce: messageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
@@ -193,7 +194,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
 
         // emit deposit event
         emit MessageTransaction(
-            TransactionType.Deposit,
+            TwineTypes.TransactionType.Deposit,
             messageIndex,
             chainId,
             uint64(block.number),
@@ -218,8 +219,8 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
             ++messageIndex;
         }
 
-        MessageData memory withdrawMessageData = MessageData({
-            txnType: TransactionType.Withdraw,
+        TwineTypes.MessageData memory withdrawMessageData = TwineTypes.MessageData({
+            txnType: TwineTypes.TransactionType.Withdraw,
             nonce: messageIndex,
             chainId: chainId,
             blockNumber: uint64(block.number),
@@ -239,7 +240,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
 
         // emit event
         emit MessageTransaction(
-            TransactionType.Withdraw,
+            TwineTypes.TransactionType.Withdraw,
             messageIndex,
             chainId,
             uint64(block.number),
@@ -253,7 +254,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     }
 
     function computeTransactionHash(
-        MessageData memory transactionData
+        TwineTypes.MessageData memory transactionData
     ) internal pure returns (bytes32) {
         return
             keccak256(
