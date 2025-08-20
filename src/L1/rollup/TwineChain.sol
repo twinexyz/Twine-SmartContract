@@ -293,7 +293,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if (isRefundExecuted[publicValues]) revert RefundAlreadyProcessed();
 
         L1OriginatedTransactionPublicValueStruct memory refundValues = TwineChainDecoder
-            .decodeTransactionValues(publicValues);
+            .decodeL1OriginatedTransactionValues(publicValues);
 
         if (refundValues.txnType != TransactionType.Deposit) {
             revert TransactionMustBeDepositType();
@@ -343,7 +343,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if (isForcedWithdrawExecuted[publicValues])
             revert WithdrawalAlreadyProcessed();
         L1OriginatedTransactionPublicValueStruct memory withdrawValues = TwineChainDecoder
-            .decodeTransactionValues(publicValues);
+            .decodeL1OriginatedTransactionValues(publicValues);
         if (withdrawValues.txnType != TransactionType.Withdraw) {
             revert TransactionMustBeWithdrawType();
         }

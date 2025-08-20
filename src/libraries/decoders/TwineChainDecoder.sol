@@ -28,9 +28,9 @@ library TwineChainDecoder {
             )
         }
     }
-    /// @dev Decode public values for refund
+    /// @dev Decode public values for refund and forced withdrawals
     /// @notice It expects address to have `0x` prefix
-    function decodeTransactionValues(
+    function decodeL1OriginatedTransactionValues(
         bytes calldata publicValues
     ) internal pure returns (ITwineChain.L1OriginatedTransactionPublicValueStruct memory transactionValues) {
         require(publicValues.length >= 265, "data too short");
