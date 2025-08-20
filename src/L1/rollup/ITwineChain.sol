@@ -51,7 +51,7 @@ interface ITwineChain {
         string amount;
         bytes message;
     }
-    struct L1RefundPublicValueStruct {
+    struct L1OriginatedTransactionPublicValueStruct {
         bytes32 batchHash;
         uint64 batchNumber;
         TransactionType txnType;

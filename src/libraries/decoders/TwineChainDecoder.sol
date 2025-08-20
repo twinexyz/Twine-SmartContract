@@ -32,7 +32,7 @@ library TwineChainDecoder {
     /// @notice It expects address to have `0x` prefix
     function decodeTransactionValues(
         bytes calldata publicValues
-    ) internal pure returns (ITwineChain.L1RefundPublicValueStruct memory transactionValues) {
+    ) internal pure returns (ITwineChain.L1OriginatedTransactionPublicValueStruct memory transactionValues) {
         require(publicValues.length >= 265, "data too short");
 
         transactionValues.batchHash = bytes32(publicValues[0:32]);
