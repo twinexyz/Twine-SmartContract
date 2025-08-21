@@ -495,12 +495,12 @@ contract L2TwineMessenger is
                     messageData.nonce,
                     messageData.chainId,
                     messageData.blockNumber,
+                    keccak256(messageData.message),
                     messageData.fromAddress,
                     messageData.toAddress,
                     messageData.l1Token,
                     messageData.l2Token,
-                    messageData.amount,
-                    keccak256(messageData.message)
+                    messageData.amount
                 )
             );
     }
