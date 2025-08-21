@@ -5,7 +5,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 import {IL1MessageHandler} from "./IL1MessageHandler.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
-import { TwineTypes } from "../../libraries/types/TwineTypes.sol";
+import {TwineTypes} from "../../libraries/types/TwineTypes.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     using TypeConversionLib for string;
@@ -173,25 +173,26 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
             ++messageIndex;
         }
 
-        TwineTypes.MessageData memory depositMessageData = TwineTypes.MessageData({
-            txnType: TwineTypes.TransactionType.Deposit,
-            nonce: messageIndex,
-            chainId: chainId,
-            blockNumber: uint64(block.number),
-            fromAddress: from.addressToString(),
-            toAddress: to.addressToString(),
-            l1Token: l1Token.addressToString(),
-            l2Token: l2Token.addressToString(),
-            amount: uintToString(amount),
-            message: message
-        });
+        TwineTypes.MessageData memory depositMessageData = TwineTypes
+            .MessageData({
+                txnType: TwineTypes.TransactionType.Deposit,
+                nonce: messageIndex,
+                chainId: chainId,
+                blockNumber: uint64(block.number),
+                fromAddress: from.addressToString(),
+                toAddress: to.addressToString(),
+                l1Token: l1Token.addressToString(),
+                l2Token: l2Token.addressToString(),
+                amount: uintToString(amount),
+                message: message
+            });
 
         bytes32 particularTransactionHash = computeTransactionHash(
             depositMessageData
         );
 
         messageRollingHashes[messageIndex] = particularTransactionHash;
-
+        
         // emit deposit event
         emit MessageTransaction(
             TwineTypes.TransactionType.Deposit,
@@ -219,18 +220,20 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
             ++messageIndex;
         }
 
-        TwineTypes.MessageData memory withdrawMessageData = TwineTypes.MessageData({
-            txnType: TwineTypes.TransactionType.Withdraw,
-            nonce: messageIndex,
-            chainId: chainId,
-            blockNumber: uint64(block.number),
-            fromAddress: from.addressToString(),
-            toAddress: to.addressToString(),
-            l1Token: l1Token.addressToString(),
-            l2Token: l2Token.addressToString(),
-            amount: uintToString(amount),
-            message: message
-        });
+        TwineTypes.MessageData memory withdrawMessageData = TwineTypes
+            .MessageData({
+                txnType: TwineTypes.TransactionType.Withdraw,
+                nonce: messageIndex,
+                chainId: chainId,
+                blockNumber: uint64(block.number),
+                fromAddress: from.addressToString(),
+                toAddress: to.addressToString(),
+                l1Token: l1Token.addressToString(),
+                l2Token: l2Token.addressToString(),
+                amount: uintToString(amount),
+                message: message
+            });
+
 
         bytes32 particularTransactionHash = computeTransactionHash(
             withdrawMessageData
@@ -263,12 +266,12 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
                     transactionData.nonce,
                     transactionData.chainId,
                     transactionData.blockNumber,
+                    keccak256(transactionData.message),
                     transactionData.fromAddress,
                     transactionData.toAddress,
                     transactionData.l1Token,
                     transactionData.l2Token,
-                    transactionData.amount,
-                    keccak256(transactionData.message)
+                    transactionData.amount
                 )
             );
     }

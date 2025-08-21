@@ -58,12 +58,12 @@ interface ITwineChain {
         uint64 nonce;
         uint64 chainId;
         uint64 blockNumber;
+        bytes32 messageHash;
         string fromAddress;
         string toAddress;
         string l1Token;
         string l2Token;
         string amount;
-        bytes message;
     }
 
     struct L2WithdrawValues {

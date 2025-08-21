@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import "forge-std/console.sol";
 
 import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -298,9 +297,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if (refundValues.txnType != TransactionType.Deposit) {
             revert TransactionMustBeDepositType();
         }
+
         if (!isBatchFinalized(refundValues.batchNumber)) {
             revert BatchNotFinalizedYet();
         }
+
         if (
             refundValues.batchHash != finalizedBatch[refundValues.batchNumber]
         ) {
@@ -359,7 +360,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         if (
             !checkMessageHash(
                 withdrawValues.nonce,
-                keccak256(bytes(publicValues[40:]))
+                bytes32(publicValues[32:64])
             )
         ) {
             revert MessageHashNotFound();
@@ -433,17 +434,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         uint64 messageNonce,
         bytes32 particularMessageHash
     ) internal view returns (bool status) {
-        bytes32 finalHashedMessage = keccak256(
-            abi.encodePacked(
-                particularMessageHash,
-                IL1MessageHandler(messageHandler).getMessageHash(
-                    messageNonce - 1
-                )
-            )
-        );
         if (
             IL1MessageHandler(messageHandler).getMessageHash(messageNonce) ==
-            finalHashedMessage
+            particularMessageHash
         ) {
             return true;
         } else {

@@ -32,23 +32,68 @@ library TwineChainDecoder {
     /// @notice It expects address to have `0x` prefix
     function decodeL1OriginTxnPublicValues(
         bytes calldata publicValues
-    ) internal pure returns (ITwineChain.L1OriginTxPublicValues memory transactionValues) {
-        require(publicValues.length >= 265, "data too short");
+    )
+        internal
+        pure
+        returns (ITwineChain.L1OriginTxPublicValues memory transactionValues)
+    {
+        require(publicValues.length >= 266, "data too short");
 
-        transactionValues.batchHash = bytes32(publicValues[0:32]);
-        transactionValues.batchNumber = uint64(bytes8(publicValues[32:40]));
-        transactionValues.txnType = ITwineChain.TransactionType(
-            uint8(publicValues[40])
+        uint256 offset = 0;
+
+        // batchHash (bytes32)
+        transactionValues.batchHash = bytes32(slice(publicValues, offset, 32));
+        offset += 32;
+
+        // batchNumber (uint64)
+        transactionValues.batchNumber = uint64(
+            bytesToUint(slice(publicValues, offset, 8))
         );
-        transactionValues.nonce = uint64(bytes8(publicValues[41:49]));
-        transactionValues.chainId = uint64(bytes8(publicValues[49:57]));
-        transactionValues.blockNumber = uint64(bytes8(publicValues[57:65]));
-        transactionValues.fromAddress = string(publicValues[65:107]);
-        transactionValues.toAddress = string(publicValues[107:149]);
-        transactionValues.l1Token = string(publicValues[149:191]);
-        transactionValues.l2Token = string(publicValues[191:233]);
-        transactionValues.amount = string(publicValues[233:265]);
-        transactionValues.message = publicValues[265:];
+        offset += 8;
+
+        // txnType (uint8 assumed for enum)
+        transactionValues.txnType = ITwineChain.TransactionType(uint8(publicValues[offset]));
+        offset += 1;
+
+        // nonce (uint64)
+        transactionValues.nonce = uint64(bytesToUint(slice(publicValues, offset, 8)));
+        offset += 8;
+
+        // chainId (uint64)
+        transactionValues.chainId = uint64(bytesToUint(slice(publicValues, offset, 8)));
+        offset += 8;
+
+        // blockNumber (uint64)
+        transactionValues.blockNumber = uint64(
+            bytesToUint(slice(publicValues, offset, 8))
+        );
+        offset += 8;
+
+        // messageHash (bytes32)
+        transactionValues.messageHash = bytes32(slice(publicValues, offset, 32));
+        offset += 32;
+
+        // fromAddress (string, 42 bytes)
+        transactionValues.fromAddress = string(slice(publicValues, offset, 42));
+        offset += 42;
+
+        // toAddress (string, 42 bytes)
+        transactionValues.toAddress = string(slice(publicValues, offset, 42));
+        offset += 42;
+
+        // l1Token (string, 42 bytes)
+        transactionValues.l1Token = string(slice(publicValues, offset, 42));
+        offset += 42;
+
+        // l2Token (string, 42 bytes)
+        transactionValues.l2Token = string(slice(publicValues, offset, 42));
+        offset += 42;
+
+        // remaining bytes are amount (string)
+        uint256 amountLength = publicValues.length - offset;
+        transactionValues.amount = string(slice(publicValues, offset, amountLength));
+
+        return transactionValues;
     }
 
     /// @dev Decode public values for l2 withdrawals zk proof
@@ -75,26 +120,61 @@ library TwineChainDecoder {
         uint256 start,
         uint256 length
     ) internal pure returns (bytes memory) {
-        require(data.length >= start + length, "Invalid slice range");
-
-        bytes memory result = new bytes(length);
-
-        assembly {
-            // Get the pointer to the result's data
-            let resultPtr := add(result, 0x20)
-            // Get the pointer to the start position in the input data
-            let dataPtr := add(add(data, 0x20), start)
-
-            // Copy the data
-            for {
-                let i := 0
-            } lt(i, length) {
-                i := add(i, 0x20)
-            } {
-                mstore(add(resultPtr, i), mload(add(dataPtr, i)))
-            }
+        bytes memory tempBytes = new bytes(length);
+        for (uint256 i = 0; i < length; i++) {
+            tempBytes[i] = data[start + i];
         }
+        return tempBytes;
+    }
 
-        return result;
+    // Helper: convert bytes to uint (big endian)
+    function bytesToUint(bytes memory b) internal pure returns (uint) {
+        uint number;
+        for (uint i = 0; i < b.length; i++) {
+            number =
+                number +
+                uint(uint8(b[i])) *
+                (2 ** (8 * (b.length - (i + 1))));
+        }
+        return number;
     }
 }
+
+// function slice(
+//     bytes memory data,
+//     uint256 start,
+//     uint256 length
+// ) internal pure returns (bytes memory result) {
+//     require(data.length >= start + length, "Invalid slice range");
+
+//     result = new bytes(length);
+
+//     assembly {
+//         let resultPtr := add(result, 0x20)
+//         let dataPtr := add(add(data, 0x20), start)
+
+//         // Number of complete 32-byte words
+//         let words := div(add(length, 31), 32)
+
+//         for {
+//             let i := 0
+//         } lt(i, words) {
+//             i := add(i, 1)
+//         } {
+//             mstore(
+//                 add(resultPtr, mul(i, 32)),
+//                 mload(add(dataPtr, mul(i, 32)))
+//             )
+//         }
+
+//         // Mask the last word if length % 32 != 0
+//         let lastBytes := mod(length, 32)
+//         if lastBytes {
+//             let mask := sub(exp(256, sub(32, lastBytes)), 1)
+//             mstore(
+//                 add(resultPtr, mul(sub(words, 1), 32)),
+//                 and(mload(add(dataPtr, mul(sub(words, 1), 32))), not(mask))
+//             )
+//         }
+//     }
+// }
