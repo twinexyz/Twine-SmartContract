@@ -11,10 +11,12 @@ interface IL1MessageHandler {
     /// @param nonce The nonce of the message.
     /// @param chainId Chain Id of this L1.
     /// @param blockNumber The block number in which this transaction occured.
-    /// @param amount The amount of token to send.
     /// @param l1Token Address of token to send from L1.
     /// @param l2Token address of token to receive on L2.
-    /// @param toTwineAddress The address of receiver.
+    /// @param l1Address The address in L1
+    /// @param TwineAddress The address in Twine.
+    /// @param amount The amount of token to send.
+
     event MessageTransaction(
         TwineTypes.TransactionType txnType,
         uint64 nonce,
@@ -22,8 +24,8 @@ interface IL1MessageHandler {
         uint64 blockNumber,
         address l1Token,
         address l2Token,
-        address from,
-        address toTwineAddress,
+        address l1Address,
+        address TwineAddress,
         uint256 amount,
         bytes message
     );
