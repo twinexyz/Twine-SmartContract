@@ -6,6 +6,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 import {IL1MessageHandler} from "./IL1MessageHandler.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineTypes} from "../../libraries/types/TwineTypes.sol";
+import {MessageHasherLib} from "../../libraries/utils/MessageHasherLib.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
 contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     using TypeConversionLib for string;
@@ -187,7 +188,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
                 message: message
             });
 
-        bytes32 particularTransactionHash = computeTransactionHash(
+        bytes32 particularTransactionHash = MessageHasherLib.hashL1Message(
             depositMessageData
         );
 

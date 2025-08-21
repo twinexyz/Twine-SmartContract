@@ -12,6 +12,7 @@ import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
+import {MessageHasherLib} from "../libraries/utils/MessageHasherLib.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
@@ -224,6 +225,7 @@ contract L2TwineMessenger is
             .latestExecutionBlockNumber();
         require(latest_block >= executionHeight, "Block not yet provable");
 
+        // TODO: HANDLE LIKE IN `handleChainTransactions`
         bytes32 ethMessageHash = keccak256(messageData);
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageHandled(
@@ -254,7 +256,7 @@ contract L2TwineMessenger is
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        bytes32 calculatedMessageHash = computeChainTransactionHash(
+        bytes32 calculatedMessageHash = MessageHasherLib.hashL1Message(messageData);(
             messageData
         );
         require(
@@ -484,24 +486,5 @@ contract L2TwineMessenger is
                 }),
                 contractCallData: messageData.message
             });
-    }
-    function computeChainTransactionHash(
-        TwineTypes.MessageData memory messageData
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    messageData.txnType,
-                    messageData.nonce,
-                    messageData.chainId,
-                    messageData.blockNumber,
-                    keccak256(messageData.message),
-                    messageData.fromAddress,
-                    messageData.toAddress,
-                    messageData.l1Token,
-                    messageData.l2Token,
-                    messageData.amount
-                )
-            );
     }
 }
