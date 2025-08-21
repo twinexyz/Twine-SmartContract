@@ -256,9 +256,7 @@ contract L2TwineMessenger is
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        bytes32 calculatedMessageHash = MessageHasherLib.hashL1Message(messageData);(
-            messageData
-        );
+        bytes32 calculatedMessageHash = MessageHasherLib.hashL1Message(messageData);
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 calculatedMessageHash
