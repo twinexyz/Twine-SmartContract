@@ -14,7 +14,7 @@ interface IL1MessageHandler {
     /// @param l1Token Address of token to send from L1.
     /// @param l2Token address of token to receive on L2.
     /// @param l1Address The address in L1
-    /// @param TwineAddress The address in Twine.
+    /// @param twineAddress The address in Twine.
     /// @param amount The amount of token to send.
 
     event MessageTransaction(
@@ -25,7 +25,7 @@ interface IL1MessageHandler {
         address l1Token,
         address l2Token,
         address l1Address,
-        address TwineAddress,
+        address twineAddress,
         uint256 amount,
         bytes message
     );
