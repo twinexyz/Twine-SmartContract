@@ -481,12 +481,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                     transactionValues.nonce,
                     transactionValues.chainId,
                     transactionValues.blockNumber,
+                    transactionValues.messageHash,
                     transactionValues.fromAddress,
                     transactionValues.toAddress,
                     transactionValues.l1Token,
                     transactionValues.l2Token,
-                    transactionValues.amount,
-                    keccak256(transactionValues.message)
+                    transactionValues.amount
                 )
             );
     }

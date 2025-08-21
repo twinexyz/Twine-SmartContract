@@ -171,6 +171,8 @@ contract L2SetupScript is Script {
         bytes32 tokensBurnerRole = roleManager.TWINE_TOKENS_BURNER();
         roleManager.grantRole(tokensBurnerRole, l2CustomERC20GatewayAddress);
         roleManager.checkRole(tokensBurnerRole, l2CustomERC20GatewayAddress);
+        roleManager.grantRole(tokensBurnerRole, l2TwineMessengerAddress);
+        roleManager.checkRole(tokensBurnerRole, l2TwineMessengerAddress);
 
         //L2ETHGateway setup
         l2ETHGateway.setRoleManagerAddress(roleManagerAddress);
