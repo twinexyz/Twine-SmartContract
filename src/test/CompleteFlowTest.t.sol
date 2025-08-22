@@ -75,7 +75,8 @@ contract CompleteFlowTest is Test {
         l1Token = new MockERC20("Mock L1", "ML1");
         l2Token = new MockERC20("Mock L2", "ML2");
         l1Token.mint(admin, 100000);
-
+        console.logAddress(address(l1Token));
+        console.logAddress(address(l2Token));
         // Initialize roleManager
         address roleManagerAddress = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
@@ -205,61 +206,79 @@ contract CompleteFlowTest is Test {
         vm.stopPrank();
     }
 
-    function testTheWholeFlow() public {
-        vm.roll(100);
-        /***************
-         * Deposit ETH *
-         **************/
+    /***************
+     * Deposit ETH *
+     **************/
+    function testDepositEth(uint256 depositAmount) internal {
         assertEq(messageHandler.messageIndex(), 0);
         assertEq(address(ethGateway).balance, 0 ether);
 
         vm.startPrank(admin);
-        uint256 depositAmount = 5 ether;
         ethGateway.depositETH{value: depositAmount}(admin, depositAmount, 0);
 
-        assertEq(address(ethGateway).balance, 5 ether);
+        assertEq(address(ethGateway).balance, depositAmount);
         assertEq(messageHandler.messageIndex(), 1);
 
-        /**********************
-         * Force Withdraw ETH *
-         *********************/
+        console.log("ETH Deposit Successful");
+    }
+
+    /**********************
+     * Force Withdraw ETH *
+     *********************/
+    function testForcedWithdrawEth(uint256 withdrawAmount) internal {
         vm.startPrank(admin);
-        uint256 withdrawAmount = 1 ether;
+
         ethGateway.forcedWithdrawalETH(admin, withdrawAmount, 0, new bytes(0));
 
         assertEq(messageHandler.messageIndex(), 2);
 
-        /*****************
-         * Deposit ERC20 *
-         ****************/
+        console.log("ETH ForcedWithdraw Successful");
+    }
+
+    /*****************
+     * Deposit ERC20 *
+     ****************/
+    function testDepositERC20(uint256 depositAmount) internal {
+        vm.startPrank(admin);
+
         assertEq(l1Token.balanceOf(address(erc20Gateway)), 0);
 
         l1Token.approve(address(erc20Gateway), 100000);
-        erc20Gateway.depositERC20(address(l1Token), admin, 10, 0);
+        erc20Gateway.depositERC20(address(l1Token), admin, depositAmount, 0);
 
-        assertEq(l1Token.balanceOf(address(erc20Gateway)), 10);
+        assertEq(l1Token.balanceOf(address(erc20Gateway)), depositAmount);
         assertEq(messageHandler.messageIndex(), 3);
 
-        /************************
-         * Force Withdraw ERC20 *
-         ***********************/
+        console.log("ERC20 Deposit Successful");
+    }
+
+    /************************
+     * Force Withdraw ERC20 *
+     ***********************/
+    function testForcedWithdrawERC20(uint256 withdrawAmount) internal {
         erc20Gateway.forcedWithdrawalERC20(
             address(l1Token),
             address(l2Token),
             admin,
-            10,
+            withdrawAmount,
             0,
             new bytes(0)
         );
 
         assertEq(messageHandler.messageIndex(), 4);
 
-        /*****************
-         *  Commit Batch *
-         ****************/
+        console.log("ERC20 Forced Withdraw Successful");
+    }
 
+    /*****************
+     *  Commit Batch *
+     ****************/
+    function testCommitBatch(
+        bytes32 genesisBlockHash,
+        bytes32 batchHash,
+        uint64 batchNumber
+    ) internal {
         // Commit Genesis Block
-        bytes32 genesisBlockHash = bytes32(0);
         twineChain.commitGenesisBlock(genesisBlockHash);
 
         assertEq(twineChain.lastFinalizedBatchHash(), genesisBlockHash);
@@ -267,17 +286,22 @@ contract CompleteFlowTest is Test {
         assert(twineChain.isGenesisBlockCommitted());
 
         // Commit Batch
-        uint64 batchNumber = 1;
-        bytes32 batchHash = hex"8a58ec38439a3ccc22aaf10ee418aca264cd1bc16c5bab8f0378e9697210e8b5";
-
         twineChain.commitBatch(batchNumber, batchHash);
 
         assertEq(twineChain.committedBatch(batchNumber), batchHash);
         assertEq(twineChain.lastCommittedBatchNumber(), 1);
 
-        /*******************
-         *  Finalize Batch *
-         ******************/
+        console.log("Batch Commitment Successful");
+    }
+
+    /*******************
+     *  Finalize Batch *
+     ******************/
+    function testFinalizeBatch(
+        bytes32 genesisBlockHash,
+        bytes32 batchHash,
+        uint64 batchNumber
+    ) internal {
         uint64 totalEthMsgHandledOnTwine = 3;
         uint64 totalSolanaMsgHandledOnTwine = 2;
         bytes memory publicValuesForFinalization = abi.encodePacked(
@@ -296,9 +320,17 @@ contract CompleteFlowTest is Test {
         assertEq(twineChain.lastFinalizedBatchHash(), batchHash);
         assertEq(twineChain.finalizedBatch(batchNumber), batchHash);
 
-        /******************
-         * Refund Deposit *
-         *****************/
+        console.log("Batch Finalization Successful");
+    }
+
+    /*************************
+     * Refund Deposit Native *
+     ************************/
+    function testRefundDepositETH(
+        bytes32 batchHash,
+        uint64 batchNumber,
+        uint256 depositAmount
+    ) internal {
         ITwineChain.L1OriginTxPublicValues memory publicValuesData = ITwineChain
             .L1OriginTxPublicValues({
                 batchHash: batchHash,
@@ -330,15 +362,246 @@ contract CompleteFlowTest is Test {
             publicValuesData.amount
         );
 
-        uint256 adminBalanceBefore = admin.balance;
-        uint256 gatewayBalanceBefore = address(ethGateway).balance;
+        uint256 adminBalanceBeforeFunctionCall = admin.balance;
+        uint256 gatewayBalanceBeforeFunctionCall = address(ethGateway).balance;
 
         twineChain.refundDeposit(publicValues, publicValues);
 
-        uint256 adminBalanceAfter = admin.balance;
-        uint256 gatewayBalanceAfter = address(ethGateway).balance;
+        uint256 adminBalanceAfterFunctionCall = admin.balance;
+        uint256 gatewayBalanceAfterFunctionCall = address(ethGateway).balance;
 
-        assertEq(adminBalanceAfter - adminBalanceBefore, depositAmount);
-        assertEq(gatewayBalanceBefore - gatewayBalanceAfter, depositAmount);
+        assertEq(
+            adminBalanceAfterFunctionCall - adminBalanceBeforeFunctionCall,
+            depositAmount
+        );
+        assertEq(
+            gatewayBalanceBeforeFunctionCall - gatewayBalanceAfterFunctionCall,
+            depositAmount
+        );
+
+        console.log("ETH Refund Successful");
+    }
+
+    /************************************
+     * Execute Forced Withdrawal Native *
+     ***********************************/
+    function testExecuteForcedWithdrawETH(
+        bytes32 batchHash,
+        uint64 batchNumber,
+        uint256 withdrawAmount
+    ) internal {
+        // Doing a deposit so that there is enough balance in gateway to withdraw
+        ethGateway.depositETH{value: 5 ether}(admin, 5 ether, 0);
+
+        ITwineChain.L1OriginTxPublicValues memory publicValuesData = ITwineChain
+            .L1OriginTxPublicValues({
+                batchHash: batchHash,
+                batchNumber: batchNumber,
+                txnType: ITwineChain.TransactionType.Withdraw,
+                nonce: 2,
+                chainId: 1700,
+                blockNumber: 100,
+                messageHash: keccak256(new bytes(0)),
+                fromAddress: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                toAddress: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                l1Token: "0x0000000000000000000000000000000000000000",
+                l2Token: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                amount: "1000000000000000000"
+            });
+
+        bytes memory publicValues = abi.encodePacked(
+            publicValuesData.batchHash,
+            publicValuesData.batchNumber,
+            publicValuesData.txnType,
+            publicValuesData.nonce,
+            publicValuesData.chainId,
+            publicValuesData.blockNumber,
+            publicValuesData.messageHash,
+            publicValuesData.fromAddress,
+            publicValuesData.toAddress,
+            publicValuesData.l1Token,
+            publicValuesData.l2Token,
+            publicValuesData.amount
+        );
+
+        uint256 adminBalanceBeforeFunctionCall = admin.balance;
+        uint256 gatewayBalanceBeforeFunctionCall = address(ethGateway).balance;
+
+        twineChain.executeForcedWithdrawal(publicValues, publicValues);
+
+        uint256 adminBalanceAfterFunctionCall = admin.balance;
+        uint256 gatewayBalanceAfterFunctionCall = address(ethGateway).balance;
+
+        assertEq(
+            adminBalanceAfterFunctionCall - adminBalanceBeforeFunctionCall,
+            withdrawAmount
+        );
+        assertEq(
+            gatewayBalanceBeforeFunctionCall - gatewayBalanceAfterFunctionCall,
+            withdrawAmount
+        );
+
+        console.log("ETH forced Withdrawal Execution Successful");
+    }
+
+    /************************
+     * Refund Deposit ERC20 *
+     ***********************/
+    function testRefundDepositERC20(
+        bytes32 batchHash,
+        uint64 batchNumber,
+        uint256 depositAmount
+    ) internal {
+        ITwineChain.L1OriginTxPublicValues memory publicValuesData = ITwineChain
+            .L1OriginTxPublicValues({
+                batchHash: batchHash,
+                batchNumber: batchNumber,
+                txnType: ITwineChain.TransactionType.Deposit,
+                nonce: 3,
+                chainId: 1700,
+                blockNumber: 100,
+                messageHash: keccak256(new bytes(0)),
+                fromAddress: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                toAddress: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                l1Token: "0x62323ec6c891daa8e432a6578c9c0b4c0db0356b",
+                l2Token: "0xca6910b7de8614251a027e4513e728baa693360b",
+                amount: "10"
+            });
+
+        bytes memory publicValues = abi.encodePacked(
+            publicValuesData.batchHash,
+            publicValuesData.batchNumber,
+            publicValuesData.txnType,
+            publicValuesData.nonce,
+            publicValuesData.chainId,
+            publicValuesData.blockNumber,
+            publicValuesData.messageHash,
+            publicValuesData.fromAddress,
+            publicValuesData.toAddress,
+            publicValuesData.l1Token,
+            publicValuesData.l2Token,
+            publicValuesData.amount
+        );
+
+        uint256 adminBalanceBeforeFunctionCall = l1Token.balanceOf(admin);
+        uint256 gatewayBalanceBeforeFunctionCall = l1Token.balanceOf(
+            address(erc20Gateway)
+        );
+
+        twineChain.refundDeposit(publicValues, publicValues);
+
+        uint256 adminBalanceAfterFunctionCall = l1Token.balanceOf(admin);
+        uint256 gatewayBalanceAfterFunctionCall = l1Token.balanceOf(
+            address(erc20Gateway)
+        );
+
+        assertEq(
+            adminBalanceAfterFunctionCall - adminBalanceBeforeFunctionCall,
+            depositAmount
+        );
+        assertEq(
+            gatewayBalanceBeforeFunctionCall - gatewayBalanceAfterFunctionCall,
+            depositAmount
+        );
+
+        console.log("ERC20 Refund Successful");
+    }
+
+    /***********************************
+     * Execute Forced Withdrawal ERC20 *
+     **********************************/
+    function testExecuteForcedWithdrawERC20(
+        bytes32 batchHash,
+        uint64 batchNumber,
+        uint256 withdrawAmount
+    ) internal {
+        // Doing a deposit so that there is enough balance in gateway to withdraw
+        erc20Gateway.depositERC20(address(l1Token), admin, 10, 0);
+
+        ITwineChain.L1OriginTxPublicValues memory publicValuesData = ITwineChain
+            .L1OriginTxPublicValues({
+                batchHash: batchHash,
+                batchNumber: batchNumber,
+                txnType: ITwineChain.TransactionType.Withdraw,
+                nonce: 4,
+                chainId: 1700,
+                blockNumber: 100,
+                messageHash: keccak256(new bytes(0)),
+                fromAddress: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                toAddress: "0x19b78ff82c94b5e517f2279f3fbf10498b039179",
+                l1Token: "0x62323ec6c891daa8e432a6578c9c0b4c0db0356b",
+                l2Token: "0xca6910b7de8614251a027e4513e728baa693360b",
+                amount: "10"
+            });
+
+        bytes memory publicValues = abi.encodePacked(
+            publicValuesData.batchHash,
+            publicValuesData.batchNumber,
+            publicValuesData.txnType,
+            publicValuesData.nonce,
+            publicValuesData.chainId,
+            publicValuesData.blockNumber,
+            publicValuesData.messageHash,
+            publicValuesData.fromAddress,
+            publicValuesData.toAddress,
+            publicValuesData.l1Token,
+            publicValuesData.l2Token,
+            publicValuesData.amount
+        );
+
+        uint256 adminBalanceBeforeFunctionCall = l1Token.balanceOf(admin);
+        uint256 gatewayBalanceBeforeFunctionCall = l1Token.balanceOf(
+            address(erc20Gateway)
+        );
+
+        twineChain.executeForcedWithdrawal(publicValues, publicValues);
+
+        uint256 adminBalanceAfterFunctionCall = l1Token.balanceOf(admin);
+        uint256 gatewayBalanceAfterFunctionCall = l1Token.balanceOf(
+            address(erc20Gateway)
+        );
+
+        assertEq(
+            adminBalanceAfterFunctionCall - adminBalanceBeforeFunctionCall,
+            withdrawAmount
+        );
+        assertEq(
+            gatewayBalanceBeforeFunctionCall - gatewayBalanceAfterFunctionCall,
+            withdrawAmount
+        );
+
+        console.log("ERC20 forced Withdrawal Execution Successful");
+    }
+
+    function testTheWholeFlow() public {
+        vm.roll(100);
+
+        uint256 depositAmountEth = 5 ether;
+        uint256 withdrawAmountEth = 1 ether;
+        uint256 depositAmountErc20 = 10;
+        uint256 withdrawAmountErc20 = 10;
+        bytes32 genesisBlockHash = bytes32(0);
+        uint64 batchNumber = 1;
+        bytes32 batchHash = hex"8a58ec38439a3ccc22aaf10ee418aca264cd1bc16c5bab8f0378e9697210e8b5";
+
+        testDepositEth(depositAmountEth);
+
+        testForcedWithdrawEth(withdrawAmountEth);
+
+        testDepositERC20(depositAmountErc20);
+
+        testForcedWithdrawERC20(withdrawAmountErc20);
+
+        testCommitBatch(genesisBlockHash, batchHash, batchNumber);
+
+        testFinalizeBatch(genesisBlockHash, batchHash, batchNumber);
+
+        testRefundDepositETH(batchHash, batchNumber, depositAmountEth);
+
+        testExecuteForcedWithdrawETH(batchHash, batchNumber, withdrawAmountEth);
+
+        testRefundDepositERC20(batchHash, batchNumber, depositAmountErc20);
+
+        testExecuteForcedWithdrawERC20(batchHash, batchNumber, withdrawAmountErc20);
     }
 }

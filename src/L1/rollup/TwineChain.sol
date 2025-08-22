@@ -222,7 +222,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function commitBatch(
         uint64 batchNumber,
         bytes32 batchHash
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) public onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         if (batchNumber != lastCommittedBatchNumber + 1) {
             revert InvalidBatchSequence();
         }
@@ -238,7 +238,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         uint64 batchNumber,
         bytes calldata publicValues,
         bytes calldata executionProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) public onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
         (
             bytes32 previousBatchHash,
             bytes32 currentBatchHash,
@@ -281,6 +281,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             currentBatchHash
         );
     }
+
+    /* -------------------------------------------------------------------------- */
+    /*                          Commit and Finalize Batch                         */
+    /* -------------------------------------------------------------------------- */
+    function commitAndFinalizeBatch(
+        uint64 batchNumber,
+        bytes calldata publicValues,
+        bytes calldata executionProof
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        (, bytes32 currentBatchHash, ) = TwineChainDecoder.decodeBatchValues(publicValues);
+
+        commitBatch(batchNumber, currentBatchHash);
+        finalizeBatch(batchNumber, publicValues, executionProof);
+    }
+
 
     /* -------------------------------------------------------------------------- */
     /*                               Refund Deposit                               */
