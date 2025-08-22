@@ -2,41 +2,61 @@
 pragma solidity ^0.8.24;
 
 interface ITwineSystemStorage {
-    /// @notice All types of messages incoming from L1
-    /// @dev Enum used to categorize different transaction types processed by the system.
-    enum L1TxnType {
-        Deposit,
-        ForcedWithdraw,
-        LayerZero,
-        Message
+    /// @notice Status of L1 Message
+    enum L1MessageStatus {
+        Unprocessed,
+        Executed,
+        Failed
     }
 
     /// @notice Get current nonce for chain id and message type
     /// @param _chainId The ID of the chain to get nonce
-    /// @param _txnType The type of transaction 
     /// @return nonce Nonce for that chainId and txnType
-    function getLastMessageExecuted(uint256 _chainId, L1TxnType _txnType) external returns(uint256);
-    
-    /// @notice Get receipt root of chain with chain id `_chainId` and height `_height`  
-    /// @param _chainId The ID of the chain to get nonce
-    /// @param _height The block height to fetch receipt root at
-    /// @return receiptRoot ReceiptRoot of chain at height
-    function getReceiptRoot(uint256 _chainId, uint256 _height) external returns(bytes32);
+    function getLastMessageExecuted(
+        uint256 _chainId
+    ) external returns (uint256);
 
-    /// @notice Sets the receipt root for a specific block on a specific chain.
+    /// @notice Get bank hash of chain with chain id `_chainId` and height `_slot`
+    /// @param _chainId The ID of the chain to get nonce
+    /// @param _slot The block height to fetch bank hash at
+    /// @return bankHash Bank Hash of chain at slot
+    function getBankHash(
+        uint256 _chainId,
+        uint256 _slot
+    ) external returns (bytes32);
+
+    /// @notice Sets the bank hash for a specific slot on a specific chain.
     /// @dev Can only be called by the authorized `twineMessenger`.
-    /// @param chainId The ID of the chain for which the receipt root is being stored.
-    /// @param height The block number (height) for which the receipt root is being stored.
-    /// @param receiptRoot The Merkle root of the receipts for the specified block.
-    function setBlockReceipts(
-        uint256 chainId,
-        uint256 height,
-        bytes32 receiptRoot
+    /// @param _chainId The ID of the chain for which the bank hash is being stored.
+    /// @param _slot Slot for which the bank hash is being stored.
+    /// @param _bankHash The bank hash for slot
+    function setBankHash(
+        uint256 _chainId,
+        uint256 _slot,
+        bytes32 _bankHash
     ) external;
 
     /// @notice Increments the nonce for a specific transaction type on a specific chain.
     /// @dev Can only be called by the authorized `twineMessenger`.
     /// @param chainId The ID of the chain for which the nonce is being incremented.
-    /// @param txnType The type of transaction for which the nonce is being incremented.
-    function increaseNonce(uint256 chainId, L1TxnType txnType) external;
+    function increaseNonce(uint256 chainId) external;
+
+    /// @notice Get status of a message on Twine
+    /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
+    /// @return L1MessageStatus  The status of messageHash
+    function getMessageStatus(
+        bytes32 messageHash
+    ) external view returns (L1MessageStatus);
+
+    /// @notice Check if a L1 message was executed on Twine
+    /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
+    /// @return bool If the message with hash `messageHash` was executed, successfully or execution failed on twine
+    function isMessageHandled(
+        bytes32 messageHash
+    ) external view returns (bool);
+
+    /// @notice Set Message Executed
+    /// @param messageHash The messageHash of L1 chain to check if it was executed on L2
+    /// @param status The status of message, if it was executed or failed
+    function setMessageExecuted(bytes32 messageHash, L1MessageStatus status) external;
 }

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.24;
 
 interface IL1GatewayRouter {
-    /**********
-     * Events *
-     **********/
-
+    /***********
+     * Events  *
+     ***********/
     /// @notice Emitted when the address of ETH Gateway is updated.
     /// @param oldETHGateway The address of the old ETH Gateway.
     /// @param newEthGateway The address of the new ETH Gateway.
@@ -33,10 +31,33 @@ interface IL1GatewayRouter {
         address indexed newGateway
     );
 
+    /*****************
+     * Custom Errors *
+     *****************/
+    /// @notice Thrown when zero address provided
+    error ZeroAddress();
+
+    /// @notice Thrown when a function is called while in a context when it should not be
+    error OnlyNotInContext();
+
+    /// @notice Thrown when a function is called outside of deposit context
+    error OnlyInDepositContext();
+
+    /// @notice Thrown when no gateway is available for the requested operation
+    error NoGatewayAvailable();
+
+    /// @notice Thrown when no ETH gateway is available for ETH-related operations
+    error NoETHGatewayAvailable();
+
+    /// @notice Thrown when array lengths or data sizes do not match expected values
+    error LengthMismatch();
+
+    /// @notice Thrown when attempting to access a function that is not accessible from the router
+    error NotAccessibleFromRouter();
+
     /*************************
      * Public View Functions *
      *************************/
-
     /// @notice Return the corresponding gateway address for given token address.
     /// @param token The address of token to query.
     function getERC20Gateway(address token) external view returns (address);
@@ -44,7 +65,6 @@ interface IL1GatewayRouter {
     /*****************************
      * Public Mutating Functions *
      *****************************/
-
     /// @notice Request ERC20 token transfer from users to gateways.
     /// @param sender The address of sender to request fund.
     /// @param token The address of token to request.
@@ -54,10 +74,6 @@ interface IL1GatewayRouter {
         address token,
         uint256 amount
     ) external returns (uint256);
-
-    /************************
-     * Restricted Functions *
-     ************************/
 
     /// @notice Update the address of ETH gateway contract.
     /// @dev This function should only be called by chain admin.

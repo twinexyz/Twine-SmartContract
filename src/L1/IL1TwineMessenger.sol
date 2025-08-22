@@ -4,9 +4,9 @@ pragma solidity ^0.8.24;
 import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
 
 interface IL1TwineMessenger is ITwineL1MessengerBase {
-    /**********
-    * Events *
-    **********/
+    /***********
+     * Events  *
+     ***********/
     /// @notice Emitted when a cross domain message is relayed successfully.
     /// @param messageHash The hash of the message.
     event RelayedMessage(bytes32 indexed messageHash);
@@ -25,12 +25,11 @@ interface IL1TwineMessenger is ITwineL1MessengerBase {
     /*****************************
      * Public Mutating Functions *
      *****************************/
-    /// @notice sets the message queue address
-    /// @param _messageQueue the address of message queue to set
-    function setMessengerQueueAddress(address _messageQueue) external;
+    /// @notice sets the message handler address
+    /// @param _messageHanlder the address of message handler to set
+    function setMessageHandlerAddress(address _messageHanlder) external;
 
     /// @notice sets the twine chain address
     /// @param _rollup the adress of twine chain to set
     function setRollupAddress(address _rollup) external;
-
 }

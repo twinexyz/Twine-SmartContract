@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.24;
-interface IL1ERC20Gateway {
-    /**********
-     * Events *
-     **********/
 
+interface IL1ERC20Gateway {
+    /***********
+     * Events  *
+     ***********/
     /// @notice Emitted when someone deposit ERC20 token from L1 to L2.
     /// @param l1Token The address of the token in L1.
     /// @param l2Token The address of the token in L2.
@@ -73,10 +72,34 @@ interface IL1ERC20Gateway {
         uint256 amount
     );
 
+    /*****************
+     * Custom Errors *
+     *****************/
+
+    /// @notice Thrown when deposit amount is zero
+    error ZeroDepositAmount();
+
+   
+
+    /// @notice Thrown when non-zero message value provided
+    error NonZeroMsgValue();
+
+    /// @notice Thrown when L2 token doesn't match
+    error L2TokenMismatch();
+
+    /// @notice Thrown when no corresponding L2 token exists
+    error NoCorrespondingL2Token();
+
+    /*************************
+     * Public View Functions *
+     *************************/
     /// @notice get address of corressponding L2 Token
     /// @param l1Token The address of the token in L1.
     function getL2ERC20Address(address l1Token) external view returns (address);
 
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
     /// @notice Deposit some token to a recipient's account on L2.
     /// @dev Make this function payable to send relayer fee in Ether.
     /// @param token The address of token in L1.

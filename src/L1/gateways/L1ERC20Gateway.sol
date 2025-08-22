@@ -26,8 +26,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
-        require(msg.value > 0, "Amount for gas is needed");
-        require(msg.value >= gasLimit, "Not efficient gas value");
+        if (msg.value < gasLimit) revert InsufficientGasValue();
         _deposit(l1Token, to, amount, gasLimit, new bytes(0));
     }
 
@@ -69,7 +68,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
     {
-        require(amount.stringToUint() > 0, "Amout must be greater than zero");
+         if (amount.stringToUint() == 0) revert ZeroAmount();
         _beforeFinalizeWithdrawERC20(
             l1Token.stringToAddress(),
             l2Token.stringToAddress()
@@ -124,8 +123,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
             // no unchecked here, since some weird token may return arbitrary balance.
             amount = balanceAfter - balanceBefore;
         }
-        // ignore weird fee on transfer token
-        require(amount > 0, "deposit amount is zero");
+        if (amount == 0) revert ZeroDepositAmount();
         return (from, amount, data);
     }
 

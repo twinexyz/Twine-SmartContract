@@ -23,6 +23,7 @@ contract L1GatewayRouter is
     IL1ERC20Gateway
 {
     using SafeERC20 for IERC20;
+
     /// @notice The address of L1ETHGateway.
     address public ethGateway;
 
@@ -76,16 +77,18 @@ contract L1GatewayRouter is
         address _roleManager
     ) external initializer {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        // it can be zero during initialization
-        if (_defaultERC20Gateway != address(0)) {
+
+        // Cache for gas optimization
+        address zero = address(0);
+
+        if (_defaultERC20Gateway != zero) {
             defaultERC20Gateway = _defaultERC20Gateway;
-            emit SetDefaultERC20Gateway(address(0), _defaultERC20Gateway);
+            emit SetDefaultERC20Gateway(zero, _defaultERC20Gateway);
         }
 
-        // it can be zero during initialization
-        if (_ethGateway != address(0)) {
+        if (_ethGateway != zero) {
             ethGateway = _ethGateway;
-            emit SetETHGateway(address(0), _ethGateway);
+            emit SetETHGateway(zero, _ethGateway);
         }
 
         roleManager = _roleManager;
@@ -96,20 +99,20 @@ contract L1GatewayRouter is
         address l1Address
     ) external view returns (address) {
         address gateway = getERC20Gateway(l1Address);
-        if (gateway == address(0)) {
-            return address(0);
-        }
-
-        return IL1ERC20Gateway(gateway).getL2ERC20Address(l1Address);
+        return
+            gateway == address(0)
+                ? address(0)
+                : IL1ERC20Gateway(gateway).getL2ERC20Address(l1Address);
     }
 
     /// @inheritdoc IL1GatewayRouter
-    function getERC20Gateway(address token) public view returns (address) {
-        address gateway = ERC20Gateway[token];
+    function getERC20Gateway(
+        address token
+    ) public view returns (address gateway) {
+        gateway = ERC20Gateway[token];
         if (gateway == address(0)) {
             gateway = defaultERC20Gateway;
         }
-        return gateway;
     }
 
     /// @inheritdoc IL1GatewayRouter
@@ -120,10 +123,13 @@ contract L1GatewayRouter is
         uint256 amount
     ) external onlyInContext returns (uint256) {
         address caller = _msgSender();
-        uint256 balance = IERC20(token).balanceOf(caller);
-        IERC20(token).safeTransferFrom(sender, caller, amount);
-        amount = IERC20(token).balanceOf(caller) - balance;
-        return amount;
+        IERC20 tokenContract = IERC20(token);
+        uint256 balanceBefore = tokenContract.balanceOf(caller);
+        tokenContract.safeTransferFrom(sender, caller, amount);
+
+        unchecked {
+            return tokenContract.balanceOf(caller) - balanceBefore;
+        }
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -145,7 +151,7 @@ contract L1GatewayRouter is
         bytes memory data
     ) public payable override onlyNotInContext {
         address gateway = getERC20Gateway(token);
-        require(gateway != address(0), "no gateway available");
+        if (gateway == address(0)) revert NoGatewayAvailable();
 
         // enter deposit context
         gatewayInContext = gateway;
@@ -170,9 +176,9 @@ contract L1GatewayRouter is
         string memory,
         string memory,
         string memory,
-        uint64 
+        uint64
     ) external payable virtual override(IL1ERC20Gateway, IL1ETHGateway) {
-        revert("Not accessible from router contract");
+        revert NotAccessibleFromRouter();
     }
 
     /// @inheritdoc IL1ERC20Gateway
@@ -185,15 +191,15 @@ contract L1GatewayRouter is
         bytes memory data
     ) external payable virtual override {
         address gateway = getERC20Gateway(l1Token);
-        require(gateway != address(0), "no gateway available");
-        bytes memory routerData = abi.encode(_msgSender(), data);
+        if (gateway == address(0)) revert NoGatewayAvailable();
+
         IL1ERC20Gateway(gateway).forcedWithdrawalERC20(
             l1Token,
             l2Token,
             to,
             amount,
             gasLimit,
-            routerData
+            abi.encode(_msgSender(), data)
         );
     }
 
@@ -214,7 +220,7 @@ contract L1GatewayRouter is
         bytes memory data
     ) public payable override onlyNotInContext {
         address gateway = ethGateway;
-        require(gateway != address(0), "eth gateway available");
+        if (gateway == address(0)) revert NoETHGatewayAvailable();
 
         // encode msg.sender with data
         bytes memory routerData = abi.encode(_msgSender(), data);
@@ -235,7 +241,7 @@ contract L1GatewayRouter is
         bytes memory data
     ) external payable virtual override {
         address gateway = ethGateway;
-        require(gateway != address(0), "eth gateway available");
+        if (gateway == address(0)) revert NoETHGatewayAvailable();
         bytes memory routerData = abi.encode(_msgSender(), data);
         IL1ETHGateway(gateway).forcedWithdrawalETH(
             to,
@@ -246,13 +252,14 @@ contract L1GatewayRouter is
     }
 
     function setRoleManagerAddress(address roleManagerAddress) external {
-        require(roleManagerAddress != address(0), "value cann't be zero");
+        if (roleManagerAddress == address(0)) revert ZeroAddress();
         roleManager = roleManagerAddress;
     }
 
     function setETHGateway(
         address newEthGateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (newEthGateway == address(0)) revert ZeroAddress();
         address oldETHGateway = ethGateway;
         ethGateway = newEthGateway;
 
@@ -263,6 +270,7 @@ contract L1GatewayRouter is
     function setDefaultERC20Gateway(
         address newDefaultERC20Gateway
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (newDefaultERC20Gateway == address(0)) revert ZeroAddress();
         address oldDefaultERC20Gateway = defaultERC20Gateway;
         defaultERC20Gateway = newDefaultERC20Gateway;
 
@@ -277,11 +285,12 @@ contract L1GatewayRouter is
         address[] memory tokens,
         address[] memory gateways
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(tokens.length == gateways.length, "length mismatch");
+        if (tokens.length != gateways.length) revert LengthMismatch();
         uint256 len = tokens.length;
         for (uint256 i = 0; i < len; i++) {
-            require(tokens[i] != address(0), " Value cann't be zero");
-            require(gateways[i] != address(0), " Value cann't be zero");
+            if (tokens[i] == address(0) || gateways[i] == address(0)) {
+                revert ZeroAddress();
+            }
             address oldGateway = ERC20Gateway[tokens[i]];
             ERC20Gateway[tokens[i]] = gateways[i];
             emit SetERC20Gateway(tokens[i], oldGateway, gateways[i]);

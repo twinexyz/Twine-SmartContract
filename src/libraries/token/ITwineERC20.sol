@@ -7,18 +7,32 @@ import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC2
 
 // The recommended ERC20 implementation for bridge token.
 // deployed in L2 when original token is on L1
-// deployed in L1 when original token is on L2
 interface ITwineERC20 is IERC20 {
 
-    /// @notice Mint some token to recipient's account.
-    /// @dev Gateway Utilities, only gateway contract can call
-    /// @param _to The address of recipient.
-    /// @param _amount The amount of token to mint.
+     /*************
+     * Events    *
+     *************/
+    
+    /// @notice Emitted when tokens are minted
+    event TokensMinted(address indexed to, uint256 amount, address indexed minter);
+    
+    /// @notice Emitted when tokens are burned
+    event TokensBurned(address indexed from, uint256 amount, address indexed burner);
+
+    /**
+     * @notice Mints tokens to a specified address
+     * @param _to The address to mint tokens to
+     * @param _amount The amount of tokens to mint
+     * @dev Only addresses with MINTER_ROLE can call this function
+     */
     function mint(address _to, uint256 _amount) external;
 
-    /// @notice Mint some token from account.
-    /// @dev Gateway Utilities, only gateway contract can call
-    /// @param _from The address of account to burn token.
-    /// @param _amount The amount of token to mint.
+    /**
+     * @notice Burns tokens from a specified address
+     * @param _from The address to burn tokens from
+     * @param _amount The amount of tokens to burn
+     * @dev Only addresses with BURNER_ROLE can call this function
+     * @dev The _from address must have sufficient balance
+     */
     function burn(address _from, uint256 _amount) external;
 }

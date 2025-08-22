@@ -15,6 +15,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
 
     address public l2TokenAddress;
 
+   
     /***************
      * Constructor *
      ***************/
@@ -52,11 +53,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
-         require(msg.value > 0, "Amount for gas is needed");
-        require(
-            msg.value >= (gasLimit + amount),
-            "Not efficient gas value"
-        );
+        if (msg.value < (gasLimit + amount)) revert InsufficientGasValue();
         _deposit(to, amount, gasLimit, new bytes(0));
     }
 
@@ -95,14 +92,17 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
     {
         uint256 amountUint = amount.stringToUint();
-        require(amountUint > 0, "Amount must be greater than zero");
-        require(l2Token.stringToAddress() == l2TokenAddress, "Wrong L2Token");
-        require(
-            address(this).balance >= amountUint,
-            "Insufficient contract balance"
-        );
-        (bool _success, ) = to.stringToAddress().call{value: amountUint}("");
-        require(_success, "ETH transfer failed");
+        if (amountUint == 0) revert ZeroAmount();
+
+        address l2TokenAddr = l2Token.stringToAddress();
+        if (l2TokenAddr != l2TokenAddress) revert WrongL2Token();
+
+        if (address(this).balance < amountUint)
+            revert InsufficientContractBalance();
+
+        address toAddr = to.stringToAddress();
+        (bool success, ) = toAddr.call{value: amountUint}("");
+        if (!success) revert ETHTransferFailed();
 
         emit FinalizeWithdrawETH(
             l1Token,
@@ -119,7 +119,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
     function setL2TokenAddress(
         address _l2TokenAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_l2TokenAddress != address(0), "value cann't be zero");
+        if (_l2TokenAddress == address(0)) revert ZeroAddress();
         l2TokenAddress = _l2TokenAddress;
         emit L2TokenSET(l2TokenAddress);
     }
@@ -135,11 +135,8 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         uint256 gasLimit,
         bytes memory data
     ) internal virtual {
-        require(amount > 0, "Amount can not be zero");
-        require(
-            amount + gasLimit <= msg.value,
-            "Amount and gas limit should not be greater than msg.value"
-        );
+        if (amount == 0) revert ZeroAmount();
+        if ( amount + gasLimit < msg.value) revert LessThanMessageValue();
 
         // Extract real sender if this call is from L1GatewayRouter.
         address from = _msgSender();
@@ -147,7 +144,6 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         if (gatewayRouter == from) {
             (from, data) = abi.decode(data, (address, bytes));
         }
-
 
         //Calculate the type of transaction
         ITwineL1MessengerBase.TransactionType transactionType = ITwineL1MessengerBase
@@ -175,7 +171,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual {
-        require(amount > 0, "withdrawing zero amount not allowed");
+        if (amount == 0) revert ZeroAmount();
         // 1. Extract real sender if this call is from L1GatewayRouter
         address from = _msgSender();
         if (gatewayRouter == from) {

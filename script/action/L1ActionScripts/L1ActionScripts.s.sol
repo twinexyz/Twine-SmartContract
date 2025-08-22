@@ -11,7 +11,7 @@ import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
 import {ITwineChain} from "../../../src/L1/rollup/ITwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
-import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
@@ -60,10 +60,10 @@ contract DepositETH is Script {
 
 contract ForcedWithdrawETH is Script {
     L1ETHGateway l1ETHGateway;
-    L1MessageQueue l1MessageQueue;
+    L1MessageHandler l1MessageHandler;
 
     address l1ETHGatewayAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
 
     uint256 withdrawAmount;
     address receiver;
@@ -72,9 +72,9 @@ contract ForcedWithdrawETH is Script {
         string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
         l1ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L1ETHGateway");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
-        l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
         // Read parameters dynamically 
         withdrawAmount = vm.envUint("WITHDRAW_AMOUNT");
@@ -84,7 +84,7 @@ contract ForcedWithdrawETH is Script {
      function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        console.log("Withdraw Message Queue Before withdrawal", l1MessageQueue.nextCrossDomainWithdrawalMessageIndex());
+        // console.log("Withdraw Message Queue Before withdrawal", l1MessageHandler.nextCrossDomainWithdrawalMessageIndex());
         vm.startBroadcast(deployerPrivateKey);
 
         l1ETHGateway.forcedWithdrawalETH{value: 0}(
@@ -94,7 +94,7 @@ contract ForcedWithdrawETH is Script {
             bytes("")
         );
 
-        console.log("Withdraw Message Queue After withdrawal", l1MessageQueue.nextCrossDomainWithdrawalMessageIndex());
+        // console.log("Withdraw Message Queue After withdrawal", l1MessageHandler.nextCrossDomainWithdrawalMessageIndex());
         vm.stopBroadcast();
     }
 }
@@ -157,12 +157,12 @@ contract ForcedWithdrawERC20 is Script {
     MockERC20 l1token;
     MockERC20 l2token;
     L1GatewayRouter l1GatewayRouter;
-    L1MessageQueue l1MessageQueue;
+    L1MessageHandler l1MessageHandler;
 
     address l1ERC20TokenAddress;
     address l2ERC20TokenAddress;
     address l1GatewayRouterAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
 
     uint256 withdrawAmount;
     address receiver;
@@ -174,12 +174,12 @@ contract ForcedWithdrawERC20 is Script {
         l1ERC20TokenAddress = vm.parseJsonAddress(deployedL1ContractJson, ".FauxCoin");
         l2ERC20TokenAddress = vm.parseJsonAddress(deployedL2ContractJson, ".FauxCoin");
         l1GatewayRouterAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1GatewayRouter");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1MessageQueue");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedL1ContractJson, ".L1MessageHandler");
 
         l1token = MockERC20(l1ERC20TokenAddress); 
         l2token = MockERC20(l2ERC20TokenAddress); 
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
-        l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
         // Read parameters dynamically
         withdrawAmount = vm.envUint("WITHDRAW_AMOUNT");
@@ -191,7 +191,7 @@ contract ForcedWithdrawERC20 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
         
-        console.log("Withdraw Message Queue Before withdrawal", l1MessageQueue.nextCrossDomainWithdrawalMessageIndex());
+        // console.log("Withdraw Message Queue Before withdrawal", l1MessageHandler.nextCrossDomainWithdrawalMessageIndex());
 
         l1GatewayRouter.forcedWithdrawalERC20(
             l1ERC20TokenAddress,
@@ -202,7 +202,7 @@ contract ForcedWithdrawERC20 is Script {
             bytes("")
         );
         
-        console.log("Withdraw Message Queue After withdrawal", l1MessageQueue.nextCrossDomainWithdrawalMessageIndex());
+        // console.log("Withdraw Message Queue After withdrawal", l1MessageHandler.nextCrossDomainWithdrawalMessageIndex());
         vm.stopBroadcast();
 
     }
@@ -247,25 +247,25 @@ contract CommitBatch is Script {
         }
 
         // Initialize array of CommitBlockInfo
-        ITwineChain.CommitBlockInfo[] memory newcommitBlockInfo = new ITwineChain.CommitBlockInfo[](length);
+        // ITwineChain.CommitBlockInfo[] memory newcommitBlockInfo = new ITwineChain.CommitBlockInfo[](length);
 
-        for (uint256 i = 0; i < length; i++) {
-            string memory indexStr = string.concat(".CommitBlockInfo[", vm.toString(i), "]");
+        // for (uint256 i = 0; i < length; i++) {
+        //     string memory indexStr = string.concat(".CommitBlockInfo[", vm.toString(i), "]");
 
-            newcommitBlockInfo[i] = ITwineChain.CommitBlockInfo({
-                blockNumber: uint64(vm.parseJsonUint(commitmentJson, string.concat(indexStr, ".blockNumber"))),
-                blockHash: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".blockHash")),
-                transactionRoot: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".transactionRoot")),
-                receiptRoot: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".receiptRoot"))
-            });
-        }
+        //     newcommitBlockInfo[i] = ITwineChain.CommitBlockInfo({
+        //         blockNumber: uint64(vm.parseJsonUint(commitmentJson, string.concat(indexStr, ".blockNumber"))),
+        //         blockHash: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".blockHash")),
+        //         transactionRoot: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".transactionRoot")),
+        //         receiptRoot: vm.parseJsonBytes32(commitmentJson, string.concat(indexStr, ".receiptRoot"))
+        //     });
+        // }
 
         vm.startBroadcast(deployerPrivateKey);
-        console.log("Last finalize batch before commitment:", twineChain.lastCommittedBlockNumber());
+        // console.log("Last finalize batch before commitment:", twineChain.lastCommittedBlockNumber());
         
-        twineChain.commitBatch(startBlock, endBlock, newcommitBlockInfo);
+        // twineChain.commitBatch(startBlock, endBlock, newcommitBlockInfo);
         
-        console.log("Last finalize batch after commitment:", twineChain.lastCommittedBlockNumber());
+        // console.log("Last finalize batch after commitment:", twineChain.lastCommittedBlockNumber());
         vm.stopBroadcast();
     }
 }
@@ -293,21 +293,21 @@ contract FinalizeBatch is Script {
     
  
         vm.startBroadcast(deployerPrivateKey);
-        console.log("Last finalize batch before finalization:", twineChain.lastFinalizedBlockNumber());
+        // console.log("Last finalize batch before finalization:", twineChain.lastFinalizedBlockNumber());
         
-        twineChain.finalizeBatch(publicInputForExecution, executionProof);
+        // twineChain.finalizeBatch(publicInputForExecution, executionProof);
         
-        console.log("Last finalize batch after finalization:", twineChain.lastFinalizedBlockNumber());
+        // console.log("Last finalize batch after finalization:", twineChain.lastFinalizedBlockNumber());
         vm.stopBroadcast();
     }
 }
 
 contract commitAndFinalizeTransaction is Script {
     TwineChain twineChain;
-    L1MessageQueue l1MessageQueue;
+    L1MessageHandler l1MessageHandler;
 
     address twineChainAddress;
-    address l1MessageQueueAddress;
+    address l1MessageHandlerAddress;
 
     // data required for transaction finalization
     bytes transactionInfo;
@@ -317,10 +317,10 @@ contract commitAndFinalizeTransaction is Script {
         string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
 
         twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
-        l1MessageQueueAddress = vm.parseJsonAddress(deployedJson, ".L1MessageQueue");
+        l1MessageHandlerAddress = vm.parseJsonAddress(deployedJson, ".L1MessageHandler");
 
         twineChain = TwineChain(twineChainAddress);
-        l1MessageQueue = L1MessageQueue(l1MessageQueueAddress);
+        l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
 
         // Read parameters dynamically
         transactionInfo = vm.envBytes("TRANSACTION_INFO");
@@ -331,11 +331,11 @@ contract commitAndFinalizeTransaction is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
-        console.log("Deposit Message Queue Before Finalization: ", l1MessageQueue.nextCrossDomainDepositMessageIndex());
+        // console.log("Deposit Message Queue Before Finalization: ", l1MessageHandler.nextCrossDomainDepositMessageIndex());
 
-        twineChain.commitAndFinalizeTransactions(transactionInfo, inclusionProof);
+        // twineChain.commitAndFinalizeTransactions(transactionInfo, inclusionProof);
 
-        console.log("Deposit Message Queue After Finalization: ", l1MessageQueue.nextCrossDomainDepositMessageIndex());
+        // console.log("Deposit Message Queue After Finalization: ", l1MessageHandler.nextCrossDomainDepositMessageIndex());
         vm.stopBroadcast();
 
     }
@@ -381,27 +381,27 @@ contract finalizeWithdrawal is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address admin = vm.addr(deployerPrivateKey);
         // Prepare Input
-        ITwineChain.WithdrawalPublicInput memory publicInput = ITwineChain.WithdrawalPublicInput({
-            chainId: chainId,
-            blockNumber: blockNumber,
-            nonce: nonce,
-            isForcedWithdrawal: isForcedWithdrawal,
-            receiptRoot: receiptRoot,
-            l1ReceiverAddress: l1ReceiverAddress,
-            l1TokenAddress: l1TokenAddress,
-            l2TokenAddress: l2TokenAddress,
-            amount: amount
-        });
+        // ITwineChain.WithdrawalPublicInput memory publicInput = ITwineChain.WithdrawalPublicInput({
+        //     chainId: chainId,
+        //     blockNumber: blockNumber,
+        //     nonce: nonce,
+        //     isForcedWithdrawal: isForcedWithdrawal,
+        //     receiptRoot: receiptRoot,
+        //     l1ReceiverAddress: l1ReceiverAddress,
+        //     l1TokenAddress: l1TokenAddress,
+        //     l2TokenAddress: l2TokenAddress,
+        //     amount: amount
+        // });
 
-        ITwineChain.FinalizeWithdrawalInput memory withdrawalInput = ITwineChain.FinalizeWithdrawalInput({
-            publicInput: publicInput,
-            inclusionProof: inclusionProof
-        });
+        // ITwineChain.FinalizeWithdrawalInput memory withdrawalInput = ITwineChain.FinalizeWithdrawalInput({
+        //     publicInput: publicInput,
+        //     inclusionProof: inclusionProof
+        // });
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Admin Balance before deposit", admin.balance);
 
-        twineChain.finalizeWithdrawal(withdrawalInput);
+        // twineChain.finalizeWithdrawal(withdrawalInput);
         
         console.log("Admin Balance after deposit", admin.balance);
         vm.stopBroadcast();
