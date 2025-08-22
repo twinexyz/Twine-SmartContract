@@ -256,7 +256,9 @@ contract L2TwineMessenger is
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        bytes32 calculatedMessageHash = MessageHasherLib.hashL1Message(messageData);
+        bytes32 calculatedMessageHash = MessageHasherLib.hashL1Message(
+            messageData
+        );
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 calculatedMessageHash
@@ -290,11 +292,13 @@ contract L2TwineMessenger is
             try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
                 // success
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
-                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Executed
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Executed
                 );
             } catch (bytes memory lowLevelError) {
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
-                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Failed
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Failed
                 );
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
@@ -306,11 +310,13 @@ contract L2TwineMessenger is
             try ITwineERC20(token).burn(to, amount) {
                 // Success
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
-                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Executed
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Executed
                 );
             } catch (bytes memory lowLevelError) {
                 ITwineSystemStorage(systemStorageContract).setMessageExecuted(
-                    bridgeMessageHash, ITwineSystemStorage.L1MessageStatus.Failed
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Failed
                 );
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
@@ -468,13 +474,24 @@ contract L2TwineMessenger is
     function createL1Txns(
         TwineTypes.MessageData memory messageData
     ) internal pure returns (L1Txns memory) {
+        TwineTypes.TransactionType txnType = messageData.txnType;
+
+        if (
+            txnType != TwineTypes.TransactionType.Deposit &&
+            txnType != TwineTypes.TransactionType.Withdraw
+        ) {
+            revert("transaction type not supported");
+        }
+
+        bool is_deposit = (txnType == TwineTypes.TransactionType.Deposit);
+
         return
             L1Txns({
                 nonce: messageData.nonce,
                 tokenTxn: TokenTxn({
                     token: messageData.l2Token.stringToAddress(),
                     receiver: messageData.toAddress.stringToAddress(),
-                    deposit: true,
+                    deposit: is_deposit,
                     amount: messageData.amount.stringToUint()
                 }),
                 l1Metadata: L1Metadata({
