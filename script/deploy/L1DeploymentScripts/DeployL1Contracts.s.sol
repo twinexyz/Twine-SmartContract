@@ -16,6 +16,8 @@ import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gatewa
 
 import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
+import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
+
 contract DeployL1Contracts is Script {
     struct DeployedContracts {
         address roleManager;
@@ -121,6 +123,9 @@ contract DeployL1Contracts is Script {
         // Deploying the SP1Verifier contract
         contracts.verifier = address(new SP1Verifier());
 
+        // Deploying the SP1Verifier contract
+        contracts.verifier = address(new SP1Verifier());
+
         string memory twineObject = "l1-contracts";
         vm.serializeAddress(twineObject, "TwineChain", contracts.twineChain);
         vm.serializeAddress(
@@ -156,6 +161,8 @@ contract DeployL1Contracts is Script {
         vm.serializeAddress(twineObject, "L1XERC20Gateway", address(0));
         vm.serializeAddress(twineObject, "Verifier", contracts.verifier);
         vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
+        vm.serializeAddress(twineObject, "Verifier", contracts.verifier);
+        vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
 
         // Fill them manually
         vm.serializeBytes32(
@@ -174,6 +181,7 @@ contract DeployL1Contracts is Script {
             bytes32("dummy_value")
         );
 
+        vm.writeJson(finalJson, exportPath);
         vm.writeJson(finalJson, exportPath);
 
         // Stop broadcasting transactions
