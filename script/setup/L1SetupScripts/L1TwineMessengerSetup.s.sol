@@ -47,24 +47,24 @@ contract SetRollupAddress is Script {
     }
 }
 
-contract setMessageQueueAddress is Script {
+contract setMessageHandlerAddress is Script {
     L1TwineMessenger l1TwineMessenger;
     address l1TwineMessengerAddress;
-    address messageQueueAddress;
+    address messageHandlerAddress;
 
     function setUp() public {
         string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         l1TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L1TwineMessenger");
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
 
-        messageQueueAddress = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
+        messageHandlerAddress = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
     }   
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
-        l1TwineMessenger.setMessengerQueueAddress(messageQueueAddress);
+        l1TwineMessenger.setMessageHandlerAddress(messageHandlerAddress);
         vm.stopBroadcast();
     }
 }

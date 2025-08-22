@@ -60,30 +60,44 @@ abstract contract TwineL1GatewayBase is
     function setRoleManagerAddress(
         address _roleManagerAddress
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_roleManagerAddress != address(0),"value cann't be zero");
+        if (_roleManagerAddress == address(0)) revert ZeroAddress();  
+        address oldRoleManager = roleManager;
         roleManager = _roleManagerAddress;
+        
+        emit RoleManagerUpdated(oldRoleManager, _roleManagerAddress);
     }
 
     /// @notice sets the gateway router address
     function setGatewayRouter(
         address _gatewayRouter
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_gatewayRouter != address(0),"value cann't be zero");
+         if (_gatewayRouter == address(0)) revert ZeroAddress();
+        
+        address oldRouter = gatewayRouter;
         gatewayRouter = _gatewayRouter;
+        
+        emit GatewayRouterUpdated(oldRouter, _gatewayRouter);
     }
 
     /// @notice sets the twine messenger contract address
     function setTwineMessenger(
         address _messenger
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(_messenger != address(0),"value cann't be zero");
+        if (_messenger == address(0)) revert ZeroAddress();
+        
+        address oldMessenger = messenger;
         messenger = _messenger;
+        
+        emit MessengerUpdated(oldMessenger, _messenger);
     }
 
     /// @notice sets the chainId
      function setChainId(
         uint64 _chainId
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        uint64 oldChainId = chainId;
         chainId = _chainId;
+        
+        emit ChainIdUpdated(oldChainId, _chainId);
     }
 }

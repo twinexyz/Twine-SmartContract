@@ -54,10 +54,10 @@ contract SetChainId is Script {
     } 
 }
 
-contract SetmessageQueueAddress is Script {
+contract SetMessageHandlerAddress is Script {
     TwineChain twineChain;
     address twineChainAddress;
-    address messageQueueAddress;
+    address messageHandlerAddress;
     function setUp() public {
         string memory deployedJson = vm.readFile("./script/utils/L1Addresses.json");
         twineChainAddress = vm.parseJsonAddress(
@@ -66,13 +66,13 @@ contract SetmessageQueueAddress is Script {
         );
         twineChain = TwineChain(twineChainAddress);
 
-        messageQueueAddress = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
+        messageHandlerAddress = vm.envAddress("MESSAGE_QUEUE_ADDRESS");
     }
     
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        twineChain.setMessengerQueueAddress(messageQueueAddress);
+        twineChain.setMessageHandlerAddress(messageHandlerAddress);
         vm.stopBroadcast();
     }
 }

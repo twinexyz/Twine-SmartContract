@@ -5,17 +5,25 @@ import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
+import {ISP1Helios} from "./ISP1Helios.sol";
 import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
+import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
+import {MessageHasherLib} from "../libraries/utils/MessageHasherLib.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
-contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompressor {
+contract L2TwineMessenger is
+    TwineL2MessengerBase,
+    IL2TwineMessenger,
+    ZstdCompressor
+{
+    using TypeConversionLib for string;
     using TypeConversionLib for address;
 
     /// @notice SP1 Verifier Address
@@ -36,8 +44,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
     /// @notice The address of bridging Precompile
     address public bridgingPrecompileAddress;
 
+    /// @notice Address of sp1 helios
+    address public sp1Helios;
+
     /// @notice Mapping to store consensus verification keys of L1s
     mapping(uint256 => bytes32) public vKeys;
+
+    /// @notice Mapping of message index to message hash
+    mapping(uint256 => bytes32) public messageHash;
 
     /***************
      * Constructor *
@@ -87,6 +101,13 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         bool status
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         skipVerification = status;
+    }
+
+    function setSP1Helios(
+        address _sp1Helios
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(_sp1Helios != address(0), "_sp1Helios address cannot be zero");
+        sp1Helios = _sp1Helios;
     }
 
     function setSp1VerifierAddress(
@@ -184,49 +205,78 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
             );
         }
 
-        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
-            .call(output);
-        require(txnSuccess, "Failed executing transactions");
-        handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
+        // (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+        //     .call(output);
+        // require(txnSuccess, "Failed executing transactions");
+        // handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
     }
 
     function handleEthereumProofAndTransactions(
         uint256 chainId,
-        uint256 height,
-        bytes32 receiptRoot,
-        bytes memory consensusProof,
-        bytes memory ethereumTransactions
+        uint256 executionHeight,
+        bytes memory messageData,
+        bytes memory serializedProof
     )
         external
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        // For testing purposes only. TODO: Remove before deploying to production.
-        if (skipVerification) {
-            ITwineSystemStorage(systemStorageContract).setBlockReceipts(
-                chainId,
-                height,
-                receiptRoot
-            );
-        }
-        if (consensusProof.length > 0) {
-            _verifyConsensusProof(chainId, consensusProof);
-        }
+        uint256 latest_block = ISP1Helios(sp1Helios)
+            .latestExecutionBlockNumber();
+        require(latest_block >= executionHeight, "Block not yet provable");
 
-        if (ethereumTransactions.length > 0) {
-            bytes memory data = abi.encode(chainId, ethereumTransactions);
-            (
-                bool txnSuccess,
-                bytes memory txnOutput
-            ) = bridgingPrecompileAddress.call(data);
-            require(txnSuccess, "Ethereum Transactions failed!");
-            handleBridgeTransactions(chainId, ChainType.Ethereum, txnOutput);
-        }
+        // TODO: HANDLE LIKE IN `handleChainTransactions`
+        bytes32 ethMessageHash = keccak256(messageData);
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
+                ethMessageHash
+            ),
+            "Message already executed"
+        );
+
+        bytes32 stateRoot = ISP1Helios(sp1Helios).executionStateRoots(
+            executionHeight
+        );
+
+        bytes memory precompile_input = abi.encode(
+            chainId,
+            abi.encode(executionHeight, stateRoot, messageData, serializedProof)
+        );
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(precompile_input);
+        require(txnSuccess, "Ethereum Transactions failed!");
+        handleBridgeTransactions(chainId, ethMessageHash, txnOutput);
+    }
+
+    /// @notice This function is exclusively for mock testing and should never be deployed
+    function handleChainTransactions(
+        TwineTypes.MessageData memory messageData
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        bytes32 calculatedMessageHash = MessageHasherLib.hashL1Message(
+            messageData
+        );
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
+                calculatedMessageHash
+            ),
+            "Message already executed"
+        );
+        bytes memory txnOutput = abi.encode(createL1Txns(messageData));
+
+        handleBridgeTransactions(
+            messageData.chainId,
+            calculatedMessageHash,
+            txnOutput
+        );
     }
 
     function handleBridgeTransactions(
         uint256 chainId,
-        ChainType chainType,
+        bytes32 bridgeMessageHash,
         bytes memory precompileOutput
     ) internal {
         L1Txns memory l1Txn = abi.decode(precompileOutput, (L1Txns));
@@ -237,29 +287,37 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         bool shouldMint = l1Txn.tokenTxn.deposit;
 
         if (shouldMint) {
-            _checkAndUpdateNonce(
-                chainId,
-                nonce,
-                ITwineSystemStorage.L1TxnType.Deposit
-            );
+            _checkAndUpdateNonce(chainId, nonce);
 
-            try this.mintAndCall(chainType, token, to, amount, l1Txn.contractCallData) {
+            try this.mintAndCall(token, to, amount, l1Txn.contractCallData) {
                 // success
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Executed
+                );
             } catch (bytes memory lowLevelError) {
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Failed
+                );
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;
             }
         } else {
-            _checkAndUpdateNonce(
-                chainId,
-                nonce,
-                ITwineSystemStorage.L1TxnType.ForcedWithdraw
-            );
+            _checkAndUpdateNonce(chainId, nonce);
 
             try ITwineERC20(token).burn(to, amount) {
                 // Success
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Executed
+                );
             } catch (bytes memory lowLevelError) {
+                ITwineSystemStorage(systemStorageContract).setMessageExecuted(
+                    bridgeMessageHash,
+                    ITwineSystemStorage.L1MessageStatus.Failed
+                );
                 emit TransactionFailed(lowLevelError);
                 emit L1TransactionsHandled(chainId, 0, nonce, precompileOutput);
                 return;
@@ -269,23 +327,15 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         emit L1TransactionsHandled(chainId, 1, nonce, precompileOutput);
     }
 
-    function _checkAndUpdateNonce(
-        uint256 chainId,
-        uint256 nonce,
-        ITwineSystemStorage.L1TxnType txnType
-    ) internal {
+    function _checkAndUpdateNonce(uint256 chainId, uint256 nonce) internal {
         uint256 expectedNonce = ITwineSystemStorage(systemStorageContract)
-            .getLastMessageExecuted(chainId, txnType);
+            .getLastMessageExecuted(chainId);
         require(expectedNonce + 1 == nonce, "Invalid nonce");
 
-        ITwineSystemStorage(systemStorageContract).increaseNonce(
-            chainId,
-            txnType
-        );
+        ITwineSystemStorage(systemStorageContract).increaseNonce(chainId);
     }
 
     function mintAndCall(
-        ChainType chainType,
         address token,
         address to,
         uint256 amount,
@@ -296,14 +346,14 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         ITwineERC20(token).mint(to, amount);
 
         if (contractCallData.length > 0) {
-            if ( chainType == ChainType.Solana ) {
-                bytes memory output = _decompress(contractCallData);
-                contractCallData = output;
-            }
+            bytes memory output = _decompress(contractCallData);
+            contractCallData = output;
 
-            ContractCall[] memory contractCallsArray = abi.decode(contractCallData, (ContractCall[]));
+            ContractCall[] memory contractCallsArray = abi.decode(
+                contractCallData,
+                (ContractCall[])
+            );
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
-
         }
     }
 
@@ -343,6 +393,18 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
         uint256 gasLimit
     ) internal {
         ++messageCount;
+        messageHash[messageCount] = computeTransactionHash(
+            from,
+            l2Token,
+            to,
+            l1Token,
+            amount,
+            value,
+            messageCount,
+            chainId,
+            block.number,
+            gasLimit
+        );
         emit SentMessage(
             from,
             l2Token,
@@ -378,5 +440,66 @@ contract L2TwineMessenger is TwineL2MessengerBase, IL2TwineMessenger, ZstdCompre
             );
         }
         emit ConsensusVerified(consensusProof);
+    }
+
+    function computeTransactionHash(
+        address from,
+        address l2Token,
+        string memory to,
+        string memory l1Token,
+        uint256 amount,
+        uint256 value,
+        uint256 messageCount,
+        uint256 chainId,
+        uint256 blockNumber,
+        uint256 gasLimit
+    ) public pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    from,
+                    l2Token,
+                    to,
+                    l1Token,
+                    amount,
+                    value,
+                    messageCount,
+                    chainId,
+                    blockNumber,
+                    gasLimit
+                )
+            );
+    }
+
+    function createL1Txns(
+        TwineTypes.MessageData memory messageData
+    ) internal pure returns (L1Txns memory) {
+        TwineTypes.TransactionType txnType = messageData.txnType;
+
+        if (
+            txnType != TwineTypes.TransactionType.Deposit &&
+            txnType != TwineTypes.TransactionType.Withdraw
+        ) {
+            revert("transaction type not supported");
+        }
+
+        bool is_deposit = (txnType == TwineTypes.TransactionType.Deposit);
+
+        return
+            L1Txns({
+                nonce: messageData.nonce,
+                tokenTxn: TokenTxn({
+                    token: messageData.l2Token.stringToAddress(),
+                    receiver: messageData.toAddress.stringToAddress(),
+                    deposit: is_deposit,
+                    amount: messageData.amount.stringToUint()
+                }),
+                l1Metadata: L1Metadata({
+                    blockHeight: messageData.blockNumber,
+                    fromAddress: messageData.fromAddress,
+                    l1Token: messageData.l1Token
+                }),
+                contractCallData: messageData.message
+            });
     }
 }

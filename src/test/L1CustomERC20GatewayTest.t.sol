@@ -10,7 +10,7 @@ import {L2MsgExecutor} from "../L2/L2MsgExecutor.sol";
 import {TwineChain} from "../L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../L1/L1TwineMessenger.sol";
 import {L2TwineMessenger} from "../L2/L2TwineMessenger.sol";
-import {L1MessageQueue} from "../L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../L1/rollup/L1MessageHandler.sol";
 import {RoleManager} from "../libraries/access/RoleManager.sol";
 import {IL1GatewayRouter, L1GatewayRouter} from "../L1/gateways/L1GatewayRouter.sol";
 import {IL1ERC20Gateway, L1CustomERC20Gateway} from "../L1/gateways/L1CustomERC20Gateway.sol";
@@ -22,7 +22,7 @@ contract L1CustomERC20GatewayTest is Test {
     TwineChain private rollup;
     L1GatewayRouter private router;
     RoleManager private roleManager;
-    L1MessageQueue private messageQueue;
+    L1MessageHandler private messageHandler;
     L1TwineMessenger private l1Messenger;
     L2TwineMessenger private l2Messenger;
     L1CustomERC20Gateway private gateway;
@@ -32,6 +32,8 @@ contract L1CustomERC20GatewayTest is Test {
     bytes32 public constant CHAIN_ADMIN = keccak256("CHAIN_ADMIN");
     bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
     bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
+
+    error ZeroAddress();
 
     function setUp() public {
         vm.startPrank(initialOwner);
@@ -60,15 +62,15 @@ contract L1CustomERC20GatewayTest is Test {
         );
         router = L1GatewayRouter(L1GatewayRouterAddress);
 
-        address L1MessageQueueAddress = Upgrades.deployTransparentProxy(
-            "L1MessageQueue.sol",
+        address L1MessageHandlerAddress = Upgrades.deployTransparentProxy(
+            "L1MessageHandler.sol",
             msg.sender,
             abi.encodeCall(
-                L1MessageQueue.initialize,
+                L1MessageHandler.initialize,
                 (0, address(0), address(roleManager))
             )
         );
-        messageQueue = L1MessageQueue(L1MessageQueueAddress);
+        messageHandler = L1MessageHandler(L1MessageHandlerAddress);
 
         address L2MessageExecutorAddress = Upgrades.deployTransparentProxy(
             "L2MsgExecutor.sol",
@@ -106,7 +108,7 @@ contract L1CustomERC20GatewayTest is Test {
                 L1TwineMessenger.initialize,
                 (
                     address(l2Messenger),
-                    address(messageQueue),
+                    address(messageHandler),
                     address(0),
                     address(roleManager)
                 )
@@ -144,7 +146,7 @@ contract L1CustomERC20GatewayTest is Test {
         router.setETHGateway(address(gateway));
         router.setDefaultERC20Gateway(address(gateway));
         gateway.setRoleManagerAddress(address(roleManager));
-        messageQueue.setMessengerAddress(address(l1Messenger));
+        messageHandler.setMessengerAddress(address(l1Messenger));
         vm.stopPrank();
     }
     function testSetRoleManagerAddress() public {
@@ -157,7 +159,7 @@ contract L1CustomERC20GatewayTest is Test {
 
     function testSetRoleManagerAddressZeroAddress() public {
         vm.startPrank(initialOwner);
-        vm.expectRevert("value cann't be zero");
+        vm.expectRevert(ZeroAddress.selector);
         gateway.setRoleManagerAddress(address(0));
         vm.stopPrank();
     }
@@ -180,7 +182,7 @@ contract L1CustomERC20GatewayTest is Test {
 
     function testSetGatewayRouterZeroAddress() public {
         vm.startPrank(initialOwner);
-        vm.expectRevert("value cann't be zero");
+        vm.expectRevert(ZeroAddress.selector);
         gateway.setGatewayRouter(address(0));
         vm.stopPrank();
     }
@@ -203,7 +205,7 @@ contract L1CustomERC20GatewayTest is Test {
 
     function testSetTwineMessengerZeroAddress() public {
         vm.startPrank(initialOwner);
-        vm.expectRevert("value cann't be zero");
+        vm.expectRevert(ZeroAddress.selector);
         gateway.setTwineMessenger(address(0));
         vm.stopPrank();
     }
@@ -309,7 +311,7 @@ contract L1CustomERC20GatewayTest is Test {
             10,
             new bytes(0)
         );
-        assertEq(messageQueue.nextCrossDomainWithdrawalMessageIndex(), 1);
+        assertEq(messageHandler.messageIndex(), 1);
     }
 
     function addressToString(

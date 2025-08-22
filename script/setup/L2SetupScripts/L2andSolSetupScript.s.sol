@@ -34,7 +34,7 @@ contract L2andSolSetupScript is Script {
     address l2MessageExecutorAddress;
     address l2ETHGatewayAddress;
     address l2ERC20TokenAddress;
-    address l2MessageQueueAddress;
+    address l2MessageHandlerAddress;
     address l2GatewayRouterAddress;
     address l2XERC20GatewayAddress;
     address twineOperationsHandler;

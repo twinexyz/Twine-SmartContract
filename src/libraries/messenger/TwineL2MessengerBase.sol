@@ -15,6 +15,8 @@ abstract contract TwineL2MessengerBase is
     /*************
      * Variables *
      *************/
+     //count for the messages
+    uint256 public messageCount;
 
     /// @notice The address of fee vault, collecting cross domain messaging fee.
     address public feeVault;
@@ -26,9 +28,6 @@ abstract contract TwineL2MessengerBase is
 
     //chainId=> (l2Token => L2Gateway)
     mapping(uint256 => mapping(address => address)) public tokenGateWay;
-
-    //count for the messages
-    uint256 public messageCount;
 
     /**********************
      * Function Modifiers *

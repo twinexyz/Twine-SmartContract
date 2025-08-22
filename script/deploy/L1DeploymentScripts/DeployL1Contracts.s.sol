@@ -8,7 +8,7 @@ import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 
 import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
-import {L1MessageQueue} from "../../../src/L1/rollup/L1MessageQueue.sol";
+import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
@@ -16,14 +16,15 @@ import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gatewa
 
 import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
-contract DeployL1Contracts is Script {
+import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
+contract DeployL1Contracts is Script {
     struct DeployedContracts {
         address roleManager;
         address twineChain;
         address l1ETHGateway;
         address l1GatewayRouter;
-        address l1MessageQueue;
+        address l1MessageHandler;
         address l1TwineMessenger;
         address l1CustomERC20Gateway;
         address verifier;
@@ -84,12 +85,12 @@ contract DeployL1Contracts is Script {
             )
         );
 
-        // Deploying an upgradeable proxy for L1MessageQueue
-        contracts.l1MessageQueue = Upgrades.deployTransparentProxy(
-            "L1MessageQueue.sol",
+        // Deploying an upgradeable proxy for L1MessageHandler
+        contracts.l1MessageHandler = Upgrades.deployTransparentProxy(
+            "L1MessageHandler.sol",
             initialOwner,
             abi.encodeCall(
-                L1MessageQueue.initialize,
+                L1MessageHandler.initialize,
                 (0, address(0), contracts.roleManager)
             )
         );
@@ -100,7 +101,7 @@ contract DeployL1Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 TwineChain.initialize,
-                (contracts.l1MessageQueue, address(0), contracts.roleManager)
+                (contracts.l1MessageHandler, address(0), contracts.roleManager)
             )
         );
 
@@ -112,7 +113,7 @@ contract DeployL1Contracts is Script {
                 L1TwineMessenger.initialize,
                 (
                     address(0),
-                    contracts.l1MessageQueue,
+                    contracts.l1MessageHandler,
                     contracts.twineChain,
                     contracts.roleManager
                 )
@@ -122,27 +123,65 @@ contract DeployL1Contracts is Script {
         // Deploying the SP1Verifier contract
         contracts.verifier = address(new SP1Verifier());
 
+        // Deploying the SP1Verifier contract
+        contracts.verifier = address(new SP1Verifier());
+
         string memory twineObject = "l1-contracts";
         vm.serializeAddress(twineObject, "TwineChain", contracts.twineChain);
-        vm.serializeAddress(twineObject, "L1ETHGateway", contracts.l1ETHGateway);
-        vm.serializeAddress(twineObject, "L1RoleManager", contracts.roleManager);
-        vm.serializeAddress(twineObject, "L1MessageQueue", contracts.l1MessageQueue);
-        vm.serializeAddress(twineObject, "L1GatewayRouter", contracts.l1GatewayRouter);
-        vm.serializeAddress(twineObject, "L1TwineMessenger", contracts.l1TwineMessenger);
-        vm.serializeAddress(twineObject, "L1CustomERC20Gateway", contracts.l1CustomERC20Gateway);
+        vm.serializeAddress(
+            twineObject,
+            "L1ETHGateway",
+            contracts.l1ETHGateway
+        );
+        vm.serializeAddress(
+            twineObject,
+            "L1RoleManager",
+            contracts.roleManager
+        );
+        vm.serializeAddress(
+            twineObject,
+            "L1MessageHandler",
+            contracts.l1MessageHandler
+        );
+        vm.serializeAddress(
+            twineObject,
+            "L1GatewayRouter",
+            contracts.l1GatewayRouter
+        );
+        vm.serializeAddress(
+            twineObject,
+            "L1TwineMessenger",
+            contracts.l1TwineMessenger
+        );
+        vm.serializeAddress(
+            twineObject,
+            "L1CustomERC20Gateway",
+            contracts.l1CustomERC20Gateway
+        );
         vm.serializeAddress(twineObject, "L1XERC20Gateway", address(0));
+        vm.serializeAddress(twineObject, "Verifier", contracts.verifier);
+        vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
         vm.serializeAddress(twineObject, "Verifier", contracts.verifier);
         vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
 
         // Fill them manually
-        vm.serializeString(twineObject, "executionVkey", "");
-        vm.serializeString(twineObject, "inclusionVkey", "");
-        string memory finalJson = vm.serializeString(
-            twineObject, 
-            "withdrawalVkey", 
-            ""
-        ); // Capture the final serialized string
+        vm.serializeBytes32(
+            twineObject,
+            "finalizeVkey",
+            bytes32("dummy_value")
+        );
+        vm.serializeBytes32(
+            twineObject,
+            "refundVkey",
+            bytes32("dummy_value")
+        );
+        string memory finalJson = vm.serializeBytes32(
+            twineObject,
+            "withdrawalVkey",
+            bytes32("dummy_value")
+        );
 
+        vm.writeJson(finalJson, exportPath);
         vm.writeJson(finalJson, exportPath);
 
         // Stop broadcasting transactions
@@ -154,7 +193,7 @@ contract DeployL1Contracts is Script {
         console.log("Twine chain :", contracts.twineChain);
         console.log("L1 Eth Gatway :", contracts.l1ETHGateway);
         console.log("L1 Rolemanager :", contracts.roleManager);
-        console.log("L1 Message Queue :", contracts.l1MessageQueue);
+        console.log("L1 Message Handler :", contracts.l1MessageHandler);
         console.log("L1 Gateway Router :", contracts.l1GatewayRouter);
         console.log("L1 Twine Messenger :", contracts.l1TwineMessenger);
         console.log("L1 Custom ERC20 Gateway:", contracts.l1CustomERC20Gateway);

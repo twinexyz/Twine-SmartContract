@@ -2,40 +2,127 @@
 pragma solidity ^0.8.24;
 
 import {ITwineERC20} from "./ITwineERC20.sol";
+import {IRoleManager} from "../access/IRoleManager.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-contract TwineStandardERC20 is ITwineERC20,ERC20Upgradeable{
-    address public gateway;
-    uint8 private decimals_;
+/**
+ * @title TwineStandardERC20
+ * @dev Upgradeable ERC20 token
+ */
+contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
+    /*************
+     * Variables *
+     *************/
 
-     modifier onlyGateway() {
-        require(gateway == _msgSender(), "Only Gateway");
+    /// @notice Number of decimal places for the token
+    uint8 public decimals_;
+
+    /// @notice Address of the role manager contract
+    IRoleManager public roleManager;
+
+    /***********
+     * Errors  *
+     ***********/
+    /// @notice Thrown when an invalid input for token name and symbol is given
+    error InvalidTokenInitialization();
+
+    /// @notice Thrown when a zero address is provided where not allowed
+    error ZeroAddress();
+
+    /// @notice Thrown when a zero amount is provided where not allowed
+    error ZeroAmount();
+
+    /**********************
+     * Function Modifiers *
+     **********************/
+
+    /**
+     * @notice Restricts function access to addresses with specific roles
+     * @param role The role hash required to call the function
+     */
+    modifier onlyRole(bytes32 role) {
+        roleManager.checkRole(role, msg.sender);
         _;
     }
 
+    /**
+     * @notice Validates that an address is not zero
+     * @param addr The address to validate
+     */
+    modifier notZeroAddress(address addr) {
+        if (addr == address(0)) revert ZeroAddress();
+        _;
+    }
+
+    /**
+     * @notice Validates that an amount is greater than zero
+     * @param amount The amount to validate
+     */
+    modifier notZeroAmount(uint256 amount) {
+        if (amount == 0) revert ZeroAmount();
+        _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        // Disable initializers in the implementation contract
+        _disableInitializers();
+    }
+
+    /***********************
+     * Initialize Function *
+     ***********************/
+
+    /**
+     * @notice Initializes the contract with token details
+     * @param _name The name of the token
+     * @param _symbol The symbol of the token
+     * @param _decimals Number of decimal places for the token
+     * @param _roleManager Address of the role manager contract
+     * @dev This function can only be called once due to the initializer modifier
+     */
     function initialize(
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        address _gateway
+        address _roleManager
     ) external initializer {
-        __ERC20_init(_name, _symbol);
+        // Validate inputs
+        if (bytes(_name).length == 0 || bytes(_symbol).length == 0) {
+            revert InvalidTokenInitialization(); // Reusing error for empty strings
+        }
+        if (_roleManager == address(0)) revert ZeroAddress();
         decimals_ = _decimals;
-        gateway = _gateway;
+        roleManager = IRoleManager(_roleManager);
+        __ERC20_init(_name, _symbol);
     }
 
-
-    function decimals() public view override returns (uint8) {
-        return decimals_;
-    }
-
-    /// @inheritdoc ITwineERC20
-    function mint(address _to, uint256 _amount) external onlyGateway {
+    /**********************
+     * External Functions *
+     **********************/
+    function mint(
+        address _to,
+        uint256 _amount
+    )
+        external
+        notZeroAddress(_to)
+        notZeroAmount(_amount)
+        onlyRole(roleManager.TWINE_TOKENS_MINTER())
+    {
         _mint(_to, _amount);
+        emit TokensMinted(_to, _amount, _msgSender());
     }
 
-    /// @inheritdoc ITwineERC20
-    function burn(address _from, uint256 _amount) external onlyGateway {
+    function burn(
+        address _from,
+        uint256 _amount
+    )
+        external
+        notZeroAddress(_from)
+        notZeroAmount(_amount)
+        onlyRole(roleManager.TWINE_TOKENS_BURNER())
+    {
         _burn(_from, _amount);
+        emit TokensBurned(_from, _amount, _msgSender());
     }
 }

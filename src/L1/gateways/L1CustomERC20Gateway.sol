@@ -69,9 +69,9 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address l1Token,
         address l2Token
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
-        require(l1Token != address(0), "token address cannot be 0");
-        require(l2Token != address(0), "token address cannot be 0");
-
+        if (l1Token == address(0) || l2Token == address(0)) {
+            revert ZeroAddress();
+        }
         address oldL2Token = tokenMapping[l1Token];
         tokenMapping[l1Token] = l2Token;
 
@@ -87,10 +87,11 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         address l1Token,
         address l2Token
     ) internal virtual override {
-        require(msg.value == 0, "nonzero msg.value");
-        require(l1Token != address(0), "token address cannot be 0");
-        require(l2Token != address(0), "token address cannot be 0");
-        require(l2Token == tokenMapping[l1Token], "l2 token mismatch");
+        if (msg.value != 0) revert NonZeroMsgValue();
+        if (l1Token == address(0) || l2Token == address(0)) {
+            revert ZeroAddress();
+        }
+        if (l2Token != tokenMapping[l1Token]) revert L2TokenMismatch();
     }
 
     /// @inheritdoc L1ERC20Gateway
@@ -101,9 +102,9 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual override {
-        require(amount > 0, "Amount can not be zero");
+        if (amount == 0) revert ZeroAmount();
         address l2Token = tokenMapping[token];
-        require(l2Token != address(0), "no corresponding l2 token");
+        if (l2Token == address(0)) revert NoCorrespondingL2Token();
 
         //  Transfer token into this contract.
         address from;
@@ -129,7 +130,7 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         uint256 /* gasLimit */,
         bytes memory data
     ) internal virtual override {
-        require(amount > 0, "withdrawing zero amount not allowd");
+        if (amount == 0) revert ZeroAmount();
         // Extract real sender if this call is from L1GatewayRouter
         address from;
         (from, data) = _getRealSender(data);

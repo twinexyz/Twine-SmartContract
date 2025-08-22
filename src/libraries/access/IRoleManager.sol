@@ -47,4 +47,14 @@ interface IRoleManager {
      * @notice Returns bytes32 value of the public variable  TWINE_OPERATIONS_HANDLER
      **/
     function TWINE_OPERATIONS_HANDLER() external view returns (bytes32);
+
+    /**
+     * @notice Returns bytes32 value of the public variable  TWINE_TOKENS_MINTER
+     **/
+    function TWINE_TOKENS_MINTER() external view returns (bytes32);
+
+    /**
+     * @notice Returns bytes32 value of the public variable  TWINE_TOKENS_MINTER
+     **/
+    function TWINE_TOKENS_BURNER() external view returns (bytes32);
 }

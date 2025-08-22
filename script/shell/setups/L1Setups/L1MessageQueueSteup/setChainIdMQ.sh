@@ -13,7 +13,7 @@ export PRIVATE_KEY
 export CHAIN_ID
 
 #Run the forge script with the provided values
-forge script script/setup/L1SetupScripts/MessageQueueSetup.s.sol:SetRoleManager \
+forge script script/setup/L1SetupScripts/MessageHandlerSetup.s.sol:SetRoleManager \
     --fork-url $DEFAULT_FORK_URL  \
     --broadcast \
     -- --env "CHAIN_ID=$CHAIN_ID" --env "PRIVATE_KEY=$PRIVATE_KEY"
