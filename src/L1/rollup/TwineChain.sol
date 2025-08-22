@@ -75,11 +75,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The mapping of batchNumber => batchHash
     mapping(uint64 => bytes32) public finalizedBatch;
     /// @notice Mapping of executed withdraw hash to a boolean value
-    mapping(bytes => bool) public isL2WithdrawExecuted;
+    mapping(bytes32 => bool) public isL2WithdrawExecuted;
     /// @notice Mapping of executed withdraw hash to a boolean value
-    mapping(bytes => bool) public isForcedWithdrawExecuted;
-    /// @notice Mapping of executed refubd hash to a boolean value
-    mapping(bytes => bool) public isRefundExecuted;
+    mapping(bytes32 => bool) public isForcedWithdrawExecuted;
+    /// @notice Mapping of executed refund hash to a boolean value
+    mapping(bytes32 => bool) public isRefundExecuted;
 
     /**********************
      * Function Modifiers *
@@ -289,7 +289,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata refundProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (isRefundExecuted[publicValues]) revert RefundAlreadyProcessed();
+        if (isRefundExecuted[keccak256(publicValues)]) revert RefundAlreadyProcessed();
 
         L1OriginTxPublicValues memory refundValues = TwineChainDecoder
             .decodeL1OriginTxnPublicValues(publicValues);
@@ -331,7 +331,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             refundValues.fromAddress,
             refundValues.amount
         );
-        isRefundExecuted[publicValues] = true;
+        isRefundExecuted[keccak256(publicValues)] = true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -341,7 +341,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata withdrawalProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (isForcedWithdrawExecuted[publicValues])
+        if (isForcedWithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
         L1OriginTxPublicValues memory withdrawValues = TwineChainDecoder
             .decodeL1OriginTxnPublicValues(publicValues);
@@ -380,13 +380,14 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawValues.fromAddress,
             withdrawValues.amount
         );
-        isForcedWithdrawExecuted[publicValues] = true;
+        isForcedWithdrawExecuted[keccak256(publicValues)] = true;
     }
+
     function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (isL2WithdrawExecuted[publicValues])
+        if (isL2WithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
 
         L2WithdrawValues memory withdrawValues = TwineChainDecoder
@@ -415,7 +416,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawValues.to,
             withdrawValues.amount
         );
-        isL2WithdrawExecuted[publicValues] = true;
+        isL2WithdrawExecuted[keccak256(publicValues)] = true;
         emit L2WithdrawExecuted(
             withdrawValues.nonce,
             withdrawValues.l1Token,
@@ -489,5 +490,20 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
                     transactionValues.amount
                 )
             );
+    }
+
+    function extractMessageHash(
+        bytes memory data
+    ) internal pure returns (bytes32) {
+        require(data.length > 40, "Data too short");
+
+        uint256 newLen = data.length - 40;
+        bytes memory result = new bytes(newLen);    
+
+        for(uint256 i = 0; i < newLen; i++) {
+            result[i] = data[i + 40];
+        }
+
+        return keccak256(result);
     }
 }
