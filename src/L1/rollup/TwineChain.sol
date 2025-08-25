@@ -290,12 +290,13 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata executionProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        (, bytes32 currentBatchHash, ) = TwineChainDecoder.decodeBatchValues(publicValues);
+        (, bytes32 currentBatchHash, ) = TwineChainDecoder.decodeBatchValues(
+            publicValues
+        );
 
         commitBatch(batchNumber, currentBatchHash);
         finalizeBatch(batchNumber, publicValues, executionProof);
     }
-
 
     /* -------------------------------------------------------------------------- */
     /*                               Refund Deposit                               */
@@ -304,7 +305,8 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         bytes calldata publicValues,
         bytes calldata refundProof
     ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (isRefundExecuted[keccak256(publicValues)]) revert RefundAlreadyProcessed();
+        if (isRefundExecuted[keccak256(publicValues)])
+            revert RefundAlreadyProcessed();
 
         L1OriginTxPublicValues memory refundValues = TwineChainDecoder
             .decodeL1OriginTxnPublicValues(publicValues);
@@ -347,6 +349,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             refundValues.amount
         );
         isRefundExecuted[keccak256(publicValues)] = true;
+
+        emit RefundSuccessful(
+            refundValues.nonce,
+            refundValues.fromAddress,
+            refundValues.l1Token,
+            refundValues.chainId,
+            refundValues.amount,
+            uint64(block.number)
+        );
     }
 
     /* -------------------------------------------------------------------------- */
@@ -396,6 +407,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawValues.amount
         );
         isForcedWithdrawExecuted[keccak256(publicValues)] = true;
+
+        emit ForcedWithdrawalSuccessful(
+            withdrawValues.nonce,
+            withdrawValues.fromAddress,
+            withdrawValues.l1Token,
+            withdrawValues.chainId,
+            withdrawValues.amount,
+            uint64(block.number)
+        );
     }
 
     function executeL2Withdraw(
@@ -513,9 +533,9 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         require(data.length > 40, "Data too short");
 
         uint256 newLen = data.length - 40;
-        bytes memory result = new bytes(newLen);    
+        bytes memory result = new bytes(newLen);
 
-        for(uint256 i = 0; i < newLen; i++) {
+        for (uint256 i = 0; i < newLen; i++) {
             result[i] = data[i + 40];
         }
 
