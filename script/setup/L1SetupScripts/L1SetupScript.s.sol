@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
+
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";

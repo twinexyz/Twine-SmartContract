@@ -101,6 +101,7 @@ contract WithdrawERC20 is Script {
         vm.stopBroadcast();
     }
 }
+
 contract GrantRole is Script {
     RoleManager roleManager;
     address roleManagerAddress;
@@ -162,6 +163,7 @@ contract RevokeRole is Script {
         vm.stopBroadcast();
     }
 }
+
 contract UpdateTokenMapping is Script {
     uint256 chainId;
     address l2ERC20TokenAddress;

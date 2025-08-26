@@ -140,8 +140,9 @@ contract L2SetupScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // setup twine messenger address
+        console.log("ya samma ta thik xa");
         twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
-
+        console.log("Role nai xaina jasto xa");
         //roleManager setup
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
         roleManager.checkRole(keccak256("CHAIN_ADMIN"), initialOwner);

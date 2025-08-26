@@ -8,8 +8,8 @@ help:
 	@echo "               Available Targets Help                    "
 	@echo "========================================================="
 	@echo "help                            - Show this help message"
-	@echo "build  				- Build contracts "
-	@echo "clean                     	- Remove build artifacts"
+	@echo "build  							- Build contracts "
+	@echo "clean                     		- Remove build artifacts"
 	@echo "updateSp1Version                - Update sp1 library version in build file"
 	@echo "updateL1DefaultValues           - Update private key and RPC URL for L1"
 	@echo "updateL2DefaultValues           - Update private key and RPC URL for L2"
@@ -60,7 +60,7 @@ help:
 
 
 # ******************************************************* 
-# *						build and clean			*
+# *						build and clean			        *
 # *******************************************************
 build:
 	@echo "Starting contract compilation..."
@@ -70,7 +70,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf out cache
 # ******************************************************* 
-# *						Update sp1 Version			*
+# *						Update sp1 Version			    *
 # *******************************************************
 updateSp1Version:
 	bash script/updateSp1Version.sh
@@ -82,8 +82,8 @@ updateSp1Version:
 # Update the default value of PrivateKey and ForkURL in every L1 file
 updateL1DefaultValues:
 	bash script/shell/updateL1DefaultValues.sh
-# Update the default value of PrivateKey and ForkURL in every L2 file
 
+# Update the default value of PrivateKey and ForkURL in every L2 file
 updateL2DefaultValues:
 	bash script/shell/updateL2DefaultValues.sh
 
@@ -124,7 +124,12 @@ depositERC20:
 forcedWithdrawERC20:
 	bash script/shell/actions/L1actions/erc20forcedWithdraw.sh
 
+
 #<-------------TWINE CHAIN ACTIONS------------->
+
+#commit Genesis Block
+commitGenesisBlock:
+	bash script/shell/actions/L1actions/commitGenesisBlock.sh
 
 # commit batch
 commitBatch:
@@ -135,12 +140,13 @@ finalizeBatch:
 	bash script/shell/actions/L1actions/finalizeBatch.sh
 
 # commit and finalize transaction for a batch
-commitAndFinalizeTransaction:
-	bash script/shell/actions/L1actions/commitAndFinalizeTxn.sh
+commitAndFinalizeBatch:
+	bash script/shell/actions/L1actions/commitAndFinalizeBatch.sh
 
 # finalize a withdrawal
-finalizeWithdrawal:
-	bash script/shell/actions/L1actions/finalizeWithdrawal.sh
+refundDeposit:
+	bash script/shell/actions/L1actions/refundDeposit.sh
+
 
 #<-------------ROLE MANAGER ACTIONS------------->
 grantRoleL1:
@@ -170,85 +176,87 @@ setupEveryL1Contracts:
 #<-------------TWINE CHAIN SETUPS------------->
 
 #setup rolemanager
-setupRoleManagerTwineChain:
+setupRoleManagerTC:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setRoleManagerTC.sh
 
 #setup chain id 
-setupChainIdTwineChain:
+setupChainIdTC:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setChainIdTC.sh
 
 #setup message queue 
-setupMessageHandlerTwineChain:
+setupMessageHandlerTC:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setMessageHandlerTC.sh
 
 #setup verifier
-setupVerifierTwineChain:
+setupVerifierTC:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setVerifierTC.sh
 
 #setup program V keys
-setupVkeysTwineChain:
+setupVkeysTC:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setVkeysTC.sh
 
 #setup gateway
-setupGatewayTwineChain:
+setupGatewayTC:
 	bash script/shell/setups/L1Setups/TwineChainSetup/setGatewayTC.sh
+
 
 #<-------------L1 ETH GATEWAY SETUP------------->
 
 #setup role manager
-setupRoleManagerL1ETHGateway:
+setupRoleManagerL1EthG:
 	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setRoleManagerETH.sh
 
 #setup gateway router
-setGatewayRouterL1ETHGateway:
+setGatewayRouterL1EthG:
 	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setGatewayRouterETH.sh
 
 #setup twine messenger
-setTwineMessengerL1ETHGateway:
+setTwineMessengerL1EthG:
 	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setTwineMessengerETH.sh
 
 #setup L2 Token Address
-setL2TokenL1ETHGateway:
+setL2TokenL1EthG:
 	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setL2TokenETH.sh
 
-setChainIdL1ETHGateway:
-	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setChainId.sh
+setChainIdL1EthG:
+	bash script/shell/setups/L1Setups/L1ETHGatewaySetup/setChainIdETH.sh
 
-#<-------------L1 MESSAGE QUEUE SETUP------------->
+
+#<-------------L1 Message Handler SETUP------------->
 
 #setup role manager
-setRoleManagerMQ:
+setRoleManagerMH:
 	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setRoleManagerMQ.sh
 
 #setup chain id
-setChainIdMQ:
+setChainIdMH:
 	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setChainIdMQ.sh
 
 #setup l1 twine messenger 
-setTwineMessengerMQ:
+setTwineMessengerMH:
 	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setTwineMessengerMQ.sh
 
 #setup message queue proxy
-setMessageProxyMQ:
+setMessageProxyMH:
 	bash script/shell/setups/L1Setups/L1MessageHandlerSetup/setMessageProxyMQ.sh
 
 
 #<-------------L1 GATEWAY ROUTER SETUP------------->
 
 #setup role manager
-setRoleManagerGR:
+setRoleManagerL1GR:
 	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setRoleManagerGR.sh
 
 #setup ETH Gateway
-setETHGatewayGR:
+setETHGatewayL1GR:
 	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setETHGatewayGR.sh
 
 #setup Default ERC20 Gateway
-setDefaultERC20GatewayGR:
+setDefaultERC20GatewayL1GR:
 	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setDefaultERC20GatewayGR.sh
 
 #setup ERC20 Gaetway
-setERC20GatewayGR:
+setERC20GatewayL1GR:
 	bash script/shell/setups/L1Setups/L1GatewayRouterSetup/setERC20GatewayGR.sh
 
 
@@ -270,27 +278,32 @@ setMessageHandlerMS:
 setCounterpartMessengerMS:
 	bash script/shell/setups/L1Setups/L1MessengerSetup/setCounterpartMessengerMS.sh
 
+#setup FeeVault 
+setFeeVaultMS:
+	bash script/shell/setups/L1Setups/L1MessengerSetup/setFeeVaultMS.sh
+
+
 #<-------------L1 CUSTOM ERC20 SETUP------------->
 
 #setup role manager
-setRoleManagerCG:
+setRoleManagerL1ErcG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setRoleManagerCG.sh
 
 #setup gateway router
-setGatewayRouterCG:
+setGatewayRouterL1ErcG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setGatewayRouterCG.sh
 
 #setup twine messenger
-setTwineMessengerCG:
+setTwineMessengerL1ErcG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setTwineMessengerCG.sh
 
 #update token mapping
-updateTokenMappingCG:
+updateTokenMappingL1ErcG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/updateTokenMappingCG.sh
 
 #update and set chain Id
-setChainIdCG:
-	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setChainId.sh
+setChainIdL1ErcG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setChainIdCG.sh
 
 
 # *************************************************** 

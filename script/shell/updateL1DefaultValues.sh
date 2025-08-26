@@ -19,35 +19,46 @@ fi
 
 # Define the files to be updated
 FILES=(
-    #Deployements
+    #<---------------------------- Deployement ---------------------------->
     "script/shell/deployments/L1deployments/deployEveryL1Contracts.sh"
 
+    #<------------------------------- Setups ------------------------------->
+     "script/shell/setups/L1Setups/setupEveryL1Contracts.sh"
 
+    # CustomERC20Gateway Setup
+    "script/shell/setups/L1Setups/CustomERC20GatewaySetup/setChainIdCG.sh"
     "script/shell/setups/L1Setups/CustomERC20GatewaySetup/setGatewayRouterCG.sh"
     "script/shell/setups/L1Setups/CustomERC20GatewaySetup/setRoleManagerCG.sh"
     "script/shell/setups/L1Setups/CustomERC20GatewaySetup/setTwineMessengerCG.sh"
     "script/shell/setups/L1Setups/CustomERC20GatewaySetup/updateTokenMappingCG.sh"
 
+    # L1ETHGateway Setup
+    "script/shell/setups/L1Setups/L1ETHGatewaySetup/setChainIdETH.sh"
     "script/shell/setups/L1Setups/L1ETHGatewaySetup/setGatewayRouterETH.sh"
     "script/shell/setups/L1Setups/L1ETHGatewaySetup/setL2TokenETH.sh"
     "script/shell/setups/L1Setups/L1ETHGatewaySetup/setRoleManagerETH.sh"
     "script/shell/setups/L1Setups/L1ETHGatewaySetup/setTwineMessengerETH.sh"
 
+    # L1GatewayRouter Setup
     "script/shell/setups/L1Setups/L1GatewayRouterSetup/setDefaultERC20GatewayGR.sh"
     "script/shell/setups/L1Setups/L1GatewayRouterSetup/setERC20GatewayGR.sh"
     "script/shell/setups/L1Setups/L1GatewayRouterSetup/setETHGatewayGR.sh"
     "script/shell/setups/L1Setups/L1GatewayRouterSetup/setRoleManagerGR.sh"
 
-    "script/shell/setups/L1Setups/L1MessageHandlerSteup/setChainIdMQ.sh"
-    "script/shell/setups/L1Setups/L1MessageHandlerSteup/setMessageProxyMQ.sh"
-    "script/shell/setups/L1Setups/L1MessageHandlerSteup/setRoleManagerMQ.sh"
-    "script/shell/setups/L1Setups/L1MessageHandlerSteup/setTwineMessengerMQ.sh"
+    # MessageHandler Setup
+    "script/shell/setups/L1Setups/L1MessageHandlerSetup/setChainIdMQ.sh"
+    "script/shell/setups/L1Setups/L1MessageHandlerSetup/setMessageProxyMQ.sh"
+    "script/shell/setups/L1Setups/L1MessageHandlerSetup/setRoleManagerMQ.sh"
+    "script/shell/setups/L1Setups/L1MessageHandlerSetup/setTwineMessengerMQ.sh"
 
+    # L1Messenger Setup
     "script/shell/setups/L1Setups/L1MessengerSetup/setCounterpartMessengerMS.sh"
+    "script/shell/setups/L1Setups/L1MessengerSetup/setFeeVaultMS.sh"
     "script/shell/setups/L1Setups/L1MessengerSetup/setMessageHandlerMS.sh"
     "script/shell/setups/L1Setups/L1MessengerSetup/setRoleManagerMS.sh"
     "script/shell/setups/L1Setups/L1MessengerSetup/setRollupMS.sh"
 
+    # TwineChain Setup
     "script/shell/setups/L1Setups/TwineChainSetup/setChainIdTC.sh"
     "script/shell/setups/L1Setups/TwineChainSetup/setGatewayTC.sh"
     "script/shell/setups/L1Setups/TwineChainSetup/setMessageHandlerTC.sh"
@@ -55,9 +66,10 @@ FILES=(
     "script/shell/setups/L1Setups/TwineChainSetup/setVerifierTC.sh"
     "script/shell/setups/L1Setups/TwineChainSetup/setVkeysTC.sh"
 
-    # L1 Actions
-    "script/shell/actions/L1actions/commitAndFinalizeTxn.sh" 
+    #<------------------------------- Actions ------------------------------->
+    "script/shell/actions/L1actions/commitAndFinalizeBatch.sh" 
     "script/shell/actions/L1actions/commitBatch.sh" 
+    "script/shell/actions/L1actions/commitGenesisBlock.sh" 
     "script/shell/actions/L1actions/erc20deposit.sh" 
     "script/shell/actions/L1actions/erc20forcedWithdraw.sh" 
     "script/shell/actions/L1actions/ethdeposit.sh" 
@@ -65,6 +77,7 @@ FILES=(
     "script/shell/actions/L1actions/finalizeBatch.sh" 
     "script/shell/actions/L1actions/finalizeWithdrawal.sh" 
     "script/shell/actions/L1actions/grantRole.sh" 
+    "script/shell/actions/L1actions/refundDeposit.sh" 
     "script/shell/actions/L1actions/revokeRole.sh" 
 )
 

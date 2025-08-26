@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
+
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 
 contract SetRoleManagerAddress is Script {
@@ -20,7 +22,11 @@ contract SetRoleManagerAddress is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
+        console.log("Previous Role Manager Address", l1GatewayRouter.roleManager());
+
         l1GatewayRouter.setRoleManagerAddress(roleManagerAddress);
+
+        console.log("New Role Manager Address", l1GatewayRouter.roleManager());
         vm.stopBroadcast();
     }
 }
@@ -42,7 +48,11 @@ contract SetETHGateway is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
+        console.log("Previous ETH Gateway Address: ", l1GatewayRouter.ethGateway());
+
         l1GatewayRouter.setETHGateway(l1ETHGatewayAddress);
+        
+        console.log("New ETH Gateway Address: ", l1GatewayRouter.ethGateway());
         vm.stopBroadcast();
     }
 }
@@ -64,7 +74,11 @@ contract SetDefaultERC20Gateway is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
+        console.log("Previous Default ERC20 Gateway: ", l1GatewayRouter.defaultERC20Gateway());
+
         l1GatewayRouter.setDefaultERC20Gateway(l1CustomERC20GatewayAddress);
+
+        console.log("New Default ERC20 Gateway: ", l1GatewayRouter.defaultERC20Gateway());
         vm.stopBroadcast();
     }
 }
@@ -93,7 +107,10 @@ contract SetERC20Gateway is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
+
         l1GatewayRouter.setERC20Gateway(tokens, gateways);
+        console.log("New ERC20 Gateway set: ", l1GatewayRouter.ERC20Gateway(tokens[0]));
+
         vm.stopBroadcast();
     }
 
