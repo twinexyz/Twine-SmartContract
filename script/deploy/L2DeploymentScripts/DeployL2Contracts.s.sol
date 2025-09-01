@@ -76,7 +76,7 @@ contract DeployL2Contracts is Script {
 
         address solToken = Upgrades.deployTransparentProxy(
             "TwineStandardERC20.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 TwineStandardERC20.initialize,
                 ("TwineSol", "TWS", 9, address(roleManagerAddress))
@@ -84,7 +84,7 @@ contract DeployL2Contracts is Script {
         );
         address ethToken = Upgrades.deployTransparentProxy(
             "TwineStandardERC20.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 TwineStandardERC20.initialize,
                 ("TwineEth", "TWE", 18, address(roleManagerAddress))
@@ -92,7 +92,7 @@ contract DeployL2Contracts is Script {
         );
         address randomToken = Upgrades.deployTransparentProxy(
             "TwineStandardERC20.sol",
-            msg.sender,
+            initialOwner,
             abi.encodeCall(
                 TwineStandardERC20.initialize,
                 ("FauxCoin", "FAUX", 18, address(roleManagerAddress))
