@@ -304,7 +304,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function refundDeposit(
         bytes calldata publicValues,
         bytes calldata refundProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isRefundExecuted[keccak256(publicValues)])
             revert RefundAlreadyProcessed();
 
@@ -366,7 +366,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function executeForcedWithdrawal(
         bytes calldata publicValues,
         bytes calldata withdrawalProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isForcedWithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
         L1OriginTxPublicValues memory withdrawValues = TwineChainDecoder
@@ -421,7 +421,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isL2WithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
 
