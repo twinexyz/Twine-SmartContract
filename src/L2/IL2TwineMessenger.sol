@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
     struct TokenTxn {
@@ -102,7 +103,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     function handleEthereumProofAndTransactions(
         uint256 chainId,
         uint256 executionHeight,
-        bytes memory messageData,
+        TwineTypes.MessageData memory messageData,
         bytes memory serializedProof
     ) external;
 

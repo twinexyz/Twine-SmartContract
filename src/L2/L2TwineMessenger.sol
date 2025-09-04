@@ -214,7 +214,7 @@ contract L2TwineMessenger is
     function handleEthereumProofAndTransactions(
         uint256 chainId,
         uint256 executionHeight,
-        bytes memory messageData,
+        TwineTypes.MessageData memory messageData,
         bytes memory serializedProof
     )
         external
@@ -224,9 +224,10 @@ contract L2TwineMessenger is
         uint256 latest_block = ISP1Helios(sp1Helios)
             .latestExecutionBlockNumber();
         require(latest_block >= executionHeight, "Block not yet provable");
-
-        // TODO: HANDLE LIKE IN `handleChainTransactions`
-        bytes32 ethMessageHash = keccak256(messageData);
+        
+        bytes32 ethMessageHash = MessageHasherLib.hashL1Message(
+            messageData
+        );
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 ethMessageHash
