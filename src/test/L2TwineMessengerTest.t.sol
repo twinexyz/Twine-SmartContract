@@ -248,7 +248,7 @@ import {IMockTwineSystemStorage, MockTwineSystemStorage} from "./mocks/MockTwine
 //             abi.encode("deposit input"),
 //             abi.encode(l1Txns)
 //         );
-//         messenger.handleDepoistsWithdraws(
+//         messenger.handleDepositsWithdraws(
 //             abi.encode("deposit input")
 //         );
 //         assertEq(
@@ -289,7 +289,7 @@ import {IMockTwineSystemStorage, MockTwineSystemStorage} from "./mocks/MockTwine
 //             abi.encode("deposit input"),
 //             abi.encode(l1Txns)
 //         );
-//         messenger.handleDepoistsWithdraws(
+//         messenger.handleDepositsWithdraws(
 //             abi.encode("deposit input")
 //         );
 //         assertEq(
@@ -322,7 +322,7 @@ import {IMockTwineSystemStorage, MockTwineSystemStorage} from "./mocks/MockTwine
 //             abi.encode("deposit input"),
 //             abi.encode(l1Txns)
 //         );
-//         messenger.handleDepoistsWithdraws(
+//         messenger.handleDepositsWithdraws(
 //             abi.encode("deposit input")
 //         );
 
@@ -349,7 +349,7 @@ import {IMockTwineSystemStorage, MockTwineSystemStorage} from "./mocks/MockTwine
 //             abi.encode("withdraw input"),
 //             abi.encode(l1WithdrawTxns)
 //         );
-//         messenger.handleDepoistsWithdraws(
+//         messenger.handleDepositsWithdraws(
 //             abi.encode("withdraw input")
 //         );
 
