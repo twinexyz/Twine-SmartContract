@@ -212,8 +212,7 @@ contract L2TwineMessenger is
     }
 
     function handleEthereumProofAndTransactions(
-        uint256 chainId,
-        uint256 executionHeight,
+        uint256 proofHeight,
         TwineTypes.MessageData memory messageData,
         bytes memory serializedProof
     )
@@ -223,7 +222,7 @@ contract L2TwineMessenger is
     {
         uint256 latest_block = ISP1Helios(sp1Helios)
             .latestExecutionBlockNumber();
-        require(latest_block >= executionHeight, "Block not yet provable");
+        require(latest_block >= proofHeight, "Block not yet provable");
         
         bytes32 ethMessageHash = MessageHasherLib.hashL1Message(
             messageData
@@ -236,12 +235,14 @@ contract L2TwineMessenger is
         );
 
         bytes32 stateRoot = ISP1Helios(sp1Helios).executionStateRoots(
-            executionHeight
+            proofHeight
         );
+
+        uint64 chainId = messageData.chainId;
 
         bytes memory precompile_input = abi.encode(
             chainId,
-            abi.encode(executionHeight, stateRoot, messageData, serializedProof)
+            abi.encode(proofHeight, stateRoot, messageData, serializedProof)
         );
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(precompile_input);
