@@ -100,8 +100,12 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     ) external;
 
     /// @notice handle the ethereum  transactions
+    /// @dev `proofHeight` is the height of ethereum chain
+    ///      against which the state proof was computed
+    ///      serializedProof is the proof generated to prove 
+    ///      some ethereum state at `proofHeight`
     function handleEthereumProofAndTransactions(
-        uint256 executionHeight,
+        uint256 proofHeight,
         TwineTypes.MessageData memory messageData,
         bytes memory serializedProof
     ) external;

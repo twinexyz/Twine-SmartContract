@@ -211,6 +211,7 @@ contract L2TwineMessenger is
         // handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
     }
 
+    /// @inheritdoc IL2TwineMessenger
     function handleEthereumProofAndTransactions(
         uint256 proofHeight,
         TwineTypes.MessageData memory messageData,
