@@ -177,38 +177,39 @@ contract L2TwineMessenger is
     }
 
     function handleSolanaTransactions(
-        uint256 chainId,
-        bytes calldata precompileInput
+        bytes32 prevRollingHash,
+        TwineTypes.MessageData memory messageData,
+        bytes memory publicValues,
+        bytes memory proof
     )
         external
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        bytes memory output = precompileInput;
-        bool success;
+        uint64 chainId = messageData.chainId;
+
+        bytes32 solMessageHash = MessageHasherLib.hashL1Message(messageData);
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
+                solMessageHash
+            ),
+            "Message already executed"
+        );
 
         if (!skipVerification) {
-            (success, output) = consensusPrecompileAddress.call(
-                precompileInput
-            );
-            require(success, "Consensus verification failed!");
-
-            SolanaVerifierPrecompileOutput memory verifierOutput = abi.decode(
-                output,
-                (SolanaVerifierPrecompileOutput)
-            );
-
             ISP1Verifier(sp1Verifier).verifyProof(
-                vKeys[chainId],
-                verifierOutput.publicValue,
-                verifierOutput.proof
+                vKeys[uint256(chainId)],
+                publicValues,
+                proof
             );
         }
 
-        // (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
-        //     .call(output);
-        // require(txnSuccess, "Failed executing transactions");
-        // handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
+        bytes memory precompileInput = abi.encode(chainId, abi.encode(prevRollingHash, messageData, publicValues));
+
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(precompileInput);
+        require(txnSuccess, "Failed executing transactions");
+        handleBridgeTransactions(chainId, solMessageHash, txnOutput);
     }
 
     /// @inheritdoc IL2TwineMessenger
@@ -224,10 +225,8 @@ contract L2TwineMessenger is
         uint256 latest_block = ISP1Helios(sp1Helios)
             .latestExecutionBlockNumber();
         require(latest_block >= proofHeight, "Block not yet provable");
-        
-        bytes32 ethMessageHash = MessageHasherLib.hashL1Message(
-            messageData
-        );
+
+        bytes32 ethMessageHash = MessageHasherLib.hashL1Message(messageData);
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 ethMessageHash

@@ -95,8 +95,10 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     /// @notice handle the solana transactions
     function handleSolanaTransactions(
-        uint256 chainId,
-        bytes calldata precompileInput
+        bytes32 prevRollingHash,
+        TwineTypes.MessageData memory messageData,
+        bytes memory publicValues,
+        bytes memory proof
     ) external;
 
     /// @notice handle the ethereum  transactions
