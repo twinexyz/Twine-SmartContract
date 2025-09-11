@@ -121,9 +121,10 @@ contract SetProgramVkey is Script {
     TwineChain twineChain;
     address twineChainAddress;
 
-    bytes32 finalizeVKey;
     bytes32 refundVkey;
-    bytes32 withdrawalVkey;
+    bytes32 finalizeVKey;
+    bytes32 l2WithdrawalVkey;
+    bytes32 forcedWithdrawalVkey;
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
@@ -132,9 +133,10 @@ contract SetProgramVkey is Script {
         twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
         twineChain = TwineChain(twineChainAddress);
 
-        finalizeVKey = vm.envBytes32("FINALIZE_VKEY");
         refundVkey = vm.envBytes32("REFUND_VKEY");
-        withdrawalVkey = vm.envBytes32("WITHDRAWAL_VKEY");
+        finalizeVKey = vm.envBytes32("FINALIZE_VKEY");
+        l2WithdrawalVkey = vm.envBytes32("L2_WITHDRAWAL_VKEY");
+        forcedWithdrawalVkey = vm.envBytes32("FORCED_WITHDRAWAL_VKEY");
     }
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -145,18 +147,23 @@ contract SetProgramVkey is Script {
         console.logBytes32(twineChain.finalizeVKey());
         console.log("REFUND VKEY: ");
         console.logBytes32(twineChain.refundVKey());
-        console.log("WITHDRAWAL VKEY: ");
-        console.logBytes32(twineChain.withdrawalVKey());
+        console.log("FORCED WITHDRAWAL VKEY: ");
+        console.logBytes32(twineChain.forcedWithdrawalVKey());
+        console.log("L2 WITHDRAWAL VKEY: ");
+        console.logBytes32(twineChain.l2WithdrawalVkey());
 
-        twineChain.setProgramVKey(finalizeVKey, refundVkey, withdrawalVkey);
+
+        twineChain.setProgramVKey(finalizeVKey, refundVkey, forcedWithdrawalVkey, l2WithdrawalVkey);
 
         console.log("****New Vkeys****");
         console.log("FINALIZE VKEY: ");
         console.logBytes32(twineChain.finalizeVKey());
         console.log("REFUND VKEY: ");
         console.logBytes32(twineChain.refundVKey());
-        console.log("WITHDRAWAL VKEY: ");
-        console.logBytes32(twineChain.withdrawalVKey());
+        console.log("FORCED WITHDRAWAL VKEY: ");
+        console.logBytes32(twineChain.forcedWithdrawalVKey());
+        console.log("L2 WITHDRAWAL VKEY: ");
+        console.logBytes32(twineChain.l2WithdrawalVkey());
 
         vm.stopBroadcast();
     }

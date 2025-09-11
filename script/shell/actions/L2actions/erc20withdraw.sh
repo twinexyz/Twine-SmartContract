@@ -1,10 +1,13 @@
 #!/bin/bash
+if [ -f .env ]; then
+    set -o allexport
+    source .env
+    set +o allexport
+fi
 
 # Default values
 DEFAULT_RECEIVER="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 DEFAULT_AMOUNT="1000000000000000000"
-PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-DEFAULT_FORK_URL="127.0.0.1:8545"
 
 #prompt the user
 read -p "Token: " TOKEN
@@ -26,7 +29,7 @@ export CHAIN_ID
  
 #Run the forge script with the provided default values
 forge script script/action/L2ActionScripts/L2ActionScripts.s.sol:WithdrawERC20 \
-    --fork-url $DEFAULT_FORK_URL  \
+    --fork-url "$DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "RECEIVER=$RECEIVER" --env "AMOUNT=$AMOUNT" --env "PRIVATE_KEY=$PRIVATE_KEY" \
     --env "CHAIN_ID=$CHAIN_ID" --env "TOKEN=$TOKEN"

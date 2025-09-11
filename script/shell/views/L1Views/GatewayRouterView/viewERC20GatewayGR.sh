@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ -f .env ]; then
+    set -o allexport
+    source .env
+    set +o allexport
+fi
+
+read -p "ERC20 Token Address:" TOKEN
+ 
+#export env variables:
+export PRIVATE_KEY
+export TOKEN
+
+#Run the forge script with the provided values
+forge script script/view/L1ViewFunctions/L1GatewayRouterView.s.sol:ViewERC20Gateway \
+    --fork-url "$DEFAULT_FORK_URL"  \
+    --broadcast \
+    -- --env "TOKEN=$TOKEN" --env "PRIVATE_KEY=$PRIVATE_KEY"

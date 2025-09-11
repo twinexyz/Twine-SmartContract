@@ -154,6 +154,37 @@ contract UpdateTokenMapping is Script {
     }
 }
 
+contract RemoveTokenMapping is Script {
+    L1CustomERC20Gateway l1CustomERC20Gateway;
+    address l1CustomERC20GatewayAddress;
+    address l1ERC20TokenAddress;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile(
+            "./script/utils/L1Addresses.json"
+        );
+        l1CustomERC20GatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L1CustomERC20Gateway"
+        );
+        l1CustomERC20Gateway = L1CustomERC20Gateway(
+            l1CustomERC20GatewayAddress
+        );
+
+        l1ERC20TokenAddress = vm.envAddress("L1_TOKEN_ADDRESS");
+    }
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+        l1CustomERC20Gateway.removeTokenMapping(
+            l1ERC20TokenAddress
+        );
+        vm.stopBroadcast();
+    }
+}
+
 contract SetChainId is Script {
     L1CustomERC20Gateway l1CustomERC20Gateway;
     address l1CustomERC20GatewayAddress;

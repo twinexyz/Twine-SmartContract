@@ -8,8 +8,8 @@ help:
 	@echo "               Available Targets Help                    "
 	@echo "========================================================="
 	@echo "help                            - Show this help message"
-	@echo "build  							- Build contracts "
-	@echo "clean                     		- Remove build artifacts"
+	@echo "build  						   - Build contracts "
+	@echo "clean 						   - Remove build artifacts"
 	@echo "updateSp1Version                - Update sp1 library version in build file"
 	@echo "updateL1DefaultValues           - Update private key and RPC URL for L1"
 	@echo "updateL2DefaultValues           - Update private key and RPC URL for L2"
@@ -99,7 +99,39 @@ updateL2DefaultValues:
 deployEveryL1Contracts:
 	bash script/shell/deployments/L1deployments/deployEveryL1Contracts.sh
 
-	
+# deploy L1	standard ERC20 Token
+deployL1ERC20Token:
+	bash script/shell/tokens/deployL1Token.sh
+
+# *********************** 
+# *		Upgrades		*
+# ***********************
+
+# upgrade l1 CustomERC20 Gateway
+upgradeL1CustomERC20Gateway:
+	bash script/shell/upgrades/L1Upgrades/upgradeL1CustomERC20Gateway.sh
+
+#upgrade L1 ETH Gateway
+upgradeL1ETHGateway:
+	bash script/shell/upgrades/L1Upgrades/upgradeL1ETHGateway.sh
+
+# upgrade L1 Gateway Router
+upgradeL1GatewayRouter:
+	bash script/shell/upgrades/L1Upgrades/upgradeL1GatewayRouter.sh
+
+# upgrade L1 Message Handler
+upgradeL1MessageHandler:
+	bash script/shell/upgrades/L1Upgrades/upgradeL1MessageHandler.sh
+
+
+# upgrade L1 Twine Messenger
+upgradeL1TwineMessenger:
+	bash script/shell/upgrades/L1Upgrades/upgradeL1TwineMessenger.sh
+
+# upgrade Twine Chain
+upgradeTwineChain:
+	bash script/shell/upgrades/L1Upgrades/upgradeTwineChain.sh
+
 # *******************
 # *		ACTIONS		*
 # *******************
@@ -131,14 +163,6 @@ forcedWithdrawERC20:
 commitGenesisBlock:
 	bash script/shell/actions/L1actions/commitGenesisBlock.sh
 
-# commit batch
-commitBatch:
-	bash script/shell/actions/L1actions/commitBatch.sh
-
-# finalize batch
-finalizeBatch:
-	bash script/shell/actions/L1actions/finalizeBatch.sh
-
 # commit and finalize transaction for a batch
 commitAndFinalizeBatch:
 	bash script/shell/actions/L1actions/commitAndFinalizeBatch.sh
@@ -154,12 +178,6 @@ grantRoleL1:
 
 revokeRoleL1:
 	bash script/shell/actions/L1actions/revokeRole.sh
-
-grantRoleL2:
-	bash script/shell/actions/L2actions/grantRole.sh
-
-revokeRoleL2:
-	bash script/shell/actions/L2actions/revokeRole.sh
 
 
 
@@ -301,9 +319,122 @@ setTwineMessengerL1ErcG:
 updateTokenMappingL1ErcG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/updateTokenMappingCG.sh
 
+# remove token mapping
+removeTokenMappingL1ErcG:
+	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/removeTokenMappingCG.sh
+
 #update and set chain Id
 setChainIdL1ErcG:
 	bash script/shell/setups/L1Setups/CustomERC20GatewaySetup/setChainIdCG.sh
+	
+#<-------------TWINE CHAIN VIEWS------------->
+
+
+
+# *******************
+# *		Views		*
+# *******************
+
+#<-------------L1 ETH GATEWAY VIEWS------------->
+viewChainIdL1EthG:
+	bash script/shell/views/L1views/ETHGatewayView/viewChainIdETH.sh
+
+viewGatewayRouterL1EthG:
+	bash script/shell/views/L1views/ETHGatewayView/viewGatewayRouterETH.sh
+
+viewL2TokenL1EthG:
+	bash script/shell/views/L1views/ETHGatewayView/viewL2TokenETH.sh
+
+viewRoleManagerL1EthG:
+	bash script/shell/views/L1views/ETHGatewayView/viewRoleManagerETH.sh
+
+viewTwineMessengerL1EthG:
+	bash script/shell/views/L1views/ETHGatewayView/viewTwineMessengerETH.sh
+
+#<-------------L1 CUSTOM ERC20 VIEWS------------->
+viewGatewayRouterL1ErcG:
+	bash script/shell/views/L1views/CustomERC20GatewayView/viewGatewayRouterCG.sh
+
+viewRoleManagerL1ErcG:
+	bash script/shell/views/L1views/CustomERC20GatewayView/viewRoleManagerCG.sh
+
+viewTokenMappingL1ErcG:
+	bash script/shell/views/L1views/CustomERC20GatewayView/viewTokenMappingCG.sh
+
+viewTwineMessengerL1ErcG:
+	bash script/shell/views/L1views/CustomERC20GatewayView/viewTwineMessengerCG.sh
+
+#<-------------L1 GATEWAY ROUTER VIEWS------------->
+viewDefaultERC20GatewayL1GR:
+	bash script/shell/views/L1views/GatewayRouterView/viewDefaultERC20GatewayGR.sh
+
+viewERC20GatewayL1GR:
+	bash script/shell/views/L1views/GatewayRouterView/viewERC20GatewayGR.sh
+
+viewETHGatewayL1GR:
+	bash script/shell/views/L1views/GatewayRouterView/viewETHGatewayGR.sh
+
+viewRoleManagerL1GR:
+	bash script/shell/views/L1views/GatewayRouterView/viewRoleManagerGR.sh
+
+#<-------------L1 MESSENGER VIEWS------------->
+
+viewCounterPartMessengerMS:
+	bash script/shell/views/L1views/TwineMessengerView/viewCounterPartMessengerMS.sh
+
+viewFeeVaultMS:
+	bash script/shell/views/L1views/TwineMessengerView/viewFeeVaultMS.sh
+
+viewMessageHandlerMS:
+	bash script/shell/views/L1views/TwineMessengerView/viewMessageHandlerMS.sh
+
+viewRoleManagerMS:
+	bash script/shell/views/L1views/TwineMessengerView/viewRoleManagerMS.sh
+
+viewRollupMS:
+	bash script/shell/views/L1views/TwineMessengerView/viewRollupMS.sh
+
+#<-------------L1 Message Handler VIEWS------------->
+viewMessageHandlerProxyMH:
+	bash script/shell/views/L1views/MessageHandlerView/viewMessageHandlerProxyMH.sh
+
+viewMessengerAddressMH:
+	bash script/shell/views/L1views/MessageHandlerView/viewMessengerAddressMH.sh
+
+viewRoleManagerMH:
+	bash script/shell/views/L1views/MessageHandlerView/viewRoleManagerMH.sh
+
+viewCurrentMessageNonceMH:
+	bash script/shell/views/L1views/MessageHandlerView/viewCurrentMessageNonceMH.sh
+
+#<-------------TWINE CHAIN VIEWS------------->
+
+viewChainIdTC:
+	bash script/shell/views/L1views/TwineChainView/viewChainIdTC.sh
+
+viewGatewayAddressTC:
+	bash script/shell/views/L1views/TwineChainView/viewGatewayAddressTC.sh
+
+viewLastCommittedBatchTC:
+	bash script/shell/views/L1views/TwineChainView/viewLastCommittedBatchTC.sh
+
+viewLastFinalizedBatchTC:
+	bash script/shell/views/L1views/TwineChainView/viewLastFinalizedBatchTC.sh
+
+viewLastFinalizedBatchHashTC:
+	bash script/shell/views/L1views/TwineChainView/viewLastFinalizedBatchHashTC.sh
+
+viewMessageHandlerTC:
+	bash script/shell/views/L1views/TwineChainView/viewMessageHandlerTC.sh
+
+viewProgramVKeyTC:
+	bash script/shell/views/L1views/TwineChainView/viewProgramVKey.sh
+
+viewRoleManagerTC:
+	bash script/shell/views/L1views/TwineChainView/viewRoleManagerTC.sh
+
+viewVerifierAddressTC:
+	bash script/shell/views/L1views/TwineChainView/viewVerifierAddressTC.sh
 
 
 # *************************************************** 
@@ -318,17 +449,56 @@ setChainIdL1ErcG:
 deployEveryL2Contracts:
 	bash script/shell/deployments/L2deployments/deployEveryL2Contracts.sh
 
+# deploy Twine standard ERC20 Token
+deployL2ERC20Token:
+	bash script/shell/tokens/deployL2Token.sh
+
+# *********************** 
+# *		Upgrades		*
+# ***********************
+# upgrade L2 ETH Gateway
+upgradeL2ETHGateway:
+	bash script/shell/upgrades/L2Upgrades/L2ETHGateway.sh
+
+# upgrade L2 Gateway Router
+upgradeL2GatewayRouter:
+	bash script/shell/upgrades/L2Upgrades/upgradeL2GatewayRouter.sh
+
+# upgrade L2 Twine Messenger
+upgradeL2TwineMessenger:
+	bash script/shell/upgrades/L2Upgrades/upgradeL2TwineMessenger.sh
+
+# upgrade Message Executor
+upgradeMessageExecutor:
+	bash script/shell/upgrades/L2Upgrades/upgradeMessageExecutor.sh
+
+# upgrade L2 Custom ERC20 Gateway
+upgradeL2CustomERC20Gateway:
+	bash script/shell/upgrades/L2Upgrades/upgradeL2CustomERC20Gateway.sh
+
 # *******************
 # *		ACTIONS		*
 # *******************
 
-#withdraw ETH
+# withdraw ETH
 #	bash script/shell/actions/L2actions/ethwithdraw.sh
 
 
 #withdraw ERC20
-WithdrawERC20FromL2:
+withdrawERC20FromL2:
 	bash script/shell/actions/L2actions/erc20withdraw.sh
+
+grantRoleL2:
+	bash script/shell/actions/L2actions/grantRole.sh
+
+revokeRoleL2:
+	bash script/shell/actions/L2actions/revokeRole.sh
+
+updateTokenMappingL2:
+	bash script/shell/actions/L2actions/updateTokenMapping.sh
+
+removeTokenMappingL2:
+	bash script/shell/actions/L2actions/removeTokenMapping.sh
 
 
 # *******************

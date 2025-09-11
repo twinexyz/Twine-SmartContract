@@ -25,6 +25,7 @@ contract DepositETH is Script {
 
     uint256 depositAmount;
     address receiver;
+    bytes data;
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
@@ -45,6 +46,7 @@ contract DepositETH is Script {
         // Read parameters dynamically
         depositAmount = vm.envUint("DEPOSIT_AMOUNT");
         receiver = vm.envAddress("RECEIVER");
+        data = vm.envBytes("DATA");
     }
 
     function run() external {
@@ -58,10 +60,11 @@ contract DepositETH is Script {
             address(l1ETHGateway).balance
         );
         console.log("Admin Balance before deposit", admin.balance);
-        l1GatewayRouter.depositETH{value: depositAmount}(
+        l1GatewayRouter.depositETHAndCall{value: depositAmount}(
             receiver,
             depositAmount,
-            0
+            0,
+            data
         );
         console.log(
             "Gateway Balance after deposit",
@@ -139,6 +142,7 @@ contract DepositERC20 is Script {
 
     uint256 depositAmount;
     address receiver;
+    bytes data;
 
     function setUp() public {
         string memory deployedJson = vm.readFile(
@@ -164,6 +168,7 @@ contract DepositERC20 is Script {
         // Read parameters dynamically
         depositAmount = vm.envUint("DEPOSIT_AMOUNT");
         receiver = vm.envAddress("RECEIVER");
+        data = vm.envBytes("DATA");
     }
 
     function run() external {
@@ -181,11 +186,12 @@ contract DepositERC20 is Script {
             "Balance of Admin Before Deposit: ",
             token.balanceOf(admin)
         );
-        l1GatewayRouter.depositERC20{value: 0}(
+        l1GatewayRouter.depositERC20AndCall{value: 0}(
             l1ERC20TokenAddress,
             receiver,
             depositAmount,
-            0
+            0,
+            data
         );
         console.log("Balance of Admin After Deposit: ", token.balanceOf(admin));
         // Stop broadcasting transactions
@@ -296,87 +302,6 @@ contract CommitGenesisBlock is Script {
         console.log("Genesis Block batch hash");
         console.logBytes32(twineChain.committedBatch(0));
 
-        vm.stopBroadcast();
-    }
-}
-
-contract CommitBatch is Script {
-    TwineChain twineChain;
-    address twineChainAddress;
-
-    // Data required for commitment:
-    uint64 batchNumber;
-    bytes32 batchHash;
-
-    function setUp() public {
-        string memory deployedJson = vm.readFile(
-            "./script/utils/L1Addresses.json"
-        );
-
-        twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
-        twineChain = TwineChain(twineChainAddress);
-
-        // Read environment variables
-        batchNumber = uint64(vm.envUint("BATCH_NUMBER"));
-        batchHash = bytes32(vm.envBytes32("BATCH_HASH"));
-    }
-
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        vm.startBroadcast(deployerPrivateKey);
-        console.log(
-            "Last Committed batch before commitment:",
-            twineChain.lastCommittedBatchNumber()
-        );
-
-        twineChain.commitBatch(batchNumber, batchHash);
-
-        console.log(
-            "Last Committed batch after commitment:",
-            twineChain.lastCommittedBatchNumber()
-        );
-        vm.stopBroadcast();
-    }
-}
-
-contract FinalizeBatch is Script {
-    TwineChain twineChain;
-    address twineChainAddress;
-
-    uint64 batchNumber;
-    bytes publicValues;
-    bytes executionProof;
-
-    function setUp() public {
-        string memory deployedJson = vm.readFile(
-            "./script/utils/L1Addresses.json"
-        );
-
-        twineChainAddress = vm.parseJsonAddress(deployedJson, ".TwineChain");
-        twineChain = TwineChain(twineChainAddress);
-
-        // Read environment variables
-        batchNumber = uint64(vm.envUint("BATCH_NUMBER"));
-        publicValues = vm.envBytes("PUBLIC_INPUT_FOR_EXECUTION");
-        executionProof = vm.envBytes("EXECUTION_PROOF");
-    }
-
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        vm.startBroadcast(deployerPrivateKey);
-        console.log(
-            "Last finalize batch before finalization:",
-            twineChain.lastFinalizedBatchNumber()
-        );
-
-        twineChain.finalizeBatch(batchNumber, publicValues, executionProof);
-
-        console.log(
-            "Last finalize batch after finalization:",
-            twineChain.lastFinalizedBatchNumber()
-        );
         vm.stopBroadcast();
     }
 }
