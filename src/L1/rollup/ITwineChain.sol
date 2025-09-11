@@ -157,6 +157,24 @@ interface ITwineChain {
         bytes32 batchHash
     );
 
+    event RefundSuccessful(
+        uint64 nonce,
+        string l1Address,
+        string L1TokenAddress,
+        uint64 ChainId,
+        string amount,
+        uint64 blockNumber
+    );
+
+    event ForcedWithdrawalSuccessful(
+        uint64 nonce, 
+        string l1Address,
+        string L1TokenAddress,
+        uint64 chainId,
+        string amount,
+        uint64 blockNumber
+    );
+
     /// @notice Emitted when vkeys are set
     event SetProgramVkey(
         bytes32 executionVKey,

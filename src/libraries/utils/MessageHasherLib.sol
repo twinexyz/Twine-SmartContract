@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 import {TwineTypes} from "../types/TwineTypes.sol";
+import {TypeConversionLib} from "./TypeConversionLib.sol";
 
 /**
  * @title MessageHasherLib
  * @notice MessageHasherLib hashes messages in correct format
  **/
 library MessageHasherLib {
+    using TypeConversionLib for string;
     /// @dev This function is used to hash l1 messages 
     /// @notice The message hash is then stored on chain 
     /// @notice The L2 side uses this method to verify message with this hash was executed
@@ -21,10 +23,10 @@ library MessageHasherLib {
                     messageData.chainId,
                     messageData.blockNumber,
                     keccak256(messageData.message),
-                    messageData.fromAddress,
-                    messageData.toAddress,
-                    messageData.l1Token,
-                    messageData.l2Token,
+                    messageData.fromAddress.toLower(),
+                    messageData.toAddress.toLower(),
+                    messageData.l1Token.toLower(),
+                    messageData.l2Token.toLower(),
                     messageData.amount
                 )
             );
