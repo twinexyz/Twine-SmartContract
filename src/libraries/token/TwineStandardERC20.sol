@@ -32,6 +32,7 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
     /// @notice Thrown when a zero amount is provided where not allowed
     error ZeroAmount();
 
+
     /**********************
      * Function Modifiers *
      **********************/

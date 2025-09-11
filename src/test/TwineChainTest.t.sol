@@ -40,7 +40,8 @@ contract TwineChainTest is Test {
     bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
     bytes32 finalizeVKey;
     bytes32 refundVKey;
-    bytes32 withdrawalVKey;
+    bytes32 forcedWithdrawalVKey;
+    bytes32 l2WithdrawalVkey;
 
     function setUp() public {
         vm.startPrank(admin);
@@ -48,7 +49,8 @@ contract TwineChainTest is Test {
         newVerifierAddress = makeAddr("newVerifierAddress");
         finalizeVKey = keccak256("finalizeVKey");
         refundVKey = keccak256("refundVKey");
-        withdrawalVKey = keccak256("withdrawalVKey");
+        forcedWithdrawalVKey = keccak256("forcedWithdrawalVKey");
+        l2WithdrawalVkey = keccak256("l2WithdrawalVkey");
 
         deal(admin, 20 ether);
 
@@ -254,28 +256,29 @@ contract TwineChainTest is Test {
         address nonAdminUser = address(0x123);
         vm.prank(nonAdminUser);
         vm.expectRevert();
-        twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
+        twineChain.setProgramVKey(finalizeVKey, refundVKey, forcedWithdrawalVKey, l2WithdrawalVkey);
     }
 
     function testSetProgramVKeyZeroBytesNotAllowed() public {
         vm.prank(admin);
         vm.expectRevert();
-        twineChain.setProgramVKey(bytes32(0), bytes32(0), bytes32(0));
+        twineChain.setProgramVKey(bytes32(0), bytes32(0), bytes32(0), bytes32(0));
     }
 
     function testSetProgramVKey() public {
         vm.prank(admin);
-        twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
+        twineChain.setProgramVKey(finalizeVKey, refundVKey, forcedWithdrawalVKey, l2WithdrawalVkey);
         assertEq(twineChain.finalizeVKey(), finalizeVKey);
         assertEq(twineChain.refundVKey(), refundVKey);
-        assertEq(twineChain.withdrawalVKey(), withdrawalVKey);
+        assertEq(twineChain.forcedWithdrawalVKey(), forcedWithdrawalVKey);
+        assertEq(twineChain.l2WithdrawalVkey(), l2WithdrawalVkey);
     }
 
     function testsetGatewayAddressForNonAdmin() public {
         address nonAdminUser = address(0x123);
         vm.prank(nonAdminUser);
         vm.expectRevert();
-        twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
+        twineChain.setProgramVKey(finalizeVKey, refundVKey, forcedWithdrawalVKey, l2WithdrawalVkey);
     }
 
     function testsetGatewayAddressZeroNotAllowed() public {
@@ -303,36 +306,24 @@ contract TwineChainTest is Test {
         assert(twineChain.isGenesisBlockCommitted() == true);
     }
 
-    function testCommitBatch() public {
-        vm.startPrank(admin);
-        /*******************
-         * Preparing Input *
-         ******************/
-        uint64 batchNumber = 1;
-        bytes32 batchHash =  0x8a58ec38439a3ccc22aaf10ee418aca264cd1bc16c5bab8f0378e9697210e8b5;
-        bytes32 genesisBlockHash = bytes32(0);
-        twineChain.commitGenesisBlock(genesisBlockHash);
-        twineChain.commitBatch(batchNumber,batchHash);
-        assertEq(twineChain.lastCommittedBatchNumber(), 1);
-        vm.stopPrank();
-    }
-    function testFinalizeBatch() public {
+    function testCommitAndFinalizeBatch() public {
         uint64 batchNumber = 1;
         uint64 totalEthMsgHandledOnTwine = 3;
         uint64 totalSolanaMsgHandledOnTwine = 2;
         bytes32 batchHash =  0x8a58ec38439a3ccc22aaf10ee418aca264cd1bc16c5bab8f0378e9697210e8b5;
         bytes32 genesisBlockHash = bytes32(0);
+        vm.startPrank(admin);
+        twineChain.commitGenesisBlock(genesisBlockHash);
+
         bytes memory publicValues = abi.encodePacked(
             genesisBlockHash,
             batchHash,
             totalEthMsgHandledOnTwine,
             totalSolanaMsgHandledOnTwine
         );
-        console.log("public values length",publicValues.length);
-        testCommitBatch();
-        vm.startPrank(admin);
 
-        twineChain.finalizeBatch(batchNumber,publicValues, publicValues);
+        twineChain.commitAndFinalizeBatch(batchNumber,publicValues, publicValues);
+        assertEq(twineChain.lastCommittedBatchNumber(), 1);
         assertEq(twineChain.lastFinalizedBatchNumber(), 1);
         vm.stopPrank();
     }

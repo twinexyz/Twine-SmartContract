@@ -161,7 +161,8 @@ interface ITwineChain {
     event SetProgramVkey(
         bytes32 executionVKey,
         bytes32 inclusionVKey,
-        bytes32 withdrawalVKey
+        bytes32 forcedWithdrawalVKey,
+        bytes32 l2WithdrawalVkey
     );
 
      /*****************
@@ -251,13 +252,15 @@ interface ITwineChain {
     function setVeriferAddress(address _verifier) external;
 
     /// @notice sets vkeys for different proofs.
-    /// @param _executionVKey vKey for execution proof for a batch
-    /// @param _inclusionVKey vKey for transaction proof of a batch
-    /// @param _withdrawalVKey vKey for withdrawal proof
+    /// @param _finalizeVKey vKey for execution proof for a batch
+    /// @param _refundVKey vKey for transaction proof of a batch
+    /// @param _forcedWithdrawalVKey vKey for forced withdrawal proof
+    /// @param _l2WithdrawalVkey vkey for l2 withdrawal proof
     function setProgramVKey(
-        bytes32 _executionVKey,
-        bytes32 _inclusionVKey,
-        bytes32 _withdrawalVKey
+        bytes32 _finalizeVKey,
+        bytes32 _refundVKey,
+        bytes32 _forcedWithdrawalVKey,
+        bytes32 _l2WithdrawalVkey
     ) external;
 
     /// @notice sets the gateway addresses
@@ -275,11 +278,8 @@ interface ITwineChain {
     /// @param genesisBlockHash The hash of the genesis block
     function commitGenesisBlock(bytes32 genesisBlockHash) external;
 
-    /// @notice Commits a batch
-    function commitBatch(uint64 batchNumber, bytes32 batchHash) external;
-
-    /// @notice Finalizes a batch
-    function finalizeBatch(
+    /// @notice Commits and Finalizes a batch
+    function commitAndFinalizeBatch(
         uint64 batchNumber,
         bytes calldata publicValues,
         bytes calldata executionProof
