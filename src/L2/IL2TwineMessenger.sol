@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 interface IL2TwineMessenger is ITwineL2MessengerBase {
     struct TokenTxn {
@@ -94,15 +95,20 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     /// @notice handle the solana transactions
     function handleSolanaTransactions(
-        uint256 chainId,
-        bytes calldata precompileInput
+        bytes32 prevRollingHash,
+        TwineTypes.MessageData memory messageData,
+        bytes memory publicValues,
+        bytes memory proof
     ) external;
 
     /// @notice handle the ethereum  transactions
+    /// @dev `proofHeight` is the height of ethereum chain
+    ///      against which the state proof was computed
+    ///      serializedProof is the proof generated to prove 
+    ///      some ethereum state at `proofHeight`
     function handleEthereumProofAndTransactions(
-        uint256 chainId,
-        uint256 executionHeight,
-        bytes memory messageData,
+        uint256 proofHeight,
+        TwineTypes.MessageData memory messageData,
         bytes memory serializedProof
     ) external;
 

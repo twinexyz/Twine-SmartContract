@@ -409,7 +409,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isL2WithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
 
