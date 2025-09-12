@@ -270,10 +270,11 @@ contract CompleteFlowTest is Test {
         console.log("ERC20 Forced Withdraw Successful");
     }
 
-    /*****************
-     *  Commit Batch *
-     ****************/
-    function testCommitBatch(
+
+    /******************************
+     *  Commit And Finalize Batch *
+     *****************************/
+    function testCommitAndFinalizeBatch(
         bytes32 genesisBlockHash,
         bytes32 batchHash,
         uint64 batchNumber
@@ -285,23 +286,6 @@ contract CompleteFlowTest is Test {
         assertEq(twineChain.lastCommittedBatchNumber(), 0);
         assert(twineChain.isGenesisBlockCommitted());
 
-        // Commit Batch
-        twineChain.commitBatch(batchNumber, batchHash);
-
-        assertEq(twineChain.committedBatch(batchNumber), batchHash);
-        assertEq(twineChain.lastCommittedBatchNumber(), 1);
-
-        console.log("Batch Commitment Successful");
-    }
-
-    /*******************
-     *  Finalize Batch *
-     ******************/
-    function testFinalizeBatch(
-        bytes32 genesisBlockHash,
-        bytes32 batchHash,
-        uint64 batchNumber
-    ) internal {
         uint64 totalEthMsgHandledOnTwine = 3;
         uint64 totalSolanaMsgHandledOnTwine = 2;
         bytes memory publicValuesForFinalization = abi.encodePacked(
@@ -311,16 +295,18 @@ contract CompleteFlowTest is Test {
             totalSolanaMsgHandledOnTwine
         );
 
-        twineChain.finalizeBatch(
+        twineChain.commitAndFinalizeBatch(
             batchNumber,
             publicValuesForFinalization,
             publicValuesForFinalization
         );
+        assertEq(twineChain.committedBatch(batchNumber), batchHash);
+        assertEq(twineChain.lastCommittedBatchNumber(), 1);
         assertEq(twineChain.lastFinalizedBatchNumber(), 1);
         assertEq(twineChain.lastFinalizedBatchHash(), batchHash);
         assertEq(twineChain.finalizedBatch(batchNumber), batchHash);
 
-        console.log("Batch Finalization Successful");
+        console.log("Batch Commitment And Finalization Successful");
     }
 
     /*************************
@@ -592,9 +578,7 @@ contract CompleteFlowTest is Test {
 
         testForcedWithdrawERC20(withdrawAmountErc20);
 
-        testCommitBatch(genesisBlockHash, batchHash, batchNumber);
-
-        testFinalizeBatch(genesisBlockHash, batchHash, batchNumber);
+        testCommitAndFinalizeBatch(genesisBlockHash, batchHash, batchNumber);
 
         testRefundDepositETH(batchHash, batchNumber, depositAmountEth);
 

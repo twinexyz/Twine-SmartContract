@@ -37,8 +37,11 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     /// @notice The verification key for finalize proof
     bytes32 public finalizeVKey;
 
-    /// @notice The verification key for withdrawal proof
-    bytes32 public withdrawalVKey;
+    /// @notice The verification key for forced withdrawal proof
+    bytes32 public forcedWithdrawalVKey;
+
+    /// @notice The verification key for l2 initiated withdrawal proof
+    bytes32 public l2WithdrawalVkey;
 
     /// @notice The verification key for refund proof.
     bytes32 public refundVKey;
@@ -169,20 +172,28 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function setProgramVKey(
         bytes32 _finalizeVKey,
         bytes32 _refundVKey,
-        bytes32 _withdrawalVKey
+        bytes32 _forcedWithdrawalVKey,
+        bytes32 _l2WithdrawalVkey
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
         if (
             _finalizeVKey == bytes32(0) ||
             _refundVKey == bytes32(0) ||
-            _withdrawalVKey == bytes32(0)
+            _forcedWithdrawalVKey == bytes32(0) ||
+            _l2WithdrawalVkey == bytes32(0)
         ) {
             revert InvalidVerificationKeys();
         }
 
         finalizeVKey = _finalizeVKey;
         refundVKey = _refundVKey;
-        withdrawalVKey = _withdrawalVKey;
-        emit SetProgramVkey(_finalizeVKey, _refundVKey, _withdrawalVKey);
+        forcedWithdrawalVKey = _forcedWithdrawalVKey;
+        l2WithdrawalVkey = _l2WithdrawalVkey;
+        emit SetProgramVkey(
+            _finalizeVKey,
+            _refundVKey,
+            _forcedWithdrawalVKey,
+            _l2WithdrawalVkey
+        );
     }
 
     /// @inheritdoc ITwineChain
@@ -217,34 +228,27 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /* -------------------------------------------------------------------------- */
-    /*                                COMMIT BATCH                                */
+    /*                          Commit and Finalize Batch                         */
     /* -------------------------------------------------------------------------- */
-    function commitBatch(
-        uint64 batchNumber,
-        bytes32 batchHash
-    ) public onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        if (batchNumber != lastCommittedBatchNumber + 1) {
-            revert InvalidBatchSequence();
-        }
-        committedBatch[batchNumber] = batchHash;
-        lastCommittedBatchNumber = batchNumber;
-        emit CommitedBatch(batchNumber, chainId, block.number, batchHash);
-    }
-
-    /* -------------------------------------------------------------------------- */
-    /*                               FINALIZE BATCH                               */
-    /* -------------------------------------------------------------------------- */
-    function finalizeBatch(
+    function commitAndFinalizeBatch(
         uint64 batchNumber,
         bytes calldata publicValues,
         bytes calldata executionProof
-    ) public onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+        // Commitment
+        if (batchNumber != lastCommittedBatchNumber + 1) {
+            revert InvalidBatchSequence();
+        }
         (
             bytes32 previousBatchHash,
             bytes32 currentBatchHash,
             uint64 executedMessageCount
         ) = TwineChainDecoder.decodeBatchValues(publicValues);
 
+        committedBatch[batchNumber] = currentBatchHash;
+        lastCommittedBatchNumber = batchNumber;
+
+        // Finalization
         if (lastFinalizedBatchNumber != batchNumber - 1) {
             revert BatchMustBeFinalizedSequentially();
         }
@@ -283,28 +287,12 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     }
 
     /* -------------------------------------------------------------------------- */
-    /*                          Commit and Finalize Batch                         */
-    /* -------------------------------------------------------------------------- */
-    function commitAndFinalizeBatch(
-        uint64 batchNumber,
-        bytes calldata publicValues,
-        bytes calldata executionProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
-        (, bytes32 currentBatchHash, ) = TwineChainDecoder.decodeBatchValues(
-            publicValues
-        );
-
-        commitBatch(batchNumber, currentBatchHash);
-        finalizeBatch(batchNumber, publicValues, executionProof);
-    }
-
-    /* -------------------------------------------------------------------------- */
     /*                               Refund Deposit                               */
     /* -------------------------------------------------------------------------- */
     function refundDeposit(
         bytes calldata publicValues,
         bytes calldata refundProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isRefundExecuted[keccak256(publicValues)])
             revert RefundAlreadyProcessed();
 
@@ -366,7 +354,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function executeForcedWithdrawal(
         bytes calldata publicValues,
         bytes calldata withdrawalProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isForcedWithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
         L1OriginTxPublicValues memory withdrawValues = TwineChainDecoder
@@ -393,7 +381,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
         }
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
-                withdrawalVKey,
+                forcedWithdrawalVKey,
                 publicValues,
                 withdrawalProof
             );
@@ -421,7 +409,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isL2WithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
 
@@ -439,7 +427,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
 
         if (!skipVerification) {
             SP1Verifier(verifier).verifyProof(
-                refundVKey,
+                l2WithdrawalVkey,
                 publicValues,
                 withdrawProof
             );

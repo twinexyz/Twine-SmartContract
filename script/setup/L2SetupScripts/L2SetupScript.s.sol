@@ -5,8 +5,6 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
-import {MockERC20_9Decimals} from "../../../src/test/mocks/MockERC20_9Decimals.sol";
 import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
@@ -22,7 +20,7 @@ contract L2SetupScript is Script {
     L2TwineMessenger l2TwineMessenger;
     L2CustomERC20Gateway l2CustomERC20Gateway;
     TwineSystemStorage twineSystemStorage;
-    MockERC20_9Decimals solToken;
+    TwineStandardERC20 solToken;
     TwineStandardERC20 ethToken;
     TwineStandardERC20 fauxCoin;
 
@@ -34,12 +32,10 @@ contract L2SetupScript is Script {
     address roleManagerAddress;
     address l2MessageExecutorAddress;
     address l2ETHGatewayAddress;
-    address l1FauxCoinAddress;
     address l1ETHGatewayAddress;
-    address l2ERC20TokenAddress;
-    address l2MessageHandlerAddress;
     address l2GatewayRouterAddress;
     address l2XERC20GatewayAddress;
+    address chainAdmin;
     address twineOperationsHandler;
     address l1TwineMessengerAddress;
     address l2TwineMessengerAddress;
@@ -48,8 +44,11 @@ contract L2SetupScript is Script {
     address twineSystemStorageAddress;
     address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
+    address l1solTokenAddress;
+    address l1FauxCoinAddress;
 
     function setUp() public {
+        // <--------------------------- Read Json Files ---------------------------->
         string memory deployedL1Json = vm.readFile(
             "./script/utils/L1Addresses.json"
         );
@@ -58,6 +57,11 @@ contract L2SetupScript is Script {
             "./script/utils/twineAddresses.json"
         );
 
+        string memory setupValues = vm.readFile(
+            "./script/utils/setupValues.json"
+        );
+
+        // <-------------------- Deployed L2 Contract Addresses -------------------->
         roleManagerAddress = vm.parseJsonAddress(
             deployedL2Json,
             ".L2RoleManager"
@@ -94,7 +98,7 @@ contract L2SetupScript is Script {
 
         fauxCoinAddress = vm.parseJsonAddress(deployedL2Json, ".FauxCoin");
 
-        l1FauxCoinAddress = vm.parseJsonAddress(deployedL1Json, ".FauxCoin");
+        // <-------------------- Deployed L1 Contract Addresses -------------------->
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
             deployedL1Json,
@@ -111,30 +115,43 @@ contract L2SetupScript is Script {
             ".L1TwineMessenger"
         );
 
-        chainIdEth = 17000; //holesky chain Id
-        chainIdSolana = 900;
+        l1FauxCoinAddress = vm.parseJsonAddress(deployedL1Json, ".FauxCoin");
+
+        l1solTokenAddress = vm.parseJsonAddress(deployedL1Json, ".EthSol");
+
+
+        // <-------------------- L2 Contracts -------------------->
 
         l2CustomERC20Gateway = L2CustomERC20Gateway(
             l2CustomERC20GatewayAddress
         );
-
         roleManager = RoleManager(roleManagerAddress);
         l2ETHGateway = L2ETHGateway(l2ETHGatewayAddress);
         l2GatewayRouter = L2GatewayRouter(l2GatewayRouterAddress);
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
-        solToken = MockERC20_9Decimals(solTokenAddress);
+        solToken = TwineStandardERC20(solTokenAddress);
         ethToken = TwineStandardERC20(ethTokenAddress);
         fauxCoin = TwineStandardERC20(fauxCoinAddress);
         consensusPrecompileAddress = address(0x15);
         bridgingPrecompileAddress = address(0x16);
         twineSystemStorageAddress = address(0x17);
         twineSystemStorage = TwineSystemStorage(twineSystemStorageAddress);
+
+        // <--------------- Setup Values --------------->
+
+        chainIdEth = uint64(vm.parseJsonUint(setupValues, ".ChainIdEth"));
+        chainIdSolana = uint64(vm.parseJsonUint(setupValues, ".ChainIdSol"));
+
+        chainAdmin = vm.parseJsonAddress(setupValues, ".L2ChainAdmin");
+        twineOperationsHandler = vm.parseJsonAddress(
+            setupValues,
+            ".L2TwineOperationHandler"
+        );
     }
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
-        twineOperationsHandler = initialOwner;
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
@@ -145,6 +162,10 @@ contract L2SetupScript is Script {
         //roleManager setup
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
         roleManager.checkRole(keccak256("CHAIN_ADMIN"), initialOwner);
+
+        roleManager.grantRole(keccak256("CHAIN_ADMIN"), chainAdmin);
+        roleManager.checkRole(keccak256("CHAIN_ADMIN"), chainAdmin);
+
         roleManager.grantRole(
             keccak256("TWINE_OPERATIONS_HANDLER"),
             twineOperationsHandler
@@ -229,8 +250,13 @@ contract L2SetupScript is Script {
 
         l2CustomERC20Gateway.updateTokenMapping(
             chainIdEth,
-            address(ethToken),
+            ethTokenAddress,
             "0x0000000000000000000000000000000000000000"
+        );
+        l2CustomERC20Gateway.updateTokenMapping(
+            chainIdEth,
+            solTokenAddress,
+            addressToString(l1solTokenAddress)
         );
 
         l2CustomERC20Gateway.updateTokenMapping(
@@ -239,17 +265,8 @@ contract L2SetupScript is Script {
             "11111111111111111111111111111111"
         );
 
-        // TODO: Map FauxCoin  on Twine to FauxCoin on solana
 
-        uint256[] memory chainIdset = new uint256[](1);
-        string[] memory l1Token = new string[](1);
-        string[] memory erc20CounterpartGateWay = new string[](1);
-
-        chainIdset[0] = chainIdEth;
-        l1Token[0] = addressToString(l1FauxCoinAddress);
-        erc20CounterpartGateWay[0] = addressToString(
-            l1CustomERC20GatewayAddress
-        );
+        // TODO: Map FauxCoin on Twine to FauxCoin on solana
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
