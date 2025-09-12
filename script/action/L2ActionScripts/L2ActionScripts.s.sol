@@ -26,9 +26,17 @@ contract WithdrawETH is Script {
     uint256 gasLimit;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
-        l2ETHGatewayAddress = vm.parseJsonAddress(deployedJson, ".L2ETHGateway");
-        l2TwineMessengerAddress = vm.parseJsonAddress(deployedJson, ".L2TwineMessenger");
+        string memory deployedJson = vm.readFile(
+            "./script/utils/twineAddresses.json"
+        );
+        l2ETHGatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2ETHGateway"
+        );
+        l2TwineMessengerAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2TwineMessenger"
+        );
         l2ETHGateway = L2ETHGateway(l2ETHGatewayAddress);
         l2TwineMessenger = L2TwineMessenger(l2TwineMessengerAddress);
 
@@ -42,20 +50,26 @@ contract WithdrawETH is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        console.log("Messenger balance before deposit", address(l2TwineMessenger).balance);
+        console.log(
+            "Messenger balance before deposit",
+            address(l2TwineMessenger).balance
+        );
 
         vm.startBroadcast(deployerPrivateKey);
-        
+
         l2ETHGateway.withdrawETH{value: amount}(
             l2Token,
             l1Token,
-            to, 
-            amount, 
-            chainId, 
+            to,
+            amount,
+            chainId,
             0
         );
-        
-        console.log("Messenger balance after deposit", address(l2TwineMessenger).balance);
+
+        console.log(
+            "Messenger balance after deposit",
+            address(l2TwineMessenger).balance
+        );
         vm.stopBroadcast();
     }
 }
@@ -72,11 +86,18 @@ contract WithdrawERC20 is Script {
     uint256 chainId;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
+        string memory deployedJson = vm.readFile(
+            "./script/utils/twineAddresses.json"
+        );
 
-        l2CustomERC20GatewayAddress = vm.parseJsonAddress(deployedJson, ".L2CustomERC20Gateway"); 
+        l2CustomERC20GatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2CustomERC20Gateway"
+        );
 
-        l2CustomERC20Gateway = L2CustomERC20Gateway(l2CustomERC20GatewayAddress);
+        l2CustomERC20Gateway = L2CustomERC20Gateway(
+            l2CustomERC20GatewayAddress
+        );
 
         // Read parameters dynamically
         tokenAddress = vm.envAddress("TOKEN");
@@ -93,14 +114,27 @@ contract WithdrawERC20 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        console.log("Balance of Admin before withdrawal: ", token.balanceOf(admin));
-        
-        l2CustomERC20Gateway.withdrawERC20(tokenAddress, to, amount, chainId, 0);
+        console.log(
+            "Balance of Admin before withdrawal: ",
+            token.balanceOf(admin)
+        );
 
-        console.log("Balance of Admin after withdrawal: ", token.balanceOf(admin));
+        l2CustomERC20Gateway.withdrawERC20(
+            tokenAddress,
+            to,
+            amount,
+            chainId,
+            0
+        );
+
+        console.log(
+            "Balance of Admin after withdrawal: ",
+            token.balanceOf(admin)
+        );
         vm.stopBroadcast();
     }
 }
+
 contract GrantRole is Script {
     RoleManager roleManager;
     address roleManagerAddress;
@@ -109,9 +143,14 @@ contract GrantRole is Script {
     address account;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
-        
-        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".L2RoleManager");
+        string memory deployedJson = vm.readFile(
+            "./script/utils/twineAddresses.json"
+        );
+
+        roleManagerAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2RoleManager"
+        );
         roleManager = RoleManager(roleManagerAddress);
 
         // Read parameters dynamically
@@ -122,7 +161,7 @@ contract GrantRole is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
-       
+
         vm.startBroadcast(deployerPrivateKey);
 
         roleManager.grantRole(encodedRole, account);
@@ -140,9 +179,14 @@ contract RevokeRole is Script {
     address account;
 
     function setUp() public {
-        string memory deployedJson = vm.readFile("./script/utils/twineAddresses.json");
-        
-        roleManagerAddress = vm.parseJsonAddress(deployedJson, ".L2RoleManager");
+        string memory deployedJson = vm.readFile(
+            "./script/utils/twineAddresses.json"
+        );
+
+        roleManagerAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2RoleManager"
+        );
         roleManager = RoleManager(roleManagerAddress);
 
         // Read parameters dynamically
@@ -154,14 +198,15 @@ contract RevokeRole is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
-       
+
         vm.startBroadcast(deployerPrivateKey);
 
         roleManager.revokeRole(encodedRole, account);
-        
+
         vm.stopBroadcast();
     }
 }
+
 contract UpdateTokenMapping is Script {
     uint256 chainId;
     address l2ERC20TokenAddress;
@@ -198,3 +243,32 @@ contract UpdateTokenMapping is Script {
     }
 }
 
+contract RemoveTokenMapping is Script {
+    uint256 chainId;
+    address l2ERC20TokenAddress;
+    address l2CustomERC20GatewayAddress;
+    L2CustomERC20Gateway l2CustomERC20Gateway;
+
+    function setUp() public {
+        string memory deployedJson = vm.readFile(
+            "./script/utils/twineAddresses.json"
+        );
+        l2CustomERC20GatewayAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2CustomERC20Gateway"
+        );
+        l2CustomERC20Gateway = L2CustomERC20Gateway(
+            l2CustomERC20GatewayAddress
+        );
+
+        chainId = vm.envUint("CHAIN_ID");
+        l2ERC20TokenAddress = vm.envAddress("L2_TOKEN_ADDRESS");
+    }
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+        l2CustomERC20Gateway.removeTokenMapping(chainId, l2ERC20TokenAddress);
+        vm.stopBroadcast();
+    }
+}

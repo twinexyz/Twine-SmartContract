@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
-import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
+import {L1ERC20} from "../../../src/libraries/token/L1ERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 
@@ -13,8 +13,6 @@ import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
-
-import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
 import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
@@ -29,6 +27,7 @@ contract DeployL1Contracts is Script {
         address l1CustomERC20Gateway;
         address verifier;
         address fauxCoin;
+        address solToken;
     }
 
     function run() external {
@@ -45,14 +44,31 @@ contract DeployL1Contracts is Script {
 
         DeployedContracts memory contracts;
 
-        // Deploy MockERC20
-        contracts.fauxCoin = address(new MockERC20("FauxCoin", "FAUX"));
-
         // Deploying an upgradable proxy for RoleManager
         contracts.roleManager = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
             initialOwner,
             abi.encodeCall(RoleManager.initialize, (initialOwner))
+        );
+
+        // Deploy fauxcoin
+        contracts.fauxCoin = Upgrades.deployTransparentProxy(
+            "L1ERC20.sol",
+            initialOwner,
+            abi.encodeCall(
+                L1ERC20.initialize,
+                ("FauxCoin", "FAUX", 18, address(contracts.roleManager))
+            )
+        );
+
+        // Deploy solToken
+        contracts.solToken = Upgrades.deployTransparentProxy(
+            "L1ERC20.sol",
+            initialOwner,
+            abi.encodeCall(
+                L1ERC20.initialize,
+                ("EthSol", "ESol", 9, address(contracts.roleManager))
+            )
         );
 
         // Deploying an upgradeable proxy for L1CustomERC20Gateway
@@ -123,9 +139,6 @@ contract DeployL1Contracts is Script {
         // Deploying the SP1Verifier contract
         contracts.verifier = address(new SP1Verifier());
 
-        // Deploying the SP1Verifier contract
-        contracts.verifier = address(new SP1Verifier());
-
         string memory twineObject = "l1-contracts";
         vm.serializeAddress(twineObject, "TwineChain", contracts.twineChain);
         vm.serializeAddress(
@@ -161,8 +174,8 @@ contract DeployL1Contracts is Script {
         vm.serializeAddress(twineObject, "L1XERC20Gateway", address(0));
         vm.serializeAddress(twineObject, "Verifier", contracts.verifier);
         vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
-        vm.serializeAddress(twineObject, "Verifier", contracts.verifier);
         vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
+        vm.serializeAddress(twineObject, "EthSol", contracts.solToken);
 
         // Fill them manually
         vm.serializeBytes32(
@@ -170,14 +183,11 @@ contract DeployL1Contracts is Script {
             "finalizeVkey",
             bytes32("dummy_value")
         );
-        vm.serializeBytes32(
-            twineObject,
-            "refundVkey",
-            bytes32("dummy_value")
-        );
+        vm.serializeBytes32(twineObject, "refundVkey", bytes32("dummy_value"));
+        vm.serializeBytes32(twineObject, "forcedWithdrawalVkey", bytes32("dummy_value"));
         string memory finalJson = vm.serializeBytes32(
             twineObject,
-            "withdrawalVkey",
+            "l2WithdrawalVkey",
             bytes32("dummy_value")
         );
 

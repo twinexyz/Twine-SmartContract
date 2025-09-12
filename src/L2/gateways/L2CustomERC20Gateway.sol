@@ -72,6 +72,19 @@ contract L2CustomERC20Gateway is L2ERC20Gateway {
         emit TokenMappingUpdated(chainId, l2Token, oldL1Token, l1Token);
     }
 
+    function removeTokenMapping(
+        uint256 chainId,
+        address l2Token
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        string memory oldL1Token = tokenMapping[chainId][l2Token];
+        if (bytes(oldL1Token).length == 0) {
+            revert("Mapping does not exits");
+        } 
+
+        delete tokenMapping[chainId][l2Token];
+        emit TokenMappingUpdated(chainId, l2Token, oldL1Token, "");
+    }
+
     /**********************
      * Internal Functions *
      **********************/

@@ -78,6 +78,25 @@ contract L1CustomERC20Gateway is L1ERC20Gateway {
         emit UpdateTokenMapping(l1Token, oldL2Token, l2Token);
     }
 
+    /// @notice Removes a token mapping
+    /// @param l1Token The address of ERC20 token on layer 1 whose mapping is to be deleted.
+    function removeTokenMapping(
+        address l1Token
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (l1Token == address(0)) {
+            revert ZeroAddress();
+        }
+
+        address oldL2Token = tokenMapping[l1Token];
+        if (oldL2Token == address(0)) {
+            revert NoCorrespondingL2Token();
+        }
+
+        delete tokenMapping[l1Token];
+
+        emit UpdateTokenMapping(l1Token, oldL2Token, address(0));
+    }
+
     /**********************
      * Internal Functions *
      **********************/

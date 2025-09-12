@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
+
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
@@ -13,7 +15,7 @@ import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
 contract L1SetupScript is Script {
-    MockERC20 token;
+    // Contracts
     TwineChain twineChain;
     RoleManager roleManager;
     L1ETHGateway l1ETHGateway;
@@ -22,29 +24,38 @@ contract L1SetupScript is Script {
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
+    // Setup Values
     uint64 chainId;
-    bytes32 finalizeVKey;
+    address chainAdmin;
     bytes32 refundVKey;
-    bytes32 withdrawalVKey;
-    address tokenAddress;
+    bytes32 finalizeVKey;
+    bytes32 l2WithdrawalVkey;
+    bytes32 forcedWithdrawalVKey;
+    address twineOperationsHandler;
+
+    // l2 Contract Addresses
+    address l2FauxCoinAddress;
+    address l2SolTokenAddress;
+    address l2EthTokenAddress;
+    address l2ETHGatewayAddress;
+    address l2TwineMessengerAddress;
+    address l2CustomERC20GatewayAddress;
+
+    // L1 Contract Addresses
     address verifierAddress;
+    address l1FauxCoinAddress;
     address twineChainAddress;
     address roleManagerAddress;
     address l1ETHGatewayAddress;
-    address l1ERC20TokenAddress;
-    address l2ERC20TokenAddress;
-    address l2ETHGatewayAddress;
-    address l1MessageHandlerAddress;
+    address l1EthSolTokenAddress;
     address l1GatewayRouterAddress;
     address l1XERC20GatewayAddress;
-    address twineOperationsHandler;
+    address l1MessageHandlerAddress;
     address l1TwineMessengerAddress;
-    address l2TwineMessengerAddress;
     address l1CustomERC20GatewayAddress;
-    address l2CustomERC20GatewayAddress;
-    address l2ETHTokenAddress;
 
     function setUp() public {
+        // <--------------------------- Read Json Files ---------------------------->
         string memory deployedL1Json = vm.readFile(
             "./script/utils/L1Addresses.json"
         );
@@ -53,18 +64,18 @@ contract L1SetupScript is Script {
             "./script/utils/twineAddresses.json"
         );
 
+        string memory L1SetupJson = vm.readFile("./script/utils/setupValues.json");
+
+        // <-------------------- Deployed L1 Contract Addresses -------------------->
         roleManagerAddress = vm.parseJsonAddress(
             deployedL1Json,
             ".L1RoleManager"
         );
-        console.log("Rolemanager",roleManagerAddress);
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
             deployedL1Json,
             ".L1ETHGateway"
         );
-
-        l1ERC20TokenAddress = vm.parseJsonAddress(deployedL1Json, ".FauxCoin");
 
         l1CustomERC20GatewayAddress = vm.parseJsonAddress(
             deployedL1Json,
@@ -93,6 +104,12 @@ contract L1SetupScript is Script {
             ".L1TwineMessenger"
         );
 
+        l1FauxCoinAddress = vm.parseJsonAddress(deployedL1Json, ".FauxCoin");
+
+        l1EthSolTokenAddress = vm.parseJsonAddress(deployedL1Json, ".EthSol");
+
+        // <-------------------- Deployed L2 Contract Addresses -------------------->
+
         l2TwineMessengerAddress = vm.parseJsonAddress(
             deployedL2Json,
             ".L2TwineMessenger"
@@ -100,14 +117,10 @@ contract L1SetupScript is Script {
 
         verifierAddress = vm.parseJsonAddress(deployedL1Json, ".Verifier");
 
-        finalizeVKey = vm.parseJsonBytes32(deployedL1Json, ".finalizeVkey");
-        refundVKey = vm.parseJsonBytes32(deployedL1Json, ".refundVkey");
-        withdrawalVKey = vm.parseJsonBytes32(deployedL1Json, ".withdrawalVkey");
-
-        l2ERC20TokenAddress = vm.parseJsonAddress(deployedL2Json, ".FauxCoin");
-
-        l2ETHTokenAddress = vm.parseJsonAddress(deployedL2Json, ".ETHToken");
-
+        l2FauxCoinAddress = vm.parseJsonAddress(deployedL2Json, ".FauxCoin");
+        l2SolTokenAddress = vm.parseJsonAddress(deployedL2Json, ".SolToken");
+        l2EthTokenAddress = vm.parseJsonAddress(deployedL2Json, ".ETHToken");
+        
         l2CustomERC20GatewayAddress = vm.parseJsonAddress(
             deployedL2Json,
             ".L2CustomERC20Gateway"
@@ -118,24 +131,36 @@ contract L1SetupScript is Script {
             ".L2ETHGateway"
         );
 
+        // <-------------------- L1 Contracts -------------------->
+
         twineChain = TwineChain(twineChainAddress);
         l1CustomERC20Gateway = L1CustomERC20Gateway(
             l1CustomERC20GatewayAddress
         );
-
         roleManager = RoleManager(roleManagerAddress);
         l1ETHGateway = L1ETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
         l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
-        token = MockERC20(tokenAddress);
-        chainId = 17000; //holesky chain Id
+
+        // <--------------- Setup Values --------------->
+
+        refundVKey = vm.parseJsonBytes32(deployedL1Json, ".refundVkey");
+        finalizeVKey = vm.parseJsonBytes32(deployedL1Json, ".finalizeVkey");
+        forcedWithdrawalVKey = vm.parseJsonBytes32(deployedL1Json, ".forcedWithdrawalVkey");
+        l2WithdrawalVkey = vm.parseJsonBytes32(deployedL1Json, ".l2WithdrawalVkey");
+
+        chainId = uint64(vm.parseJsonUint(L1SetupJson, ".ChainIdEth"));
+        chainAdmin = vm.parseJsonAddress(L1SetupJson, ".L1ChainAdmin");
+        twineOperationsHandler = vm.parseJsonAddress(
+            L1SetupJson,
+            ".L1TwineOperationHandler"
+        );
     }
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
-        twineOperationsHandler = initialOwner;
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
@@ -143,6 +168,18 @@ contract L1SetupScript is Script {
         //roleManager setup
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
         roleManager.checkRole(keccak256("CHAIN_ADMIN"), initialOwner);
+
+        roleManager.grantRole(keccak256("CHAIN_ADMIN"), chainAdmin);
+        roleManager.checkRole(keccak256("CHAIN_ADMIN"), chainAdmin);
+
+        roleManager.grantRole(
+            keccak256("TWINE_OPERATIONS_HANDLER"),
+            twineOperationsHandler
+        );
+        roleManager.checkRole(
+            keccak256("TWINE_OPERATIONS_HANDLER"),
+            twineOperationsHandler
+        );
 
         roleManager.grantRole(keccak256("TWINE_GATEWAYS"), l1ETHGatewayAddress);
         roleManager.checkRole(keccak256("TWINE_GATEWAYS"), l1ETHGatewayAddress);
@@ -159,21 +196,12 @@ contract L1SetupScript is Script {
         roleManager.grantRole(keccak256("TWINE_CHAIN"), twineChainAddress);
         roleManager.checkRole(keccak256("TWINE_CHAIN"), twineChainAddress);
 
-        roleManager.grantRole(
-            keccak256("TWINE_OPERATIONS_HANDLER"),
-            twineOperationsHandler
-        );
-        roleManager.checkRole(
-            keccak256("TWINE_OPERATIONS_HANDLER"),
-            twineOperationsHandler
-        );
-
         //TwineChain setup
         twineChain.setRoleManagerAddress(roleManagerAddress);
         twineChain.setChainId(chainId);
         twineChain.setMessageHandlerAddress(l1MessageHandlerAddress);
         twineChain.setVeriferAddress(verifierAddress);
-        twineChain.setProgramVKey(finalizeVKey, refundVKey, withdrawalVKey);
+        twineChain.setProgramVKey(finalizeVKey, refundVKey, forcedWithdrawalVKey, l2WithdrawalVkey);
         twineChain.setGatewayAddress(
             l1ETHGatewayAddress,
             l1CustomERC20GatewayAddress
@@ -183,7 +211,7 @@ contract L1SetupScript is Script {
         l1ETHGateway.setRoleManagerAddress(roleManagerAddress);
         l1ETHGateway.setGatewayRouter(l1GatewayRouterAddress);
         l1ETHGateway.setTwineMessenger(l1TwineMessengerAddress);
-        l1ETHGateway.setL2TokenAddress(l2ETHTokenAddress);
+        l1ETHGateway.setL2TokenAddress(l2EthTokenAddress);
         l1ETHGateway.setChainId(chainId);
 
         //L1MessageHandler setup
@@ -197,10 +225,13 @@ contract L1SetupScript is Script {
         l1GatewayRouter.setETHGateway(l1ETHGatewayAddress);
         l1GatewayRouter.setDefaultERC20Gateway(l1CustomERC20GatewayAddress);
 
-        address[] memory tokens = new address[](1);
-        address[] memory gateways = new address[](1);
-        tokens[0] = l1ERC20TokenAddress;
+        address[] memory tokens = new address[](2);
+        address[] memory gateways = new address[](2);
+        tokens[0] = l1FauxCoinAddress;
+        tokens[1] = l1EthSolTokenAddress;
+
         gateways[0] = l1CustomERC20GatewayAddress;
+        gateways[1] = l1CustomERC20GatewayAddress;
         l1GatewayRouter.setERC20Gateway(tokens, gateways);
 
         //L1TwineMessenger setup
@@ -214,12 +245,15 @@ contract L1SetupScript is Script {
         l1CustomERC20Gateway.setGatewayRouter(l1GatewayRouterAddress);
         l1CustomERC20Gateway.setTwineMessenger(l1TwineMessengerAddress);
         l1CustomERC20Gateway.updateTokenMapping(
-            l1ERC20TokenAddress,
-            l2ERC20TokenAddress
+            l1FauxCoinAddress,
+            l2FauxCoinAddress
         );
-        l1CustomERC20Gateway.setChainId(chainId);
+        l1CustomERC20Gateway.updateTokenMapping(
+            l1EthSolTokenAddress,
+            l2SolTokenAddress
+        );
 
-        console.logBytes32(twineChain.finalizeVKey());
+        l1CustomERC20Gateway.setChainId(chainId);
 
         // Stop broadcasting transactions
         vm.stopBroadcast();

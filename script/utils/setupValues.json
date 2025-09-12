@@ -1,0 +1,8 @@
+{
+    "ChainIdEth": "11155111",
+    "ChainIdSol": "900",
+    "L1ChainAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "L2ChainAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "L1TwineOperationHandler": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "L2TwineOperationHandler": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+}
