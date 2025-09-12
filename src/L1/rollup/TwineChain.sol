@@ -337,6 +337,15 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             refundValues.amount
         );
         isRefundExecuted[keccak256(publicValues)] = true;
+
+        emit RefundSuccessful(
+            refundValues.nonce,
+            refundValues.fromAddress,
+            refundValues.l1Token,
+            refundValues.chainId,
+            refundValues.amount,
+            uint64(block.number)
+        );
     }
 
     /* -------------------------------------------------------------------------- */
@@ -386,12 +395,21 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             withdrawValues.amount
         );
         isForcedWithdrawExecuted[keccak256(publicValues)] = true;
+
+        emit ForcedWithdrawalSuccessful(
+            withdrawValues.nonce,
+            withdrawValues.fromAddress,
+            withdrawValues.l1Token,
+            withdrawValues.chainId,
+            withdrawValues.amount,
+            uint64(block.number)
+        );
     }
 
     function executeL2Withdraw(
         bytes calldata publicValues,
         bytes calldata withdrawProof
-    ) external onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER()) {
+    ) external {
         if (isL2WithdrawExecuted[keccak256(publicValues)])
             revert WithdrawalAlreadyProcessed();
 

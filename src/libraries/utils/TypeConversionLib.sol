@@ -77,4 +77,20 @@ library TypeConversionLib {
             }
         }
     }
+
+    /// @notice Converts to lower case
+    function toLower(string memory str) internal pure returns (string memory) {
+    bytes memory bStr = bytes(str);
+    bytes memory bLower = new bytes(bStr.length);
+    for (uint i = 0; i < bStr.length; i++) {
+        // Uppercase A–Z → a–z
+        if ((uint8(bStr[i]) >= 65) && (uint8(bStr[i]) <= 90)) {
+            bLower[i] = bytes1(uint8(bStr[i]) + 32);
+        } else {
+            bLower[i] = bStr[i];
+        }
+    }
+    return string(bLower);
+}
+
 }

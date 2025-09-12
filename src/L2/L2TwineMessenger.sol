@@ -4,17 +4,17 @@ pragma solidity ^0.8.24;
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
 import {ISP1Helios} from "./ISP1Helios.sol";
-import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
+import {IL2MsgExecutor} from "./IL2MsgExecutor.sol";
 import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
-import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
-import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {TwineTypes} from "../libraries/types/TwineTypes.sol";
-import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
-import {MessageHasherLib} from "../libraries/utils/MessageHasherLib.sol";
-import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
+import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
+import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
+import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
+import {MessageHasherLib} from "../libraries/utils/MessageHasherLib.sol";
+import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
+import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
 
@@ -177,44 +177,45 @@ contract L2TwineMessenger is
     }
 
     function handleSolanaTransactions(
-        uint256 chainId,
-        bytes calldata precompileInput
+        bytes32 prevRollingHash,
+        TwineTypes.MessageData memory messageData,
+        bytes memory publicValues,
+        bytes memory proof
     )
         external
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-        bytes memory output = precompileInput;
-        bool success;
+        uint64 chainId = messageData.chainId;
+
+        bytes32 solMessageHash = MessageHasherLib.hashL1Message(messageData);
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
+                solMessageHash
+            ),
+            "Message already executed"
+        );
 
         if (!skipVerification) {
-            (success, output) = consensusPrecompileAddress.call(
-                precompileInput
-            );
-            require(success, "Consensus verification failed!");
-
-            SolanaVerifierPrecompileOutput memory verifierOutput = abi.decode(
-                output,
-                (SolanaVerifierPrecompileOutput)
-            );
-
             ISP1Verifier(sp1Verifier).verifyProof(
-                vKeys[chainId],
-                verifierOutput.publicValue,
-                verifierOutput.proof
+                vKeys[uint256(chainId)],
+                publicValues,
+                proof
             );
         }
 
-        // (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
-        //     .call(output);
-        // require(txnSuccess, "Failed executing transactions");
-        // handleBridgeTransactions(chainId, ChainType.Solana, txnOutput);
+        bytes memory precompileInput = abi.encode(chainId, abi.encode(prevRollingHash, messageData, publicValues));
+
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(precompileInput);
+        require(txnSuccess, "Failed executing transactions");
+        handleBridgeTransactions(chainId, solMessageHash, txnOutput);
     }
 
+    /// @inheritdoc IL2TwineMessenger
     function handleEthereumProofAndTransactions(
-        uint256 chainId,
-        uint256 executionHeight,
-        bytes memory messageData,
+        uint256 proofHeight,
+        TwineTypes.MessageData memory messageData,
         bytes memory serializedProof
     )
         external
@@ -223,10 +224,9 @@ contract L2TwineMessenger is
     {
         uint256 latest_block = ISP1Helios(sp1Helios)
             .latestExecutionBlockNumber();
-        require(latest_block >= executionHeight, "Block not yet provable");
+        require(latest_block >= proofHeight, "Block not yet provable");
 
-        // TODO: HANDLE LIKE IN `handleChainTransactions`
-        bytes32 ethMessageHash = keccak256(messageData);
+        bytes32 ethMessageHash = MessageHasherLib.hashL1Message(messageData);
         require(
             !ITwineSystemStorage(systemStorageContract).isMessageHandled(
                 ethMessageHash
@@ -235,12 +235,14 @@ contract L2TwineMessenger is
         );
 
         bytes32 stateRoot = ISP1Helios(sp1Helios).executionStateRoots(
-            executionHeight
+            proofHeight
         );
+
+        uint64 chainId = messageData.chainId;
 
         bytes memory precompile_input = abi.encode(
             chainId,
-            abi.encode(executionHeight, stateRoot, messageData, serializedProof)
+            abi.encode(proofHeight, stateRoot, messageData, serializedProof)
         );
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(precompile_input);
@@ -342,6 +344,8 @@ contract L2TwineMessenger is
         bytes memory contractCallData
     ) external {
         require(msg.sender == address(this), "Only self-call allowed");
+
+        //@ add token mapping check here
 
         ITwineERC20(token).mint(to, amount);
 
@@ -453,7 +457,7 @@ contract L2TwineMessenger is
         uint256 chainId,
         uint256 blockNumber,
         uint256 gasLimit
-    ) public pure returns (bytes32) {
+    ) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encodePacked(

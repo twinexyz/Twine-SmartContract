@@ -126,4 +126,11 @@ contract TwineStandardERC20 is ITwineERC20, ERC20Upgradeable {
         _burn(_from, _amount);
         emit TokensBurned(_from, _amount, _msgSender());
     }
+
+    /**********************
+     * View Functions *
+     **********************/
+    function decimals() public view override virtual returns (uint8) {
+        return decimals_;
+    }
 }
