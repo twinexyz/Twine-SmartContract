@@ -14,6 +14,6 @@ export TOKEN
 
 #Run the forge script with the provided values
 forge script script/view/L1ViewFunctions/L1GatewayRouterView.s.sol:ViewERC20Gateway \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "TOKEN=$TOKEN" --env "PRIVATE_KEY=$PRIVATE_KEY"

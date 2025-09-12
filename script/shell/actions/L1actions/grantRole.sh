@@ -15,6 +15,6 @@ export ROLE
 
 # Run the forge script
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:GrantRole \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
      -- --env "PRIVATE_KEY=$PRIVATE_KEY" --env "Account=$Account" --env "ROLE=$ROLE"

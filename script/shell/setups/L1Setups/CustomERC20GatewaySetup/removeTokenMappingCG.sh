@@ -16,6 +16,6 @@ export L1_TOKEN_ADDRESS
 
 #Run the forge script with the provided values
 forge script script/setup/L1SetupScripts/L1CustomERC20GatewaySetup.s.sol:RemoveTokenMapping \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "L1_TOKEN_ADDRESS=$L1_TOKEN_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"

@@ -20,7 +20,7 @@ export L2_WITHDRAWAL_VKEY
 
 #Run the forge script with the provided values
 forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetProgramVkey \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "FINALIZE_VKEY=$FINALIZE_VKEY" --env "REFUND_VKEY=$REFUND_VKEY" \
     --env "FORCED_WITHDRAWAL_VKEY=$FORCED_WITHDRAWAL_VKEY" --env "L2_WITHDRAWAL_VKEY=$L2_WITHDRAWAL_VKEY"\

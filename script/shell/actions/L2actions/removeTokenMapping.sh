@@ -16,6 +16,6 @@ export L2_TOKEN_ADDRESS
 
 # Run the forge script
 forge script script/action/L2ActionScripts/L2ActionScripts.s.sol:RemoveTokenMapping \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L2_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "CHAIN_ID=$CHAIN_ID" --env "L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"

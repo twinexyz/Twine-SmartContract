@@ -4,20 +4,20 @@
 ENV_FILE=".env"
 MARKER="marker"
 
-ONE_L1_CHAIN_NAME="holesky"
-ONE_L1_RPC="127.0.0.1:8545"
+ONE_L1_CHAIN_NAME="l1"
+ONE_L1_RPC="127.0.0.1:9545"
 ONE_L1_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-ONE_L1_EXECUTION_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
-ONE_L1_TRANSACTION_INCLUSION_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
-ONE_L1_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd290
-ONE_L1_SP1_VERIFIER=0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
+ONE_L1_FINALIZE_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
+ONE_L1_REFUND_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
+ONE_L1_FORCED_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
+ONE_L1_L2_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
 
 TWINE_CHAIN_NAME=twine
 TWINE_RPC="127.0.0.1:8545"
 TWINE_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
-ONE_L1_ADDRESSES="script/utils/${ONE_L1_CHAIN_NAME}Addresses.json"
-TWINE_ADDRESSES="script/utils/${TWINE_CHAIN_NAME}Addresses.json"
+ONE_L1_ADDRESSES="script/utils/L1Addresses.json"
+TWINE_ADDRESSES="script/utils/twineAddresses.json"
 DEPLOYED_CONTRACTS="script/utils/deployedContracts.json"
 
 L1_DEPLOYMENT_MARKER="$MARKER/L1_deployment_marker.txt"
@@ -102,10 +102,10 @@ forge clean
 L1_DEPLOY_CMD="forge script script/deploy/L1DeploymentScripts/DeployL1Contracts.s.sol --broadcast --rpc-url $ONE_L1_RPC"
 run_if_not_done "$L1_DEPLOYMENT_MARKER" "$L1_DEPLOY_CMD"  "L1 Deployment failed." "Deploy"
 
-jq --arg vkey "$ONE_L1_EXECUTION_VKEY" '.finalizeVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
-jq --arg vkey "$ONE_L1_TRANSACTION_INCLUSION_VKEY" '.refundVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
-jq --arg vkey "$ONE_L1_WITHDRAW_VKEY" '.withdrawalVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
-jq --arg vkey "$ONE_L1_SP1_VERIFIER" '.Verifier = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
+jq --arg vkey "$ONE_L1_FINALIZE_VKEY" '.finalizeVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
+jq --arg vkey "$ONE_L1_REFUND_VKEY" '.refundVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
+jq --arg vkey "$ONE_L1_FORCED_WITHDRAW_VKEY" '.forcedWithdrawalVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
+jq --arg vkey "$ONE_L1_L2_WITHDRAW_VKEY" '.l2WithdrawalVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
 
 dev_contracts=$(cat "$ONE_L1_ADDRESSES")
 twine_contracts=$(cat "$TWINE_ADDRESSES")

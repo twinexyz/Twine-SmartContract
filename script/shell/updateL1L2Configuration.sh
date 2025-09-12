@@ -41,7 +41,7 @@ FILE="script/configure.sh"
     else
         echo "File $FILE not found!"
     fi
-done
+
 
 echo "All files updated successfully!"
 

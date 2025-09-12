@@ -14,6 +14,6 @@ export CHAIN_ID
 
 # Run the forge script
 forge script script/setup/L1SetupScripts/ETHGatewaySetup.s.sol:SetChainId \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
      -- --env "PRIVATE_KEY=$PRIVATE_KEY" --env "CHAIN_ID=$CHAIN_ID" 

@@ -29,7 +29,7 @@ export CHAIN_ID
  
 #Run the forge script with the provided default values
 forge script script/action/L2ActionScripts/L2ActionScripts.s.sol:WithdrawERC20 \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L2_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "RECEIVER=$RECEIVER" --env "AMOUNT=$AMOUNT" --env "PRIVATE_KEY=$PRIVATE_KEY" \
     --env "CHAIN_ID=$CHAIN_ID" --env "TOKEN=$TOKEN"

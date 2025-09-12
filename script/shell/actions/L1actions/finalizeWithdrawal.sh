@@ -32,7 +32,7 @@ export INCLUSION_PROOF
  
 #Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:finalizeWithdrawal \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "CHAIN_ID=$CHAIN_ID" --env "BATCH_NUMBER=$BLOCK_NUMBER" --env "NONCE=$NONCE" --env "IS_FORCED=$IS_FORCED" \
     --env "RECEIPT_ROOT=$RECEIPT_ROOT" --env "L1_RECEIVER_ADDRESS=$L1_RECEIVER_ADDRESS" --env "L1_TOKEN_ADDRESS=$L1_TOKEN_ADDRESS" \

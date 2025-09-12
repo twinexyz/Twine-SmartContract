@@ -29,7 +29,7 @@ export PRIVATE_KEY
  
 #Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:DepositERC20 \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "RECEIVER=$RECEIVER" --env "DEPOSIT_AMOUNT=$DEPOSIT_AMOUNT" \
     --env "DATA=$DATA" --env "PRIVATE_KEY=$PRIVATE_KEY"

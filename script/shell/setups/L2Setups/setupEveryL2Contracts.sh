@@ -11,6 +11,6 @@ export PRIVATE_KEY
 
 #Run the forge script
 forge script script/setup/L2SetupScripts/L2SetupScript.s.sol:L2SetupScript \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L2_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "PRIVATE_KEY=$PRIVATE_KEY"

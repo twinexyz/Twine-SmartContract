@@ -18,6 +18,6 @@ export ERC20_GATEWAY
 
 #Run the forge script with the provided values
 forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetGatewayAddress \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "ETH_GATEWAY=$ETH_GATEWAY" --env "ERC20_GATEWAY=$ERC20_GATEWAY" --env "PRIVATE_KEY=$PRIVATE_KEY"

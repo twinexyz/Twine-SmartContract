@@ -10,6 +10,6 @@ export PRIVATE_KEY
 
 # Run the forge script
 forge script script/upgrade/L1UpgradeScripts/UpgradeL1Contracts.s.sol:UpgradeL1CustomERC20Gateway \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
      -- --env "PRIVATE_KEY=$PRIVATE_KEY" 

@@ -512,7 +512,8 @@ setupEveryL2Contracts:
 
 # **************************************
 # *		Config L1 and L1     *
-# **************************************
+# **************************************	
+
 setupEveryContracts:
 	bash script/shell/updateL1L2Configuration.sh
 	if [ -d marker ]; then rm -rf marker; fi

@@ -11,6 +11,6 @@ export PRIVATE_KEY
 
 #Run the forge script with the provided values
 forge script script/view/L1ViewFunctions/TwineChainView.s.sol:ViewRoleManagerAddress \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "PRIVATE_KEY=$PRIVATE_KEY"

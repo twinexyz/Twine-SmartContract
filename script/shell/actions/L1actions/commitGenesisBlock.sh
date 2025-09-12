@@ -15,7 +15,7 @@ export PRIVATE_KEY
 
 # Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:CommitGenesisBlock \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "GENESIS_BLOCK_HASH=$GENESIS_BLOCK_HASH" --env "PRIVATE_KEY=$PRIVATE_KEY"
 

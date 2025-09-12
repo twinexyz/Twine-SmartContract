@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "forge-std/console.sol";
 
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 
@@ -43,9 +42,6 @@ contract TwineSystemStorage is ITwineSystemStorage {
     /// @notice Modifier to restrict access to functions only callable by the authorized Twine messenger.
     /// @dev Reverts if the caller is not the `twineMessenger`.
     modifier onlyTwineAdmin() {
-        console.log("Inside only twine admin");
-        console.log("Twine Admin: ", admin);
-        console.log("Sender: ", msg.sender);
         require(msg.sender == admin, "OnlyTwineAdmin");
         _;
     }
@@ -56,7 +52,6 @@ contract TwineSystemStorage is ITwineSystemStorage {
     function setTwineMessenger(
         address _twineMessenger
     ) external onlyTwineAdmin {
-        console.log("Inside setTwineMessenger");
         require(_twineMessenger != address(0), "ShouldBeValidMessenger");
         twineMessenger = _twineMessenger;
     }

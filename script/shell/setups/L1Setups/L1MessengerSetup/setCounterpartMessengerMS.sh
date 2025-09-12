@@ -15,6 +15,6 @@ export COUNTERPART_MESSENGER
 
 #Run the forge script with the provided values
 forge script script/setup/L1SetupScripts/L1TwineMessengerSetup.s.sol:SetCounterpartMessenger \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "COUNTERPART_MESSENGER=$COUNTERPART_MESSENGER" --env "PRIVATE_KEY=$PRIVATE_KEY"

@@ -17,6 +17,6 @@ export PRIVATE_KEY
 
 # Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:FinalizeBatch \
-    --fork-url "$DEFAULT_FORK_URL"  \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
     --broadcast \
     -- --env "PUBLIC_INPUT_FOR_REFUND=$PUBLIC_INPUT_FOR_REFUND" --env "REFUND_PROOF=$REFUND_PROOF" --env "PRIVATE_KEY=$PRIVATE_KEY"
