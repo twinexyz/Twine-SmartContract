@@ -519,5 +519,9 @@ setupEveryContracts:
 	if [ -d marker ]; then rm -rf marker; fi
 	bash script/configure.sh
 
+setupEveryContracts-default:
+	bash script/shell/makeL1L2ConfigurationDefault.sh
+	bash script/configure.sh
+
 
 	
