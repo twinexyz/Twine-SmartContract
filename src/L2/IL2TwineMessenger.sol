@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
+
 interface IL2TwineMessenger is ITwineL2MessengerBase {
     struct TokenTxn {
         address token;
@@ -66,7 +67,10 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     event ConsensusVerified(bytes consensusProof);
 
     /// @notice Emitted when the Layerzero payload is successfully verified
-    event LayerzeroPayload(uint256 indexed sourceChainId, bytes32 indexed guId);
+    event LayerzeroTransactionHandled(
+        uint256 indexed sourceChainId,
+        bytes32 indexed guId
+    );
     struct SolanaVerifierPrecompileOutput {
         bytes publicValue;
         bytes proof;
@@ -104,7 +108,7 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @notice handle the ethereum  transactions
     /// @dev `proofHeight` is the height of ethereum chain
     ///      against which the state proof was computed
-    ///      serializedProof is the proof generated to prove 
+    ///      serializedProof is the proof generated to prove
     ///      some ethereum state at `proofHeight`
     function handleEthereumProofAndTransactions(
         uint256 proofHeight,
@@ -112,12 +116,18 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         bytes memory serializedProof
     ) external;
 
+    /// @notice handle the chain  transactions
+    /// @notice This function is exclusively for mock testing and should never be deployed in mainnet
+    function handleChainTransactions(
+        TwineTypes.MessageData memory messageData
+    ) external;
+
     /// @notice verify the layerzero payload
     /// @param lzPayload layerzero payload
     /// @param payloadProof  proof of payload
-    function verifyLayerZeroPayload(
-        uint256 chainId,
-        bytes memory lzPayload,
+    function handleLayerZeroTransactions(
+        uint256 sourceChainId,
+        bytes calldata lzPayload,
         bytes memory payloadProof
     ) external;
 }

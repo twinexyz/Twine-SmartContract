@@ -6,7 +6,7 @@ import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-import {TwineDVN} from "../../src/lzdvn/TwineDVN.sol";
+import {TwineDVN} from "../../src/LayerZero/TwineDVN.sol";
 import {RoleManager} from "../../src/libraries/access/RoleManager.sol";
 contract DeployDVN is Script {
     TwineDVN twineDVN;

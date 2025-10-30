@@ -2,12 +2,11 @@
 pragma solidity ^0.8.24;
 
 interface ITwineDVN {
-    struct PayloadOtherData {
+    struct DecodedPayload {
         uint32 dstEid;
         uint64 blockConfirmations;
         address receiverAddress;
         bytes32 payloadHash;
-        bytes packetHeader;
     }
 
     event PayloadVerified(bytes packetHeader, bytes32 payloadHash);

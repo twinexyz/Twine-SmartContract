@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {IL2TwineMessenger} from "../L2/IL2TwineMessenger.sol";
+import {TwineTypes} from "../libraries/types/TwineTypes.sol";
+
+contract L2OApp is OApp {
+    address l2TwineMessenger;
+
+    constructor(
+        address _endpointAddres,
+        address _ownerAddress,
+        address _l2TwineMessenger
+    ) OApp(_endpointAddres, _ownerAddress) Ownable(_ownerAddress) {
+        l2TwineMessenger = _l2TwineMessenger;
+    }
+
+    /**
+     * @notice Sends a message from the source to destination chain.
+     * @param _dstEid Destination chain's endpoint ID.
+     * @param _message The message to send.
+     * @param _options Message execution options (e.g., for sending gas to destination).
+     */
+    function send(
+        uint32 _dstEid,
+        string memory _message,
+        bytes calldata _options
+    ) external payable onlyOwner {
+        // Encodes the message before invoking _lzSend.
+        // Replace with whatever data you want to send!
+        bytes memory _payload = abi.encode(_message);
+        _lzSend(
+            _dstEid,
+            _payload,
+            _options,
+            // Fee in native gas and ZRO token.
+            MessagingFee(msg.value, 0),
+            // Refund address in case of failed source message.
+            payable(msg.sender)
+        );
+    }
+
+    /**
+     * @dev Called when data is received from the protocol. It overrides the equivalent function in the parent contract.
+     * Protocol messages are defined as packets, comprised of the following parameters.
+     * @param payload Encoded message.
+     */
+    function _lzReceive(
+        Origin calldata /*_origin*/,
+        bytes32 /*_guid*/,
+        bytes calldata payload,
+        address, // Executor address as specified by the OApp.
+        bytes calldata // Any extra data or options to trigger on receipt.
+    ) internal override {
+        // Ensures that only the endpoint can attempt to lzReceive() messages to this OApp.
+        if (address(endpoint) != msg.sender) revert OnlyEndpoint(msg.sender);
+        TwineTypes.MessageData memory messageData = abi.decode(
+            payload,
+            (TwineTypes.MessageData)
+        );
+        IL2TwineMessenger(l2TwineMessenger).handleChainTransactions(messageData);
+    }
+
+    function quote(
+        uint32 _dstEid, // Destination chain's endpoint ID.
+        string memory _message, // The message to send.
+        bytes calldata _options, // Message execution options
+        bool _payInLzToken // boolean for which token to return fee in
+    ) public view returns (uint256 nativeFee, uint256 lzTokenFee) {}
+}

@@ -6,7 +6,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 import {ITwineChain} from "./ITwineChain.sol";
 import {IL1MessageHandler} from "./IL1MessageHandler.sol";
-import {ITwineDVN} from "../../lzdvn/interfaces/ITwineDVN.sol";
+import {ITwineDVN} from "../../layerzero/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {IL1ETHGateway} from "../gateways/interfaces/IL1ETHGateway.sol";
 import {IL1ERC20Gateway} from "../gateways/interfaces/IL1ERC20Gateway.sol";

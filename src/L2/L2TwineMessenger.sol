@@ -10,6 +10,7 @@ import {IL2TwineMessenger} from "./IL2TwineMessenger.sol";
 import {TwineTypes} from "../libraries/types/TwineTypes.sol";
 import {ITwineSystemStorage} from "./ITwineSystemStorage.sol";
 import {ITwineERC20} from "../libraries/token/ITwineERC20.sol";
+import {ITwineDVN} from "../layerzero/interfaces/ITwineDVN.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {ZstdCompressor} from "../libraries/utils/ZstdCompressor.sol";
 import {MessageHasherLib} from "../libraries/utils/MessageHasherLib.sol";
@@ -46,6 +47,9 @@ contract L2TwineMessenger is
 
     /// @notice Address of sp1 helios
     address public sp1Helios;
+
+    /// @notice Address of twine dvn
+    address public twineDvn;
 
     /// @notice Mapping to store consensus verification keys of L1s
     mapping(uint256 => bytes32) public vKeys;
@@ -250,6 +254,25 @@ contract L2TwineMessenger is
         handleBridgeTransactions(chainId, ethMessageHash, txnOutput);
     }
 
+    function handleLayerZeroTransactions(
+        uint256 sourceChainId,
+        bytes calldata lzPayload,
+        bytes memory payloadProof
+    )
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+         (bool txnSuccess, bytes memory output) = bridgingPrecompileAddress.call(
+            abi.encode(sourceChainId, lzPayload, payloadProof)
+        );
+        require(txnSuccess, "LayerZero verification failed!");
+         ITwineDVN(twineDvn).validatePayload(lzPayload);
+        bytes32 guId = abi.decode(output, (bytes32));
+        emit LayerzeroTransactionHandled(sourceChainId, guId);
+
+    }
+
     /// @notice This function is exclusively for mock testing and should never be deployed
     function handleChainTransactions(
         TwineTypes.MessageData memory messageData
@@ -359,27 +382,6 @@ contract L2TwineMessenger is
             );
             IL2MsgExecutor(msgExecutor).processMessage(contractCallsArray);
         }
-    }
-
-    function verifyLayerZeroPayload(
-        uint256 chainId,
-        bytes memory lzPayload,
-        bytes memory payloadProof
-    )
-        external
-        nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
-    {
-        bytes[] memory lzPayloads = new bytes[](1);
-        bytes[] memory payloadProofs = new bytes[](1);
-        lzPayloads[0] = lzPayload;
-        payloadProofs[0] = payloadProof;
-        (bool success, bytes memory output) = bridgingPrecompileAddress.call(
-            abi.encode(chainId, lzPayloads, payloadProofs)
-        );
-        require(success, "LayerZero verification failed!");
-        bytes32 guId = abi.decode(output, (bytes32));
-        emit LayerzeroPayload(chainId, guId);
     }
 
     /// @dev Internal function to send cross domain message.

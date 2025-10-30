@@ -57,4 +57,9 @@ interface IRoleManager {
      * @notice Returns bytes32 value of the public variable  TWINE_TOKENS_MINTER
      **/
     function TWINE_TOKENS_BURNER() external view returns (bytes32);
+
+      /**
+     * @notice Returns bytes32 value of the public variable  LZ_MESSAGE_LIBRARY
+     **/
+    function LZ_MESSAGE_LIBRARY() external view returns (bytes32);
 }
