@@ -8,6 +8,8 @@ import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 import {TwineTypes} from "../../libraries/types/TwineTypes.sol";
 import {MessageHasherLib} from "../../libraries/utils/MessageHasherLib.sol";
 import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {L1OApp} from "../../layerzero/L1Oapp.sol";
+
 contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     using TypeConversionLib for string;
     using TypeConversionLib for address;
@@ -15,16 +17,41 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     /*************
      * Variables *
      *************/
+
+    /// @notice The chai ID for the L1 where this contract is deployed
     uint64 chainId;
-    address public messenger;
-    address public roleManager;
-    address public messageHandlerProxy;
+
+    /// @notice Twine's Endpoint ID
+    uint32 twineEndpointId;
+
+    /// @notice Latest message nonce
     uint64 public override messageIndex;
 
-    mapping(uint256 => bytes32) private messageRollingHashes;
+    /// @notice The address of L1TwineMessenger contract.
+    address public messenger;
+
+    /// @notice Address of the rolemanager contract
+    address public roleManager;
+
+    /// @notice Address of the Proxy contract
+    address public messageHandlerProxy;
+
+    /// @notice Address of L1 OApp
+    address public l1OApp;
+
+    /// @notice Flag to enable or disable layer zero route
+    bool public layerZeroEnabled;
+
 
     /// @dev The storage slots reserved for future usage.
     uint256[46] private __gap;
+
+    /*************
+     * Mappings  *
+     *************/
+    
+    /// @dev The mapping of messageNonce => messageRollingHash
+    mapping(uint256 => bytes32) private messageRollingHashes;
 
     /**********************
      * Function Modifiers *
@@ -104,6 +131,13 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
     }
 
     /// @inheritdoc IL1MessageHandler
+    function setTwineEndpointId(
+        uint32 _twineEndpointId
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        twineEndpointId = _twineEndpointId;
+    }
+
+    /// @inheritdoc IL1MessageHandler
     function setRoleManager(
         address _roleManager
     ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
@@ -125,6 +159,25 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         address oldProxy = messageHandlerProxy;
         messageHandlerProxy = _proxyAddress;
         emit MessageHandlerProxyUpdated(oldProxy, _proxyAddress);
+    }
+
+    /// @inheritdoc IL1MessageHandler
+    function setOAppAddress(
+        address _l1OAppAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        if (_l1OAppAddress == address(0)) {
+            revert ErrorZeroAddress();
+        }
+        address oldOApp = l1OApp;
+        l1OApp = _l1OAppAddress;
+        emit OAppUpdated(oldOApp, _l1OAppAddress);
+    }
+
+    /// @inheritdoc IL1MessageHandler
+    function setLayerZeroStatus(
+        bool _status
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        layerZeroEnabled = _status;
     }
 
     /// @inheritdoc IL1MessageHandler
@@ -207,6 +260,26 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
             amount,
             message
         );
+
+        if (layerZeroEnabled) {
+            bytes memory payload = abi.encodePacked(
+                depositMessageData.txnType,
+                depositMessageData.nonce,
+                depositMessageData.chainId,
+                depositMessageData.blockNumber,
+                depositMessageData.fromAddress,
+                depositMessageData.toAddress,
+                depositMessageData.l1Token,
+                depositMessageData.l2Token,
+                depositMessageData.amount,
+                depositMessageData.message
+            );
+            L1OApp(l1OApp).send(
+                twineEndpointId,
+                payload,
+                '0x'
+            );
+        }
     }
 
     function _handleWithdrawalTransaction(
