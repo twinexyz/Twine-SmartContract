@@ -5,6 +5,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 import {ITwineDVN} from "./interfaces/ITwineDVN.sol";
 import {ISendLib, ISendLib} from "./interfaces/ISendLib.sol";
+import {IL2TwineMessenger} from "../L2/IL2TwineMessenger.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {IRoleManager} from "../libraries/access/IRoleManager.sol";
 import {MessageLibType} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLib.sol";
@@ -74,7 +75,7 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
     function assignJob(
         AssignJobParam calldata _param,
         bytes calldata /*_options*/
-    ) external payable onlyRoles(IRoleManager(roleManager).LZ_MESSAGE_LIBRARY()) returns (uint256 fee) {
+    ) external payable returns (uint256 fee) {
         if (!supportedDstChain[_param.dstEid])
             revert UnsupportedChain(_param.dstEid);
         if (!isSupportedMessageLib(msg.sender)) revert UnsupportedSendLib();
@@ -104,17 +105,14 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
 
     /// @inheritdoc ITwineDVN
     function validatePayload(
-        bytes calldata payloadData
+        bytes memory message,
+        IL2TwineMessenger.DecodedPayload memory decoded,
+        bytes calldata packetHeader
     )
         external
         onlyRoles(IRoleManager(roleManager).TWINE_MESSENGER())
         returns (bool)
     {
-        (
-            DecodedPayload memory decoded,
-            bytes calldata packetHeader
-        ) = decodePayloadData(payloadData);
-
         (address receiverLib, ) = layerZeroEndpointV2.getReceiveLibrary(
             decoded.receiverAddress,
             decoded.dstEid
@@ -137,7 +135,6 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
         );
 
         bytes32 guid = packetHeader.guid();
-        bytes memory message = packetHeader.message();
         ILayerZeroEndpointV2(layerZeroEndpointV2).lzReceive(
             origin,
             decoded.receiverAddress,
@@ -258,41 +255,6 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
             ISendLib(_messageLib).withdrawFee(payable(feeReceiver), fee);
             emit WithdrawFee(_messageLib, feeReceiver, fee);
         }
-    }
-
-    function decodePayloadData(
-        bytes calldata payloadData
-    )
-        internal
-        pure
-        returns (DecodedPayload memory decoded, bytes calldata packetHeader)
-    {
-        (uint32 dstEid, bytes memory remainingData) = abi.decode(
-            payloadData,
-            (uint32, bytes)
-        );
-
-        uint64 blockConfirmations;
-        address receiverAddress;
-        bytes32 payloadHash;
-
-        (blockConfirmations, receiverAddress, , , payloadHash, ) = abi.decode(
-            remainingData,
-            (uint64, address, uint256, uint256, bytes32, bytes32)
-        );
-
-        // Fixed fields before packetHeader:
-        // 2 * 32 (dstEid encoding) + 8 * 32 (remaining fields) = 320 bytes = 0x140
-        packetHeader = payloadData[0x140:];
-
-        decoded = DecodedPayload({
-            dstEid: dstEid,
-            blockConfirmations: blockConfirmations,
-            receiverAddress: receiverAddress,
-            payloadHash: payloadHash
-        });
-
-        return (decoded, packetHeader);
     }
 
     function getIDAddress(

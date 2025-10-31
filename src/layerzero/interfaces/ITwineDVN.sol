@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+import {IL2TwineMessenger} from "../../L2/IL2TwineMessenger.sol";
 
 interface ITwineDVN {
-    struct DecodedPayload {
-        uint32 dstEid;
-        uint64 blockConfirmations;
-        address receiverAddress;
-        bytes32 payloadHash;
-    }
-
+   
     event PayloadVerified(bytes packetHeader, bytes32 payloadHash);
     event SetFee(uint32 dstEid, uint256 fee);
     event DstChainStatusChanged(uint32 dstEid, bool enabled);
@@ -23,5 +18,5 @@ interface ITwineDVN {
         bytes32 guId,
         bytes packetHeader
     );
-    function validatePayload(bytes memory payloadData) external returns (bool);
+    function validatePayload(bytes memory message, IL2TwineMessenger.DecodedPayload memory decodedData, bytes calldata packetHeader) external returns (bool);
 }

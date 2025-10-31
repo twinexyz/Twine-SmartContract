@@ -32,6 +32,12 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
         Ethereum,
         Solana
     }
+     struct DecodedPayload {
+        uint32 dstEid;
+        uint64 blockConfirmations;
+        address receiverAddress;
+        bytes32 payloadHash;
+    }
 
     /// @notice Emitted when a cross domain message is sent.
     /// @param from The address of the sender who initiates the message.
@@ -124,11 +130,11 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
 
     /// @notice verify the layerzero payload
     /// @param lzPayload layerzero payload
-    /// @param payloadProof  proof of payload
-    function handleLayerZeroTransactions(
+    /// @param lzPayloadProof  proof of layerzero payload
+      function handleLayerZeroTransactions(
         uint256 proofHeight,
-        uint256 sourceChainId,
+        TwineTypes.MessageData memory messageData,
         bytes calldata lzPayload,
-        bytes memory payloadProof
+        bytes memory lzPayloadProof
     ) external;
 }

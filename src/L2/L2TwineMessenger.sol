@@ -18,12 +18,14 @@ import {IL2ERC20Gateway} from "./gateways/interfaces/IL2ERC20Gateway.sol";
 import {TypeConversionLib} from "../libraries/utils/TypeConversionLib.sol";
 import {TwineL2MessengerBase} from "../libraries/messenger/TwineL2MessengerBase.sol";
 import {ITwineL2MessengerBase} from "../libraries/messenger/ITwineL2MessengerBase.sol";
+import {PacketV1Codec} from "@layerzerolabs/lz-evm-protocol-v2/contracts/messagelib/libs/PacketV1Codec.sol";
 
 contract L2TwineMessenger is
     TwineL2MessengerBase,
     IL2TwineMessenger,
     ZstdCompressor
 {
+    using PacketV1Codec for bytes;
     using TypeConversionLib for string;
     using TypeConversionLib for address;
 
@@ -60,7 +62,6 @@ contract L2TwineMessenger is
     /***************
      * Constructor *
      ***************/
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -259,9 +260,9 @@ contract L2TwineMessenger is
 
     function handleLayerZeroTransactions(
         uint256 proofHeight,
-        uint256 sourceChainId,
+        TwineTypes.MessageData memory messageData,
         bytes calldata lzPayload,
-        bytes memory payloadProof
+        bytes memory lzPayloadProof
     )
         external
         nonReentrant
@@ -274,17 +275,33 @@ contract L2TwineMessenger is
         bytes32 stateRoot = ISP1Helios(sp1Helios).executionStateRoots(
             proofHeight
         );
-        bytes memory precompile_input = abi.encode(
-            sourceChainId,
-            abi.encode(proofHeight, stateRoot, lzPayload, payloadProof)
+
+        (
+            DecodedPayload memory decoded,
+            bytes calldata packetHeader
+        ) = decodePayloadData(lzPayload);
+        bytes32 guId = packetHeader.guid();
+
+        require(
+            keccak256(
+                abi.encodePacked(packetHeader.guid(), abi.encode(messageData))
+            ) == decoded.payloadHash,
+            "Invalid message payload"
         );
 
-        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
-            .call(precompile_input);
+        bytes memory precompile_input = abi.encode(
+            messageData.chainId,
+            abi.encode(proofHeight, stateRoot, messageData, lzPayloadProof)
+        );
+
+        (bool txnSuccess, ) = bridgingPrecompileAddress.call(precompile_input);
         require(txnSuccess, "LayerZero Transaction verification failed!");
-        ITwineDVN(twineDvn).validatePayload(lzPayload);
-        bytes32 guId = abi.decode(txnOutput, (bytes32));
-        emit LayerzeroTransactionHandled(sourceChainId, guId);
+        ITwineDVN(twineDvn).validatePayload(
+            abi.encode(messageData),
+            decoded,
+            packetHeader
+        );
+        emit LayerzeroTransactionHandled(messageData.chainId, guId);
     }
 
     /// @notice This function is exclusively for mock testing and should never be deployed
@@ -521,5 +538,40 @@ contract L2TwineMessenger is
                 }),
                 contractCallData: messageData.message
             });
+    }
+
+    function decodePayloadData(
+        bytes calldata payloadData
+    )
+        internal
+        pure
+        returns (DecodedPayload memory decoded, bytes calldata packetHeader)
+    {
+        (uint32 dstEid, bytes memory remainingData) = abi.decode(
+            payloadData,
+            (uint32, bytes)
+        );
+
+        uint64 blockConfirmations;
+        address receiverAddress;
+        bytes32 payloadHash;
+
+        (blockConfirmations, receiverAddress, , , payloadHash, ) = abi.decode(
+            remainingData,
+            (uint64, address, uint256, uint256, bytes32, bytes32)
+        );
+
+        // Fixed fields before packetHeader:
+        // 2 * 32 (dstEid encoding) + 8 * 32 (remaining fields) = 320 bytes = 0x140
+        packetHeader = payloadData[0x140:];
+
+        decoded = DecodedPayload({
+            dstEid: dstEid,
+            blockConfirmations: blockConfirmations,
+            receiverAddress: receiverAddress,
+            payloadHash: payloadHash
+        });
+
+        return (decoded, packetHeader);
     }
 }
