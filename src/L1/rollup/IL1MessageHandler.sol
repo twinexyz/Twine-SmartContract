@@ -51,6 +51,14 @@ interface IL1MessageHandler {
         address indexed newRoleManager
     );
 
+    /// @notice Emitted when OApp address is updated
+    /// @param oldOApp The previous OApp address
+    /// @param newOApp The new OApp address
+    event OAppUpdated(
+        address indexed oldOApp,
+        address indexed newOApp
+    );
+
     /// @notice Emitted when the message queue proxy address is updated by an admin
     /// @param oldProxy The previous message queue proxy address
     /// @param newProxy The new message queue proxy address
@@ -96,6 +104,10 @@ interface IL1MessageHandler {
     /// @param _chainId chain id to set
     function setChainId(uint64 _chainId) external;
 
+    /// @notice Sets the twine layerzero endpoint id
+    /// @param _twineEndpointId twine endpoint id to set
+    function setTwineEndpointId(uint32 _twineEndpointId) external;
+
     /// @notice sets role manager address
     /// @param _roleManager role manager address to set
     function setRoleManager(address _roleManager) external;
@@ -103,6 +115,14 @@ interface IL1MessageHandler {
     /// @notice set the proxy Address of MessageHandler
     /// @param _proxyAddress message handler proxy address to set
     function setMessageHandlerProxy(address _proxyAddress) external;
+
+    /// @notice set OApp address
+    /// @param _l1OAppAddress OApp address to set
+    function setOAppAddress(address _l1OAppAddress) external;
+
+    /// @notice set the layer zero status
+    /// @param _status status to enable or disable layer zero route.
+    function setLayerZeroStatus(bool _status) external;
 
     /// @notice Append new message to the deposit queue
     /// @param to Address of receiver on Twine
