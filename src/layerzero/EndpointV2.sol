@@ -12,7 +12,7 @@ import {GUID} from "@layerzerolabs/lz-evm-protocol-v2/contracts/libs/GUID.sol";
 import {Transfer} from "@layerzerolabs/lz-evm-protocol-v2/contracts/libs/Transfer.sol";
 import {MessagingChannel} from "@layerzerolabs/lz-evm-protocol-v2/contracts/MessagingChannel.sol";
 import {MessagingComposer} from "@layerzerolabs/lz-evm-protocol-v2/contracts/MessagingComposer.sol";
-import {MessageLibManager} from "./MessageLibManager.sol";
+import {MessageLibManager} from "./utils/MessageLibManager.sol";
 import {MessagingContext} from "@layerzerolabs/lz-evm-protocol-v2/contracts/MessagingContext.sol";
 
 // LayerZero EndpointV2 is fully backward compatible with LayerZero Endpoint(V1), but it also supports additional

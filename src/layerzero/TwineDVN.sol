@@ -74,7 +74,7 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
     function assignJob(
         AssignJobParam calldata _param,
         bytes calldata /*_options*/
-    ) external payable onlyRoles(IRoleManager(roleManager).TWINE_MESSENGER()) returns (uint256 fee) {
+    ) external payable onlyRoles(IRoleManager(roleManager).LZ_MESSAGE_LIBRARY()) returns (uint256 fee) {
         if (!supportedDstChain[_param.dstEid])
             revert UnsupportedChain(_param.dstEid);
         if (!isSupportedMessageLib(msg.sender)) revert UnsupportedSendLib();

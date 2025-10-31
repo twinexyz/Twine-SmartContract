@@ -7,9 +7,9 @@ import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interf
 import {ILayerZeroEndpointV2, Origin} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 
 import {IReceiveUlnE2} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/interfaces/IReceiveUlnE2.sol";
-import {ReceiveUlnBase} from "./ReceiveUlnBase.sol";
+import {ReceiveUlnBase} from "./utils/ReceiveUlnBase.sol";
 import {ReceiveLibBaseE2} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/ReceiveLibBaseE2.sol";
-import {UlnConfig} from "./UlnBase.sol";
+import {UlnConfig} from "./utils/UlnBase.sol";
 
 /// @dev This is a gluing contract. It simply parses the requests and forward to the super.impl() accordingly.
 /// @dev In this case, it combines the logic of ReceiveUlnBase and ReceiveLibBaseE2

@@ -11,7 +11,7 @@ import {PacketV1Codec} from "@layerzerolabs/lz-evm-protocol-v2/contracts/message
 import {IUltraLightNode301} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/uln301/interfaces/IUltraLightNode301.sol";
 import {IExecutor} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/interfaces/IExecutor.sol";
 import {IExecutorFeeLib} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/interfaces/IExecutorFeeLib.sol";
-import {WorkerUpgradeable} from "./WorkerUpgradeable.sol";
+import {WorkerUpgradeable} from "./utils/WorkerUpgradeable.sol";
 
 interface ILayerZeroEndpointV2 {
     function eid() external view returns (uint32);
