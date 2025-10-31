@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { MessagingFee } from "./ILayerZeroEndpointV2.sol";
-import { IMessageLib, MessageLibType } from "./IMessageLib.sol";
+import {MessagingFee} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+import {IMessageLib, MessageLibType} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLib.sol";
 
 struct Packet {
     uint64 nonce;
@@ -31,7 +31,11 @@ interface ISendLib is IMessageLib {
 
     function withdrawFee(address _to, uint256 _amount) external;
 
-    function withdrawLzTokenFee(address _lzToken, address _to, uint256 _amount) external;
+    function withdrawLzTokenFee(
+        address _lzToken,
+        address _to,
+        uint256 _amount
+    ) external;
 
     function fees(address worker) external view returns (uint256);
 }

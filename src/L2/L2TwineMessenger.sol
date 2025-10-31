@@ -208,7 +208,10 @@ contract L2TwineMessenger is
             );
         }
 
-        bytes memory precompileInput = abi.encode(chainId, abi.encode(prevRollingHash, messageData, publicValues));
+        bytes memory precompileInput = abi.encode(
+            chainId,
+            abi.encode(prevRollingHash, messageData, publicValues)
+        );
 
         (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
             .call(precompileInput);
@@ -255,6 +258,7 @@ contract L2TwineMessenger is
     }
 
     function handleLayerZeroTransactions(
+        uint256 proofHeight,
         uint256 sourceChainId,
         bytes calldata lzPayload,
         bytes memory payloadProof
@@ -263,14 +267,24 @@ contract L2TwineMessenger is
         nonReentrant
         onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
     {
-         (bool txnSuccess, bytes memory output) = bridgingPrecompileAddress.call(
-            abi.encode(sourceChainId, lzPayload, payloadProof)
-        );
-        require(txnSuccess, "LayerZero verification failed!");
-         ITwineDVN(twineDvn).validatePayload(lzPayload);
-        bytes32 guId = abi.decode(output, (bytes32));
-        emit LayerzeroTransactionHandled(sourceChainId, guId);
+        uint256 latest_block = ISP1Helios(sp1Helios)
+            .latestExecutionBlockNumber();
+        require(latest_block >= proofHeight, "Block not yet provable");
 
+        bytes32 stateRoot = ISP1Helios(sp1Helios).executionStateRoots(
+            proofHeight
+        );
+        bytes memory precompile_input = abi.encode(
+            sourceChainId,
+            abi.encode(proofHeight, stateRoot, lzPayload, payloadProof)
+        );
+
+        (bool txnSuccess, bytes memory txnOutput) = bridgingPrecompileAddress
+            .call(precompile_input);
+        require(txnSuccess, "LayerZero Transaction verification failed!");
+        ITwineDVN(twineDvn).validatePayload(lzPayload);
+        bytes32 guId = abi.decode(txnOutput, (bytes32));
+        emit LayerzeroTransactionHandled(sourceChainId, guId);
     }
 
     /// @notice This function is exclusively for mock testing and should never be deployed
