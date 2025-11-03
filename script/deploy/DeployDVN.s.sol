@@ -31,7 +31,7 @@ contract DeployDVN is Script {
             initialOwner,
             abi.encodeCall(
                 TwineDVN.initialize,
-                (layerZeroEndpointV2, roleManagerAddress)
+                (1,layerZeroEndpointV2, roleManagerAddress,address(0))
             )
         );
          // Logging the address of the deployed proxies

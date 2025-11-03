@@ -13,7 +13,7 @@ contract RoleManager is ContextUpgradeable, AccessControlUpgradeable {
     bytes32 public constant TWINE_CHAIN = keccak256("TWINE_CHAIN");
     bytes32 public constant TWINE_GATEWAYS = keccak256("TWINE_GATEWAYS");
     bytes32 public constant TWINE_MESSENGER = keccak256("TWINE_MESSENGER");
-    bytes32 public constant LZ_MESSAGE_LIBRARY = keccak256("LZ_MESSAGE_LIBRARY");
+    bytes32 public constant LZ_MESSAGE_SENDER = keccak256("LZ_MESSAGE_SENDER");
     bytes32 public constant TWINE_TOKENS_MINTER =
         keccak256("TWINE_TOKENS_MINTER");
     bytes32 public constant TWINE_TOKENS_BURNER =

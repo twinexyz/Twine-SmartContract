@@ -18,5 +18,5 @@ interface ITwineDVN {
         bytes32 guId,
         bytes packetHeader
     );
-    function validatePayload(bytes memory message, IL2TwineMessenger.DecodedPayload memory decodedData, bytes calldata packetHeader) external returns (bool);
+    function validatePayload(bytes memory lzPayload) external returns (bool);
 }

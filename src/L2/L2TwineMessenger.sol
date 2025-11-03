@@ -259,8 +259,8 @@ contract L2TwineMessenger is
     }
 
     function handleLayerZeroTransactions(
+        uint256 srcChainId,
         uint256 proofHeight,
-        TwineTypes.MessageData memory messageData,
         bytes calldata lzPayload,
         bytes memory lzPayloadProof
     )
@@ -276,32 +276,17 @@ contract L2TwineMessenger is
             proofHeight
         );
 
-        (
-            DecodedPayload memory decoded,
-            bytes calldata packetHeader
-        ) = decodePayloadData(lzPayload);
-        bytes32 guId = packetHeader.guid();
-
-        require(
-            keccak256(
-                abi.encodePacked(packetHeader.guid(), abi.encode(messageData))
-            ) == decoded.payloadHash,
-            "Invalid message payload"
-        );
-
         bytes memory precompile_input = abi.encode(
-            messageData.chainId,
-            abi.encode(proofHeight, stateRoot, messageData, lzPayloadProof)
+            srcChainId,
+            abi.encode(proofHeight, stateRoot, lzPayload.message(), lzPayloadProof)
         );
 
         (bool txnSuccess, ) = bridgingPrecompileAddress.call(precompile_input);
         require(txnSuccess, "LayerZero Transaction verification failed!");
         ITwineDVN(twineDvn).validatePayload(
-            abi.encode(messageData),
-            decoded,
-            packetHeader
+           lzPayload
         );
-        emit LayerzeroTransactionHandled(messageData.chainId, guId);
+        emit LayerzeroTransactionHandled(srcChainId, lzPayload.guid());
     }
 
     /// @notice This function is exclusively for mock testing and should never be deployed

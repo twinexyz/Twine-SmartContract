@@ -38,7 +38,7 @@ interface IRoleManager {
      **/
     function TWINE_GATEWAYS() external view returns (bytes32);
 
-     /**
+    /**
      * @notice Returns bytes32 value of the public variable TWINE_MESSENGER
      **/
     function TWINE_MESSENGER() external view returns (bytes32);
@@ -58,8 +58,8 @@ interface IRoleManager {
      **/
     function TWINE_TOKENS_BURNER() external view returns (bytes32);
 
-      /**
+    /**
      * @notice Returns bytes32 value of the public variable  LZ_MESSAGE_LIBRARY
      **/
-    function LZ_MESSAGE_LIBRARY() external view returns (bytes32);
+    function LZ_MESSAGE_SENDER() external view returns (bytes32);
 }
