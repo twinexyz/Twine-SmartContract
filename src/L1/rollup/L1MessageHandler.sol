@@ -247,21 +247,9 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
 
         messageRollingHashes[messageIndex] = particularTransactionHash;
         
-        // emit deposit event
-        emit MessageTransaction(
-            TwineTypes.TransactionType.Deposit,
-            messageIndex,
-            chainId,
-            uint64(block.number),
-            l1Token,
-            l2Token,
-            from,
-            to,
-            amount,
-            message
-        );
-
         if (layerZeroEnabled) {
+            bytes memory options = hex"0003010011010000000000000000000000000000c350";
+
             bytes memory payload = abi.encodePacked(
                 depositMessageData.txnType,
                 depositMessageData.nonce,
@@ -277,9 +265,24 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
             L1OApp(l1OApp).send(
                 twineEndpointId,
                 payload,
-                '0x'
+                options
             );
         }
+
+        // emit deposit event
+        emit MessageTransaction(
+            TwineTypes.TransactionType.Deposit,
+            messageIndex,
+            chainId,
+            uint64(block.number),
+            l1Token,
+            l2Token,
+            from,
+            to,
+            amount,
+            message
+        );
+
     }
 
     function _handleWithdrawalTransaction(

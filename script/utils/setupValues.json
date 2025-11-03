@@ -4,5 +4,9 @@
     "L1ChainAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "L2ChainAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "L1TwineOperationHandler": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "L2TwineOperationHandler": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    "L2TwineOperationHandler": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "LzEndpointAddressEth": "0x6EDCE65403992e310A62460808c4b910D972f10f",
+    "LzSendLibEth": "0xcc1ae8Cf5D3904Cef3360A9532B477529b177cCE",
+    "EndPointIdEth": "40161",
+    "EndPointIdTwine": "40217"
 }

@@ -2,6 +2,11 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
+
+import {L1OApp} from "../../../src/layerzero/L1Oapp.sol";
+import {Executor} from "../../../src/layerzero/Executor.sol";
+import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
+
 import {L1ERC20} from "../../../src/libraries/token/L1ERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
@@ -18,6 +23,7 @@ import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
 contract DeployL1Contracts is Script {
     struct DeployedContracts {
+        // L1 Contracts
         address roleManager;
         address twineChain;
         address l1ETHGateway;
@@ -26,13 +32,22 @@ contract DeployL1Contracts is Script {
         address l1TwineMessenger;
         address l1CustomERC20Gateway;
         address verifier;
+        // Tokens
         address fauxCoin;
         address solToken;
+        // LayerZero Contracts
+        address l1OApp;
+        address executor;
+        address dvn;
     }
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         string memory defaultAddressPath = "./script/utils/L1Addresses.json";
+        string memory L1SetupJson = vm.readFile(
+            "./script/utils/setupValues.json"
+        );
+
         string memory exportPath = vm.envOr(
             "ADDRESSES_EXPORT_PATH",
             defaultAddressPath
@@ -44,31 +59,15 @@ contract DeployL1Contracts is Script {
 
         DeployedContracts memory contracts;
 
+        /****************************
+         *  L1Contract Deployments  *
+         ***************************/
+
         // Deploying an upgradable proxy for RoleManager
         contracts.roleManager = Upgrades.deployTransparentProxy(
             "RoleManager.sol",
             initialOwner,
             abi.encodeCall(RoleManager.initialize, (initialOwner))
-        );
-
-        // Deploy fauxcoin
-        contracts.fauxCoin = Upgrades.deployTransparentProxy(
-            "L1ERC20.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1ERC20.initialize,
-                ("FauxCoin", "FAUX", 18, address(contracts.roleManager))
-            )
-        );
-
-        // Deploy solToken
-        contracts.solToken = Upgrades.deployTransparentProxy(
-            "L1ERC20.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1ERC20.initialize,
-                ("EthSol", "ESol", 9, address(contracts.roleManager))
-            )
         );
 
         // Deploying an upgradeable proxy for L1CustomERC20Gateway
@@ -139,6 +138,71 @@ contract DeployL1Contracts is Script {
         // Deploying the SP1Verifier contract
         contracts.verifier = address(new SP1Verifier());
 
+        /***********************
+         *  Token Deployments  *
+         **********************/
+        // Deploying fauxcoin
+        contracts.fauxCoin = Upgrades.deployTransparentProxy(
+            "L1ERC20.sol",
+            initialOwner,
+            abi.encodeCall(
+                L1ERC20.initialize,
+                ("FauxCoin", "FAUX", 18, address(contracts.roleManager))
+            )
+        );
+
+        // Deploying solToken
+        contracts.solToken = Upgrades.deployTransparentProxy(
+            "L1ERC20.sol",
+            initialOwner,
+            abi.encodeCall(
+                L1ERC20.initialize,
+                ("EthSol", "ESol", 9, address(contracts.roleManager))
+            )
+        );
+
+        /************************************
+         *  LayerZero Contract Deployments  *
+         ***********************************/
+        address endpoint = vm.parseJsonAddress(
+            L1SetupJson,
+            ".LzEndpointAddressEth"
+        );
+        address sendLibrary = vm.parseJsonAddress(L1SetupJson, ".LzSendLibEth");
+        address[] memory messageLibs = new address[](1);
+        address[] memory admins = new address[](0);
+        messageLibs[0] = sendLibrary;
+
+        // Deploying L1 OApp
+        contracts.l1OApp = address(new L1OApp(endpoint, initialOwner));
+
+        // Deploying Executor
+        contracts.executor = Upgrades.deployTransparentProxy(
+            "Executor.sol:Executor",
+            initialOwner,
+            abi.encodeCall(
+                Executor.initialize,
+                (
+                    endpoint,
+                    address(0),
+                    messageLibs,
+                    address(0),
+                    initialOwner,
+                    admins
+                )
+            )
+        );
+
+        // Deploying DVN
+        contracts.dvn = Upgrades.deployTransparentProxy(
+            "TwineDVN.sol",
+            initialOwner,
+            abi.encodeCall(
+                TwineDVN.initialize,
+                (endpoint, address(contracts.roleManager))
+            )
+        );
+
         string memory twineObject = "l1-contracts";
         vm.serializeAddress(twineObject, "TwineChain", contracts.twineChain);
         vm.serializeAddress(
@@ -176,6 +240,9 @@ contract DeployL1Contracts is Script {
         vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
         vm.serializeAddress(twineObject, "FauxCoin", contracts.fauxCoin);
         vm.serializeAddress(twineObject, "EthSol", contracts.solToken);
+        vm.serializeAddress(twineObject, "L1OApp", contracts.l1OApp);
+        vm.serializeAddress(twineObject, "L1Executor", contracts.executor);
+        vm.serializeAddress(twineObject, "L1DVN", contracts.dvn);
 
         // Fill them manually
         vm.serializeBytes32(
@@ -184,7 +251,11 @@ contract DeployL1Contracts is Script {
             bytes32("dummy_value")
         );
         vm.serializeBytes32(twineObject, "refundVkey", bytes32("dummy_value"));
-        vm.serializeBytes32(twineObject, "forcedWithdrawalVkey", bytes32("dummy_value"));
+        vm.serializeBytes32(
+            twineObject,
+            "forcedWithdrawalVkey",
+            bytes32("dummy_value")
+        );
         string memory finalJson = vm.serializeBytes32(
             twineObject,
             "l2WithdrawalVkey",
