@@ -199,7 +199,7 @@ contract DeployL1Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 TwineDVN.initialize,
-                (endpoint, address(contracts.roleManager))
+                (uint64(1) ,endpoint, address(contracts.roleManager), contracts.l1OApp)
             )
         );
 

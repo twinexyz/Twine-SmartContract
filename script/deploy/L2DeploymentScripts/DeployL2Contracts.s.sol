@@ -170,7 +170,7 @@ contract DeployL2Contracts is Script {
             initialOwner,
             abi.encodeCall(
                 TwineDVN.initialize,
-                (contracts.endpoint, contracts.roleManagerAddress)
+                (uint64(1), contracts.endpoint, contracts.roleManagerAddress, contracts.l2OApp)
             )
         );
 
