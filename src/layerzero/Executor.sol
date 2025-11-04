@@ -256,29 +256,19 @@ contract Executor is
 
     // --- Message Lib ---
     function assignJob(
-        uint32 _dstEid,
-        address _sender,
-        uint256 _calldataSize,
-        bytes calldata _options
+        uint32 , // dstEid
+        address _sender, 
+        uint256 , // calldataSize
+        bytes calldata  // options
     )
         external
+        view
         onlyRole(MESSAGE_LIB_ROLE)
         onlyAcl(_sender)
         whenNotPaused
         returns (uint256 fee)
     {
-        IExecutorFeeLib.FeeParams memory params = IExecutorFeeLib.FeeParams(
-            priceFeed,
-            _dstEid,
-            _sender,
-            _calldataSize,
-            defaultMultiplierBps
-        );
-        fee = IExecutorFeeLib(workerFeeLib).getFeeOnSend(
-            params,
-            dstConfig[_dstEid],
-            _options
-        );
+        fee = 0;
     }
 
     // assignJob for CmdLib

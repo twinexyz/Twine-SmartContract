@@ -5,6 +5,13 @@ import "forge-std/console.sol";
 
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
+import {L1OApp} from "../../../src/layerzero/L1Oapp.sol";
+import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
+import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
+import { ExecutorConfig } from "@layerzerolabs/lz-evm-messagelib-v2/contracts/SendLibBase.sol";
+import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLibManager.sol";
+import { ILayerZeroEndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+
 import {MockERC20} from "../../../src/test/mocks/MockERC20.sol";
 import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
@@ -24,6 +31,10 @@ contract L1SetupScript is Script {
     L1TwineMessenger l1TwineMessenger;
     L1CustomERC20Gateway l1CustomERC20Gateway;
 
+    L1OApp l1OApp;
+    TwineDVN twineDvn;
+    ILayerZeroEndpointV2 endpointV2;
+
     // Setup Values
     uint64 chainId;
     address chainAdmin;
@@ -33,6 +44,12 @@ contract L1SetupScript is Script {
     bytes32 forcedWithdrawalVKey;
     address twineOperationsHandler;
 
+    address layerZeroL1EndpointAddress;
+    uint32 l1EndpointId;
+    uint32 l2EndpointId;
+    address l1SendLibraryAddress;
+
+
     // l2 Contract Addresses
     address l2FauxCoinAddress;
     address l2SolTokenAddress;
@@ -40,6 +57,11 @@ contract L1SetupScript is Script {
     address l2ETHGatewayAddress;
     address l2TwineMessengerAddress;
     address l2CustomERC20GatewayAddress;
+    // L2 LayerZero Addresses
+    address l2DVN;
+    address l2Endpoint;
+    address l2OAppAddress;
+    address l2ReceiveLibrary;
 
     // L1 Contract Addresses
     address verifierAddress;
@@ -53,6 +75,10 @@ contract L1SetupScript is Script {
     address l1MessageHandlerAddress;
     address l1TwineMessengerAddress;
     address l1CustomERC20GatewayAddress;
+    // L1 LayerZero Addresses
+    address l1OAppAddress;
+    address l1executorAddress;
+    address l1DvnAddress;
 
     function setUp() public {
         // <--------------------------- Read Json Files ---------------------------->
@@ -107,6 +133,10 @@ contract L1SetupScript is Script {
         l1FauxCoinAddress = vm.parseJsonAddress(deployedL1Json, ".FauxCoin");
 
         l1EthSolTokenAddress = vm.parseJsonAddress(deployedL1Json, ".EthSol");
+        
+        l1DvnAddress = vm.parseJsonAddress(deployedL1Json, ".L1DVN");
+        l1OAppAddress = vm.parseJsonAddress(deployedL1Json, ".L1OApp");
+        l1executorAddress = vm.parseJsonAddress(deployedL1Json, ".L1Executor");
 
         // <-------------------- Deployed L2 Contract Addresses -------------------->
 
@@ -131,6 +161,8 @@ contract L1SetupScript is Script {
             ".L2ETHGateway"
         );
 
+        l2OAppAddress = vm.parseJsonAddress(deployedL2Json, ".L2OApp");
+
         // <-------------------- L1 Contracts -------------------->
 
         twineChain = TwineChain(twineChainAddress);
@@ -142,6 +174,8 @@ contract L1SetupScript is Script {
         l1GatewayRouter = L1GatewayRouter(l1GatewayRouterAddress);
         l1MessageHandler = L1MessageHandler(l1MessageHandlerAddress);
         l1TwineMessenger = L1TwineMessenger(l1TwineMessengerAddress);
+        l1OApp = L1OApp(l1OAppAddress);
+        twineDvn = TwineDVN(l1DvnAddress);
 
         // <--------------- Setup Values --------------->
 
@@ -156,6 +190,11 @@ contract L1SetupScript is Script {
             L1SetupJson,
             ".L1TwineOperationHandler"
         );
+
+        layerZeroL1EndpointAddress = vm.parseJsonAddress(L1SetupJson, ".LzEndpointAddressEth");
+        l1EndpointId = uint32(vm.parseJsonUint(L1SetupJson, ".EndPointIdEth"));
+        l2EndpointId = uint32(vm.parseJsonUint(L1SetupJson, ".EndPointIdTwine"));
+        l1SendLibraryAddress = vm.parseJsonAddress(L1SetupJson, ".LzSendLibEth");
     }
 
     function run() external {
@@ -196,6 +235,8 @@ contract L1SetupScript is Script {
         roleManager.grantRole(keccak256("TWINE_CHAIN"), twineChainAddress);
         roleManager.checkRole(keccak256("TWINE_CHAIN"), twineChainAddress);
 
+        roleManager.grantRole(keccak256("MESSAGE_LIB_ROLE"), l1SendLibraryAddress);
+
         //TwineChain setup
         twineChain.setRoleManagerAddress(roleManagerAddress);
         twineChain.setChainId(chainId);
@@ -219,6 +260,9 @@ contract L1SetupScript is Script {
         l1MessageHandler.setChainId(chainId);
         l1MessageHandler.setMessengerAddress(l1TwineMessengerAddress);
         l1MessageHandler.setMessageHandlerProxy(l1MessageHandlerAddress);
+        l1MessageHandler.setOAppAddress(l1OAppAddress);
+        l1MessageHandler.setLayerZeroStatus(true);
+        l1MessageHandler.setTwineEndpointId(l2EndpointId);
 
         //L1GatewayRouter setup
         l1GatewayRouter.setRoleManagerAddress(roleManagerAddress);
@@ -255,6 +299,43 @@ contract L1SetupScript is Script {
 
         l1CustomERC20Gateway.setChainId(chainId);
 
+        // LayerZero Setups
+        l1OApp.setPeer(l2EndpointId, bytes32(uint256(uint160(l2OAppAddress))));
+        
+        twineDvn.setDstChain(l2EndpointId, true);
+        twineDvn.addLzMessageLib(l1SendLibraryAddress);
+
+        ILayerZeroEndpointV2 endpoint = ILayerZeroEndpointV2(l1OApp.endpoint());
+        address[] memory requiredDvnAddress = new address[](1);
+        address[] memory optionalDvnAddress = new address[](0);
+
+        requiredDvnAddress[0] = l1DvnAddress;
+
+        UlnConfig memory ulnConfigData = UlnConfig({
+            confirmations: 1,
+            requiredDVNCount: 1,
+            optionalDVNCount: 0,
+            optionalDVNThreshold: 0,
+            requiredDVNs: requiredDvnAddress,
+            optionalDVNs: optionalDvnAddress
+        });
+        ExecutorConfig memory execConfigData = ExecutorConfig({
+            maxMessageSize: 100000,
+            executor: l1executorAddress
+        });
+        SetConfigParam[] memory setConfigParams = new SetConfigParam[](2);
+        setConfigParams[0] = SetConfigParam({
+            eid: l2EndpointId,
+            configType: 2,
+            config: abi.encode(ulnConfigData)
+        });
+         setConfigParams[1] = SetConfigParam({
+            eid: l2EndpointId,
+            configType: 1,
+            config: abi.encode(execConfigData)
+        });
+
+        endpoint.setConfig(l1OAppAddress, l1SendLibraryAddress, setConfigParams);
         // Stop broadcasting transactions
         vm.stopBroadcast();
     }

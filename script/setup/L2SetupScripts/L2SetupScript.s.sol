@@ -5,6 +5,14 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
+import {L2OApp} from "../../../src/layerzero/L2Oapp.sol";
+import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
+import {ReceiveUln302} from "../../../src/layerzero/ReceiveUln302.sol";
+
+import {UlnConfig, SetDefaultUlnConfigParam} from "../../../src/layerzero/utils/UlnBase.sol";
+import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLibManager.sol";
+import {EndpointV2} from "../../../src/layerzero/EndpointV2.sol";
+
 import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
@@ -14,6 +22,7 @@ import {TwineSystemStorage} from "../../../src/L2/TwineSystemStorage.sol";
 import {TwineStandardERC20} from "../../../src/libraries/token/TwineStandardERC20.sol";
 
 contract L2SetupScript is Script {
+    // Contracts
     RoleManager roleManager;
     L2ETHGateway l2ETHGateway;
     L2GatewayRouter l2GatewayRouter;
@@ -24,29 +33,49 @@ contract L2SetupScript is Script {
     TwineStandardERC20 ethToken;
     TwineStandardERC20 fauxCoin;
 
+    // Setup Values
     uint256 chainIdEth;
+    address chainAdmin;
     uint256 chainIdSolana;
+
+    uint32 l1EndpointId;
+    uint32 l2EndpointId;
+
+    // L2 Contract Addresses
     address solTokenAddress;
     address ethTokenAddress;
     address fauxCoinAddress;
     address roleManagerAddress;
     address l2MessageExecutorAddress;
-    address l2ETHGatewayAddress;
-    address l1ETHGatewayAddress;
     address l2GatewayRouterAddress;
     address l2XERC20GatewayAddress;
-    address chainAdmin;
     address twineOperationsHandler;
-    address l1TwineMessengerAddress;
     address l2TwineMessengerAddress;
     address bridgingPrecompileAddress;
     address consensusPrecompileAddress;
     address twineSystemStorageAddress;
-    address l1CustomERC20GatewayAddress;
     address l2CustomERC20GatewayAddress;
+
+    // L1 Contract Addresses
+    address l1ETHGatewayAddress;
+    address l2ETHGatewayAddress;
+    address l1TwineMessengerAddress;
+    address l1CustomERC20GatewayAddress;
     address l1solTokenAddress;
     address l1FauxCoinAddress;
 
+    // Layer zero addresses
+    address l1OAppAddress;
+    address l2DvnAddress;
+    address l2EndpointAddress;
+    address l2OAppAddress;
+    address l2ReceiveLibAddress;
+
+    // Layer zero contracts
+    L2OApp l2OApp;
+    TwineDVN twineDvn;
+    EndpointV2 endpoint;
+    ReceiveUln302 receiveLibrary;
     function setUp() public {
         // <--------------------------- Read Json Files ---------------------------->
         string memory deployedL1Json = vm.readFile(
@@ -98,6 +127,14 @@ contract L2SetupScript is Script {
 
         fauxCoinAddress = vm.parseJsonAddress(deployedL2Json, ".FauxCoin");
 
+        l2DvnAddress = vm.parseJsonAddress(deployedL2Json, ".L2DVN");
+        l2OAppAddress = vm.parseJsonAddress(deployedL2Json, ".L2OApp");
+        l2EndpointAddress = vm.parseJsonAddress(deployedL2Json, ".L2Endpoint");
+        l2ReceiveLibAddress = vm.parseJsonAddress(
+            deployedL2Json,
+            ".L2ReceiveLib"
+        );
+
         // <-------------------- Deployed L1 Contract Addresses -------------------->
 
         l1ETHGatewayAddress = vm.parseJsonAddress(
@@ -119,6 +156,7 @@ contract L2SetupScript is Script {
 
         l1solTokenAddress = vm.parseJsonAddress(deployedL1Json, ".EthSol");
 
+        l1OAppAddress = vm.parseJsonAddress(deployedL1Json, ".L1OApp");
 
         // <-------------------- L2 Contracts -------------------->
 
@@ -137,6 +175,11 @@ contract L2SetupScript is Script {
         twineSystemStorageAddress = address(0x17);
         twineSystemStorage = TwineSystemStorage(twineSystemStorageAddress);
 
+        // Layer zero Contracts
+        l2OApp = L2OApp(l2OAppAddress);
+        twineDvn = TwineDVN(l2DvnAddress);
+        endpoint = EndpointV2(l2EndpointAddress);
+
         // <--------------- Setup Values --------------->
 
         chainIdEth = uint64(vm.parseJsonUint(setupValues, ".ChainIdEth"));
@@ -146,6 +189,10 @@ contract L2SetupScript is Script {
         twineOperationsHandler = vm.parseJsonAddress(
             setupValues,
             ".L2TwineOperationHandler"
+        );
+        l1EndpointId = uint32(vm.parseJsonUint(setupValues, ".EndPointIdEth"));
+        l2EndpointId = uint32(
+            vm.parseJsonUint(setupValues, ".EndPointIdTwine")
         );
     }
 
@@ -157,7 +204,7 @@ contract L2SetupScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // setup twine messenger address
-        twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
+        // twineSystemStorage.setTwineMessenger(l2TwineMessengerAddress);
 
         //roleManager setup
         roleManager.grantRole(keccak256("CHAIN_ADMIN"), initialOwner);
@@ -236,6 +283,7 @@ contract L2SetupScript is Script {
         );
         l2TwineMessenger.setSystemStorageContract(twineSystemStorageAddress);
         l2TwineMessenger.setMsgExecutorAddress(l2MessageExecutorAddress);
+        l2TwineMessenger.setDvn(l2DvnAddress);
 
         //L2CustomERC20Gateway
         l2CustomERC20Gateway.setRoleManagerAddress(roleManagerAddress);
@@ -265,8 +313,60 @@ contract L2SetupScript is Script {
             "11111111111111111111111111111111"
         );
 
-
         // TODO: Map FauxCoin on Twine to FauxCoin on solana
+
+        // Layer Zero Setups
+
+        // OApp Setup
+        l2OApp.setPeer(l1EndpointId, bytes32(uint256(uint160(l1OAppAddress))));
+
+        // DVN Setup
+        twineDvn.setDstChain(l1EndpointId, true);
+        twineDvn.addLzMessageLib(l2ReceiveLibAddress);
+
+    
+        // Receive Library Setup
+        address[] memory requiredDvnAddress = new address[](1);
+        address[] memory optionalDvnAddress = new address[](0);
+
+        requiredDvnAddress[0] = l2DvnAddress;
+
+        UlnConfig memory ulnConfigData = UlnConfig({
+            confirmations: 1,
+            requiredDVNCount: 1,
+            optionalDVNCount: 0,
+            optionalDVNThreshold: 0,
+            requiredDVNs: requiredDvnAddress,
+            optionalDVNs: optionalDvnAddress
+        });
+        SetConfigParam[] memory setConfigParams = new SetConfigParam[](1);
+        setConfigParams[0] = SetConfigParam({
+            eid: l1EndpointId,
+            configType: 2,
+            config: abi.encode(ulnConfigData)
+        });
+
+        SetDefaultUlnConfigParam[] memory defaultConfigParam = new SetDefaultUlnConfigParam[](1);
+        defaultConfigParam[0] = SetDefaultUlnConfigParam({
+            eid: l1EndpointId,
+            config: ulnConfigData
+        });
+        receiveLibrary = ReceiveUln302(l2ReceiveLibAddress);
+        receiveLibrary.setDefaultUlnConfigs(defaultConfigParam);
+
+ 
+        // Endpoint Setup
+        endpoint = EndpointV2(l2EndpointAddress);
+        endpoint.registerLibrary(l2ReceiveLibAddress);
+        endpoint.setConfig(l2OAppAddress, l2ReceiveLibAddress, setConfigParams);
+
+        endpoint.setDefaultReceiveLibrary(l1EndpointId, l2ReceiveLibAddress, 0);        
+        endpoint.setReceiveLibrary(
+            l2OAppAddress,
+            l1EndpointId,
+            l2ReceiveLibAddress,
+            0
+        );
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
