@@ -41,6 +41,9 @@ contract DeployL2Contracts is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
+        string memory L1SetupJson = vm.readFile(
+            "./script/utils/setupValues.json"
+        );
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
@@ -149,7 +152,10 @@ contract DeployL2Contracts is Script {
         /************************************
          *  LayerZero Contract Deployments  *
          ***********************************/
-        contracts.endpoint = address(new EndpointV2(10001, initialOwner));
+        uint32 twineEndpointId = uint32(vm.parseJsonUint(L1SetupJson, ".EndPointIdTwine"));
+
+
+        contracts.endpoint = address(new EndpointV2(twineEndpointId, initialOwner));
 
         contracts.l2OApp = address(
             new L2OApp(

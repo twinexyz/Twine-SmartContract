@@ -152,6 +152,16 @@ contract L2TwineMessenger is
         vKeys[chainId] = vKey;
     }
 
+    function setDvn(
+        address dvnAddress
+    ) external onlyRoles(IRoleManager(roleManager).CHAIN_ADMIN()) {
+        require(
+            dvnAddress != address(0),
+            "DVN address cannot be zero"
+        );
+        twineDvn = dvnAddress;
+    }
+
     /// @inheritdoc ITwineL2MessengerBase
     function sendMessage(
         address from,
