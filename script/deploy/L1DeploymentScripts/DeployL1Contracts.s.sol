@@ -3,22 +3,22 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 
-import {L1OApp} from "../../../src/layerzero/L1Oapp.sol";
-import {Executor} from "../../../src/layerzero/Executor.sol";
-import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
+import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {L1ERC20} from "../../../src/libraries/token/L1ERC20.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
-
 import {TwineChain} from "../../../src/L1/rollup/TwineChain.sol";
 import {L1TwineMessenger} from "../../../src/L1/L1TwineMessenger.sol";
-import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
-
 import {L1ETHGateway} from "../../../src/L1/gateways/L1ETHGateway.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
+import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
+import {L1OApp} from "../../../src/layerzero/L1Oapp.sol";
+import {Executor} from "../../../src/layerzero/Executor.sol";
+import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
 import {SP1Verifier} from "@sp1-contracts/v4.0.0-rc.3/SP1VerifierGroth16.sol";
 
 contract DeployL1Contracts is Script {
@@ -57,6 +57,8 @@ contract DeployL1Contracts is Script {
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
+        ProxyAdmin admin = new ProxyAdmin(initialOwner);
+
         DeployedContracts memory contracts;
 
         /****************************
@@ -64,76 +66,40 @@ contract DeployL1Contracts is Script {
          ***************************/
 
         // Deploying an upgradable proxy for RoleManager
-        contracts.roleManager = Upgrades.deployTransparentProxy(
-            "RoleManager.sol",
-            initialOwner,
-            abi.encodeCall(RoleManager.initialize, (initialOwner))
-        );
+        bytes memory initData = abi.encodeCall(RoleManager.initialize, (initialOwner));
+        contracts.roleManager = _deployProxy(address(new RoleManager()), address(admin), initData);
 
         // Deploying an upgradeable proxy for L1CustomERC20Gateway
-        contracts.l1CustomERC20Gateway = Upgrades.deployTransparentProxy(
-            "L1CustomERC20Gateway.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1CustomERC20Gateway.initialize,
-                (address(0), address(0), contracts.roleManager, 0)
-            )
-        );
+        initData = abi.encodeCall(L1CustomERC20Gateway.initialize, (address(0), address(0), contracts.roleManager, 0));
+        contracts.l1CustomERC20Gateway = _deployProxy(address(new L1CustomERC20Gateway()), address(admin), initData);
 
         // Deploying an upgradeable proxy for L1ETHGateway
-        contracts.l1ETHGateway = Upgrades.deployTransparentProxy(
-            "L1ETHGateway.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1ETHGateway.initialize,
-                (address(0), address(0), contracts.roleManager, 0)
-            )
-        );
+        initData = abi.encodeCall(L1ETHGateway.initialize, (address(0), address(0), contracts.roleManager, 0));
+        contracts.l1ETHGateway = _deployProxy(address(new L1ETHGateway()), address(admin), initData);
 
         // Deploying an upgradeable proxy for L1GatewayRouter
-        contracts.l1GatewayRouter = Upgrades.deployTransparentProxy(
-            "L1GatewayRouter.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1GatewayRouter.initialize,
-                (address(0), address(0), contracts.roleManager)
-            )
-        );
+        initData = abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0), contracts.roleManager));
+        contracts.l1GatewayRouter = _deployProxy(address(new L1GatewayRouter()), address(admin), initData);
 
         // Deploying an upgradeable proxy for L1MessageHandler
-        contracts.l1MessageHandler = Upgrades.deployTransparentProxy(
-            "L1MessageHandler.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1MessageHandler.initialize,
-                (0, address(0), contracts.roleManager)
-            )
-        );
+        initData = abi.encodeCall(L1MessageHandler.initialize, (0, address(0), contracts.roleManager));
+        contracts.l1MessageHandler = _deployProxy(address(new L1MessageHandler()), address(admin), initData);
 
         // Deploying an upgradeable proxy for TwineChain
-        contracts.twineChain = Upgrades.deployTransparentProxy(
-            "TwineChain.sol",
-            initialOwner,
-            abi.encodeCall(
-                TwineChain.initialize,
-                (contracts.l1MessageHandler, address(0), contracts.roleManager)
-            )
-        );
+        initData =  abi.encodeCall(TwineChain.initialize, (contracts.l1MessageHandler, address(0), contracts.roleManager));
+        contracts.twineChain = _deployProxy(address(new TwineChain()), address(admin), initData);
 
         // Deploying an upgradeable proxy for L1TwineMessenger
-        contracts.l1TwineMessenger = Upgrades.deployTransparentProxy(
-            "L1TwineMessenger.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1TwineMessenger.initialize,
-                (
-                    address(0),
-                    contracts.l1MessageHandler,
-                    contracts.twineChain,
-                    contracts.roleManager
-                )
+        initData =  abi.encodeCall(
+            L1TwineMessenger.initialize,
+            (
+                address(0),
+                contracts.l1MessageHandler,
+                contracts.twineChain,
+                contracts.roleManager
             )
         );
+        contracts.l1TwineMessenger = _deployProxy(address(new L1TwineMessenger()), address(admin), initData);
 
         // Deploying the SP1Verifier contract
         contracts.verifier = address(new SP1Verifier());
@@ -142,24 +108,12 @@ contract DeployL1Contracts is Script {
          *  Token Deployments  *
          **********************/
         // Deploying fauxcoin
-        contracts.fauxCoin = Upgrades.deployTransparentProxy(
-            "L1ERC20.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1ERC20.initialize,
-                ("FauxCoin", "FAUX", 18, address(contracts.roleManager))
-            )
-        );
+        initData = abi.encodeCall(L1ERC20.initialize, ("FauxCoin", "FAUX", 18, contracts.roleManager));
+        contracts.fauxCoin = _deployProxy(address(new L1ERC20()), address(admin), initData);
 
         // Deploying solToken
-        contracts.solToken = Upgrades.deployTransparentProxy(
-            "L1ERC20.sol",
-            initialOwner,
-            abi.encodeCall(
-                L1ERC20.initialize,
-                ("EthSol", "ESol", 9, address(contracts.roleManager))
-            )
-        );
+        initData =  abi.encodeCall(L1ERC20.initialize, ("EthSol", "ESol", 9, contracts.roleManager));
+        contracts.solToken = _deployProxy(address(new L1ERC20()), address(admin), initData);
 
         /************************************
          *  LayerZero Contract Deployments  *
@@ -172,15 +126,13 @@ contract DeployL1Contracts is Script {
         address[] memory messageLibs = new address[](1);
         address[] memory admins = new address[](0);
         messageLibs[0] = sendLibrary;
-
+        
         // Deploying L1 OApp
         contracts.l1OApp = address(new L1OApp(endpoint, initialOwner));
 
         // Deploying Executor
-        contracts.executor = Upgrades.deployTransparentProxy(
-            "Executor.sol:Executor",
-            initialOwner,
-            abi.encodeCall(
+        Executor executorImpl = new Executor();
+        initData = abi.encodeCall(
                 Executor.initialize,
                 (
                     endpoint,
@@ -190,19 +142,15 @@ contract DeployL1Contracts is Script {
                     initialOwner,
                     admins
                 )
-            )
-        );
+            );
+        contracts.executor =  _deployProxy(address(executorImpl), address(admin), initData);
 
-        // Deploying DVN
-        contracts.dvn = Upgrades.deployTransparentProxy(
-            "TwineDVN.sol",
-            initialOwner,
-            abi.encodeCall(
-                TwineDVN.initialize,
-                (uint64(1) ,endpoint, address(contracts.roleManager), contracts.l1OApp)
-            )
-        );
+        // Deploying Twine DVN 
+        TwineDVN dvnImpl = new TwineDVN();
+        initData = abi.encodeCall(TwineDVN.initialize, (uint64(1) ,endpoint, address(contracts.roleManager), contracts.l1OApp));
+        contracts.dvn = _deployProxy(address(dvnImpl), address(admin), initData);
 
+        // Wirting the deployed addresses to json file
         string memory twineObject = "l1-contracts";
         vm.serializeAddress(twineObject, "TwineChain", contracts.twineChain);
         vm.serializeAddress(
@@ -263,7 +211,6 @@ contract DeployL1Contracts is Script {
         );
 
         vm.writeJson(finalJson, exportPath);
-        vm.writeJson(finalJson, exportPath);
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
@@ -279,5 +226,10 @@ contract DeployL1Contracts is Script {
         console.log("L1 Twine Messenger :", contracts.l1TwineMessenger);
         console.log("L1 Custom ERC20 Gateway:", contracts.l1CustomERC20Gateway);
         console.log("SP1 Verifier:", contracts.verifier);
+    }
+
+    function _deployProxy(address impl, address admin, bytes memory initData) internal returns (address) {
+        TransparentUpgradeableProxy p = new TransparentUpgradeableProxy(impl, admin, initData);
+        return address(p);
     }
 }

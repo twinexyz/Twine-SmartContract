@@ -5,15 +5,15 @@ ENV_FILE=".env"
 MARKER="marker"
 
 ONE_L1_CHAIN_NAME="sepolia"
-ONE_L1_RPC="http://127.0.0.1:8570"
-ONE_L1_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+ONE_L1_RPC="https://eth-sepolia.g.alchemy.com/v2/IMjZMN4v3998VSC6fphfy"
+ONE_L1_PRIVATE_KEY="0x2317d4513e8a7600742d452eee22afed2f5d6ddff5f20b8e9b4bfc87dc159d54"
 ONE_L1_FINALIZE_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
 ONE_L1_REFUND_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
 ONE_L1_FORCED_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
 ONE_L1_L2_WITHDRAW_VKEY=0xdd5ee6eba326044043ebbfd5332d3a2faba338d85a6d4fd75210ec22bd9cd291
 
 TWINE_CHAIN_NAME=twine
-TWINE_RPC="http://127.0.0.1:8545"
+TWINE_RPC="127.0.0.1:8545"
 TWINE_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
 ONE_L1_ADDRESSES="script/utils/L1Addresses.json"
@@ -92,14 +92,14 @@ run_if_not_done() {
 load_l2_env
 forge clean
 
-L2_DEPLOY_CMD="forge script script/deploy/L2DeploymentScripts/DeployL2Contracts.s.sol --broadcast --rpc-url $TWINE_RPC"
+L2_DEPLOY_CMD="forge script script/deploy/L2DeploymentScripts/DeployL2Contracts.s.sol --broadcast --rpc-url $TWINE_RPC --legacy --gas-price 7000000000 --slow --retries 20"
 run_if_not_done "$L2_DEPLOYMENT_MARKER" "$L2_DEPLOY_CMD" "L2 Deployment failed." "Deploy"
 
 # Deploy on L1
 load_l1_env
 forge clean
 
-L1_DEPLOY_CMD="forge script script/deploy/L1DeploymentScripts/DeployL1Contracts.s.sol --broadcast --rpc-url $ONE_L1_RPC"
+L1_DEPLOY_CMD="forge script script/deploy/L1DeploymentScripts/DeployL1Contracts.s.sol --rpc-url $ONE_L1_RPC --broadcast --legacy --gas-price 7000000000 --slow --retries 20"
 run_if_not_done "$L1_DEPLOYMENT_MARKER" "$L1_DEPLOY_CMD"  "L1 Deployment failed." "Deploy"
 
 jq --arg vkey "$ONE_L1_FINALIZE_VKEY" '.finalizeVkey = $vkey' "$ONE_L1_ADDRESSES" >temp.json && mv temp.json "$ONE_L1_ADDRESSES"
@@ -120,12 +120,12 @@ echo "$json_output" > $DEPLOYED_CONTRACTS
 
 # Setup L1
 load_l1_env
-L1_SETUP_CMD="forge script script/setup/L1SetupScripts/L1SetupScript.s.sol --broadcast --rpc-url $ONE_L1_RPC"
+L1_SETUP_CMD="forge script script/setup/L1SetupScripts/L1SetupScript.s.sol --broadcast --rpc-url $ONE_L1_RPC --legacy --gas-price 7000000000 --slow --retries 20"
 run_if_not_done "$L1_SETUP_MARKER" "$L1_SETUP_CMD"  "L1 Setup failed." "Setup"
 
 # Setup L2
 load_l2_env
-L2_SETUP_CMD="forge script script/setup/L2SetupScripts/L2SetupScript.s.sol --broadcast --rpc-url $TWINE_RPC"
+L2_SETUP_CMD="forge script script/setup/L2SetupScripts/L2SetupScript.s.sol --broadcast --rpc-url $TWINE_RPC --legacy --gas-price 7000000000 --slow --retries 20"
 run_if_not_done "$L2_SETUP_MARKER" "$L2_SETUP_CMD"  "L2 Setup failed." "Setup"
 
 # Clear .env

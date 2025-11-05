@@ -3,20 +3,22 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 
-import {L2OApp} from "../../../src/layerzero/L2Oapp.sol";
-import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
-import {EndpointV2} from "../../../src/layerzero/EndpointV2.sol";
-import {ReceiveUln302} from "../../../src/layerzero/ReceiveUln302.sol";
-
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
-import {TwineStandardERC20} from "../../../src/libraries/token/TwineStandardERC20.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {L2MsgExecutor} from "../../../src/L2/L2MsgExecutor.sol";
 import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
+import {RoleManager} from "../../../src/libraries/access/RoleManager.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
+import {TwineStandardERC20} from "../../../src/libraries/token/TwineStandardERC20.sol";
+
+import {L2OApp} from "../../../src/layerzero/L2Oapp.sol";
+import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
+import {EndpointV2} from "../../../src/layerzero/EndpointV2.sol";
+import {ReceiveUln302} from "../../../src/layerzero/ReceiveUln302.sol";
 
 contract DeployL2Contracts is Script {
     struct DeployedContracts {
@@ -41,9 +43,6 @@ contract DeployL2Contracts is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
-        string memory L1SetupJson = vm.readFile(
-            "./script/utils/setupValues.json"
-        );
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
@@ -152,11 +151,12 @@ contract DeployL2Contracts is Script {
         /************************************
          *  LayerZero Contract Deployments  *
          ***********************************/
-        uint32 twineEndpointId = uint32(vm.parseJsonUint(L1SetupJson, ".EndPointIdTwine"));
-
-
+        uint32 twineEndpointId = 40217;
+        
+        // Deploying Twine Layer Zero Endpoint
         contracts.endpoint = address(new EndpointV2(twineEndpointId, initialOwner));
 
+        // Deploying L2 OApp
         contracts.l2OApp = address(
             new L2OApp(
                 contracts.endpoint,
@@ -165,15 +165,26 @@ contract DeployL2Contracts is Script {
             )
         );
 
-        contracts.dvn = Upgrades.deployTransparentProxy(
-            "TwineDVN.sol",
-            initialOwner,
-            abi.encodeCall(
-                TwineDVN.initialize,
-                (uint64(1), contracts.endpoint, contracts.roleManagerAddress, contracts.l2OApp)
-            )
+        // Deploying Twine DVN 
+        // Deploying with deployTransparentProxy causes storage issues
+        ProxyAdmin dvnAdmin = new ProxyAdmin(initialOwner);
+
+        // Implementation
+        TwineDVN dvnImpl = new TwineDVN();
+
+        // Initializer calldata
+        bytes memory dvnInitData = abi.encodeCall(
+            TwineDVN.initialize,
+            (uint64(1), contracts.endpoint, contracts.roleManagerAddress, contracts.l2OApp)
         );
 
+        // Proxy pointing to implementation
+        TransparentUpgradeableProxy dvnProxy =
+            new TransparentUpgradeableProxy(address(dvnImpl), address(dvnAdmin), dvnInitData);
+
+        contracts.dvn = address(dvnProxy);
+
+        // Deploying L2 receive Library
         contracts.receiveLibrary = address(
             new ReceiveUln302(contracts.endpoint)
         );
