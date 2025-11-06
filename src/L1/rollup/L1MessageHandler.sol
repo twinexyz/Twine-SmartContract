@@ -250,7 +250,7 @@ contract L1MessageHandler is ContextUpgradeable, IL1MessageHandler {
         if (layerZeroEnabled) {
             bytes memory options = hex"0003010011010000000000000000000000000000c350";
 
-            bytes memory payload = abi.encodePacked(
+            bytes memory payload = abi.encode(
                 depositMessageData.txnType,
                 depositMessageData.nonce,
                 depositMessageData.chainId,

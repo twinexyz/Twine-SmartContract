@@ -269,7 +269,6 @@ contract L2TwineMessenger is
     }
 
     function handleLayerZeroTransactions(
-        uint256 srcChainId,
         uint256 proofHeight,
         bytes calldata lzPayload,
         bytes memory lzPayloadProof
@@ -286,9 +285,13 @@ contract L2TwineMessenger is
             proofHeight
         );
 
+        bytes memory msgBytes = bytes(packet.message());
+        TwineTypes.MessageData memory messageData = abi.decode(msgBytes, (TwineTypes.MessageData));
+        uint256 srcChainId = messageData.chainId;
+
         bytes memory precompile_input = abi.encode(
             srcChainId,
-            abi.encode(proofHeight, stateRoot, lzPayload.message(), lzPayloadProof)
+            abi.encode(proofHeight, stateRoot, messageData, lzPayloadProof)
         );
 
         (bool txnSuccess, ) = bridgingPrecompileAddress.call(precompile_input);
