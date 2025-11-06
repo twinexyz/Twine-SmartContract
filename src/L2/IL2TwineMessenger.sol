@@ -132,7 +132,6 @@ interface IL2TwineMessenger is ITwineL2MessengerBase {
     /// @param lzPayload layerzero payload
     /// @param lzPayloadProof  proof of layerzero payload
       function handleLayerZeroTransactions(
-         uint256 srcChainId,
         uint256 proofHeight,
         bytes calldata lzPayload,
         bytes memory lzPayloadProof

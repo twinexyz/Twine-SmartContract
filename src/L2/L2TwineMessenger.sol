@@ -285,7 +285,7 @@ contract L2TwineMessenger is
             proofHeight
         );
 
-        bytes memory msgBytes = bytes(packet.message());
+        bytes memory msgBytes = bytes(lzPayload.message());
         TwineTypes.MessageData memory messageData = abi.decode(msgBytes, (TwineTypes.MessageData));
         uint256 srcChainId = messageData.chainId;
 
