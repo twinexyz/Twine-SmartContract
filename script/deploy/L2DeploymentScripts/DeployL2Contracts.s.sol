@@ -167,7 +167,6 @@ contract DeployL2Contracts is Script {
 
         // Deploying Twine DVN 
         // Deploying with deployTransparentProxy causes storage issues
-        ProxyAdmin dvnAdmin = new ProxyAdmin(initialOwner);
 
         // Implementation
         TwineDVN dvnImpl = new TwineDVN();
@@ -180,8 +179,8 @@ contract DeployL2Contracts is Script {
 
         // Proxy pointing to implementation
         TransparentUpgradeableProxy dvnProxy =
-            new TransparentUpgradeableProxy(address(dvnImpl), address(dvnAdmin), dvnInitData);
-
+            new TransparentUpgradeableProxy(address(dvnImpl), initialOwner, dvnInitData);
+        
         contracts.dvn = address(dvnProxy);
 
         // Deploying L2 receive Library

@@ -476,6 +476,9 @@ upgradeMessageExecutor:
 upgradeL2CustomERC20Gateway:
 	bash script/shell/upgrades/L2Upgrades/upgradeL2CustomERC20Gateway.sh
 
+upgradeL2DVN:
+	bash script/shell/upgrades/L2Upgrades/upgradeTwineDvn.sh
+
 # *******************
 # *		ACTIONS		*
 # *******************

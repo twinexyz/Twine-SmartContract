@@ -12,6 +12,7 @@ import {L2TwineMessenger} from "../../../src/L2/L2TwineMessenger.sol";
 import {L2ETHGateway} from "../../../src/L2/gateways/L2ETHGateway.sol";
 import {L2GatewayRouter} from "../../../src/L2/gateways/L2GatewayRouter.sol";
 import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gateway.sol";
+import {TwineDVN} from "../../../src/layerzero/TwineDVN.sol";
 
 contract UpgradeL2CustomERC20Gateway is Script {
     using ProxyAdminLib for address;
@@ -21,7 +22,6 @@ contract UpgradeL2CustomERC20Gateway is Script {
 
     function setUp() public {
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
         string memory deployedJson = vm.readFile(
             "./script/utils/twineAddresses.json"
         );
@@ -191,6 +191,44 @@ contract UpgradeL2TwineMessenger is Script {
         admin.upgradeAndCall(
             ITransparentUpgradeableProxy(l2TwineMessengerAddress),
             address(newL2TwineMessenger),
+            data
+        );
+
+        vm.stopBroadcast();
+    }
+}
+
+
+contract UpgradeTwineDVN is Script {
+    using ProxyAdminLib for address;
+
+    uint256 deployerPrivateKey;
+    address l2DvnAddress;
+
+    function setUp() public {
+        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        string memory deployedJson = vm.readFile(
+            "./script/utils/twineAddresses.json"
+        );
+
+        l2DvnAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L2DVN"
+        );
+    }
+
+    function run() external {
+        bytes memory data = "";
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        TwineDVN newTwineDvn = new TwineDVN();
+        ProxyAdmin admin = l2DvnAddress.getProxyAdmin();
+
+        admin.upgradeAndCall(
+            ITransparentUpgradeableProxy(l2DvnAddress),
+            address(newTwineDvn),
             data
         );
 

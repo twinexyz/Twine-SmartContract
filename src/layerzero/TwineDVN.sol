@@ -138,7 +138,7 @@ contract TwineDVN is ILayerZeroDVN, ITwineDVN, ContextUpgradeable {
 
         (address receiverLib, ) = layerZeroEndpointV2.getReceiveLibrary(
             receiverAddress,
-            lzPayload.dstEid()
+            lzPayload.srcEid()
         );
 
         IReceiveUlnE2(receiverLib).verify(

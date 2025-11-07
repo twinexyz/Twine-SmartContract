@@ -57,8 +57,6 @@ contract DeployL1Contracts is Script {
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        ProxyAdmin admin = new ProxyAdmin(initialOwner);
-
         DeployedContracts memory contracts;
 
         /****************************
@@ -67,27 +65,27 @@ contract DeployL1Contracts is Script {
 
         // Deploying an upgradable proxy for RoleManager
         bytes memory initData = abi.encodeCall(RoleManager.initialize, (initialOwner));
-        contracts.roleManager = _deployProxy(address(new RoleManager()), address(admin), initData);
+        contracts.roleManager = _deployProxy(address(new RoleManager()), initialOwner, initData);
 
         // Deploying an upgradeable proxy for L1CustomERC20Gateway
         initData = abi.encodeCall(L1CustomERC20Gateway.initialize, (address(0), address(0), contracts.roleManager, 0));
-        contracts.l1CustomERC20Gateway = _deployProxy(address(new L1CustomERC20Gateway()), address(admin), initData);
+        contracts.l1CustomERC20Gateway = _deployProxy(address(new L1CustomERC20Gateway()), initialOwner, initData);
 
         // Deploying an upgradeable proxy for L1ETHGateway
         initData = abi.encodeCall(L1ETHGateway.initialize, (address(0), address(0), contracts.roleManager, 0));
-        contracts.l1ETHGateway = _deployProxy(address(new L1ETHGateway()), address(admin), initData);
+        contracts.l1ETHGateway = _deployProxy(address(new L1ETHGateway()), initialOwner, initData);
 
         // Deploying an upgradeable proxy for L1GatewayRouter
         initData = abi.encodeCall(L1GatewayRouter.initialize, (address(0), address(0), contracts.roleManager));
-        contracts.l1GatewayRouter = _deployProxy(address(new L1GatewayRouter()), address(admin), initData);
+        contracts.l1GatewayRouter = _deployProxy(address(new L1GatewayRouter()), initialOwner, initData);
 
         // Deploying an upgradeable proxy for L1MessageHandler
         initData = abi.encodeCall(L1MessageHandler.initialize, (0, address(0), contracts.roleManager));
-        contracts.l1MessageHandler = _deployProxy(address(new L1MessageHandler()), address(admin), initData);
+        contracts.l1MessageHandler = _deployProxy(address(new L1MessageHandler()), initialOwner, initData);
 
         // Deploying an upgradeable proxy for TwineChain
         initData =  abi.encodeCall(TwineChain.initialize, (contracts.l1MessageHandler, address(0), contracts.roleManager));
-        contracts.twineChain = _deployProxy(address(new TwineChain()), address(admin), initData);
+        contracts.twineChain = _deployProxy(address(new TwineChain()), initialOwner, initData);
 
         // Deploying an upgradeable proxy for L1TwineMessenger
         initData =  abi.encodeCall(
@@ -99,7 +97,7 @@ contract DeployL1Contracts is Script {
                 contracts.roleManager
             )
         );
-        contracts.l1TwineMessenger = _deployProxy(address(new L1TwineMessenger()), address(admin), initData);
+        contracts.l1TwineMessenger = _deployProxy(address(new L1TwineMessenger()), initialOwner, initData);
 
         // Deploying the SP1Verifier contract
         contracts.verifier = address(new SP1Verifier());
@@ -109,11 +107,11 @@ contract DeployL1Contracts is Script {
          **********************/
         // Deploying fauxcoin
         initData = abi.encodeCall(L1ERC20.initialize, ("FauxCoin", "FAUX", 18, contracts.roleManager));
-        contracts.fauxCoin = _deployProxy(address(new L1ERC20()), address(admin), initData);
+        contracts.fauxCoin = _deployProxy(address(new L1ERC20()), initialOwner, initData);
 
         // Deploying solToken
         initData =  abi.encodeCall(L1ERC20.initialize, ("EthSol", "ESol", 9, contracts.roleManager));
-        contracts.solToken = _deployProxy(address(new L1ERC20()), address(admin), initData);
+        contracts.solToken = _deployProxy(address(new L1ERC20()), initialOwner, initData);
 
         /************************************
          *  LayerZero Contract Deployments  *
@@ -143,12 +141,12 @@ contract DeployL1Contracts is Script {
                     admins
                 )
             );
-        contracts.executor =  _deployProxy(address(executorImpl), address(admin), initData);
+        contracts.executor =  _deployProxy(address(executorImpl), initialOwner, initData);
 
         // Deploying Twine DVN 
         TwineDVN dvnImpl = new TwineDVN();
         initData = abi.encodeCall(TwineDVN.initialize, (uint64(1) ,endpoint, address(contracts.roleManager), contracts.l1OApp));
-        contracts.dvn = _deployProxy(address(dvnImpl), address(admin), initData);
+        contracts.dvn = _deployProxy(address(dvnImpl), initialOwner, initData);
 
         // Wirting the deployed addresses to json file
         string memory twineObject = "l1-contracts";
