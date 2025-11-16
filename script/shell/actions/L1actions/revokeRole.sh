@@ -9,12 +9,11 @@ read -p "Account to revoke the role from: " Account
 read -p "ROLE (CHAIN_ADMIN, TWINE_CHAIN, TWINE_OPERATIONS_HANDLER, TWINE_GATEWAYS): " ROLE
 
 # export env variables:
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 export Account
 export ROLE
 
 # Run the forge script
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:RevokeRole \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-     -- --env "PRIVATE_KEY=$PRIVATE_KEY" --env "Account=$Account" --env "ROLE=$ROLE"
+    --broadcast

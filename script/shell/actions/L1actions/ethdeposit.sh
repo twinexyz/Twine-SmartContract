@@ -25,11 +25,8 @@ DATA=${DATA:-$DEFAULT_DATA}
 export RECEIVER
 export DEPOSIT_AMOUNT
 export DATA
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
  
 #Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:DepositETH \
-    --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "RECEIVER=$RECEIVER" --env "DEPOSIT_AMOUNT=$DEPOSIT_AMOUNT" \
-    --env "DATA=$DATA" --env "PRIVATE_KEY=$PRIVATE_KEY" 
+    --fork-url "$L1_DEFAULT_FORK_URL"  

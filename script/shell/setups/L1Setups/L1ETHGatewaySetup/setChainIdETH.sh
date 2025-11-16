@@ -9,11 +9,10 @@ fi
 read -p "Chain Id to set: " CHAIN_ID
 
 # export env variables:
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 export CHAIN_ID
 
 # Run the forge script
 forge script script/setup/L1SetupScripts/ETHGatewaySetup.s.sol:SetChainId \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-     -- --env "PRIVATE_KEY=$PRIVATE_KEY" --env "CHAIN_ID=$CHAIN_ID" 
+    --broadcast 

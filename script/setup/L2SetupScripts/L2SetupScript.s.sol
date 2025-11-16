@@ -150,7 +150,7 @@ contract L2SetupScript is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
 
         // Start broadcasting transactions

@@ -123,4 +123,8 @@ contract L1ERC20 is IL1ERC20, ERC20Upgradeable {
         _burn(msg.sender, _amount);
         emit TokensBurned(msg.sender, _amount, _msgSender());
     }
+
+    function decimals() public view override virtual returns (uint8) {
+        return decimals_;
+    }
 }

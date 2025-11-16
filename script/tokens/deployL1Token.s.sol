@@ -14,7 +14,7 @@ contract DeployL1ERC20Token is Script {
     address roleManagerAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedL1Json = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -33,6 +33,8 @@ contract DeployL1ERC20Token is Script {
     function run() external {
         address initialOwner = vm.addr(deployerPrivateKey);
 
+        vm.startBroadcast(deployerPrivateKey);
+        
         address newL1ERC20 = Upgrades.deployTransparentProxy(
             "L1ERC20.sol",
             initialOwner,
@@ -41,6 +43,7 @@ contract DeployL1ERC20Token is Script {
                 (tokenName, tokenSymbol, tokenDecimal, roleManagerAddress)
             )
         );
+        vm.stopBroadcast();
 
         console.log("Token deployed at: ", newL1ERC20);
     }

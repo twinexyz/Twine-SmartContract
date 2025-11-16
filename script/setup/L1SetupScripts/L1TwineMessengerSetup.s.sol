@@ -24,7 +24,7 @@ contract SetRoleManagerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -58,7 +58,7 @@ contract SetRollupAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous RollupAddress: ", l1TwineMessenger.rollup());
@@ -89,7 +89,7 @@ contract setMessageHandlerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -126,7 +126,7 @@ contract SetCounterpartMessenger is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -164,7 +164,7 @@ contract SetFeeValut is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous FeeVault : ", l1TwineMessenger.feeVault());

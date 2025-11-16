@@ -21,7 +21,7 @@ contract SetRoleManagerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Role Manager:", twineChain.roleManager());
@@ -48,7 +48,7 @@ contract SetChainId is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Chain ID:", twineChain.chainId());
@@ -75,7 +75,7 @@ contract SetMessageHandlerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log(
             "Previous Messenger Handler Address:",
@@ -106,7 +106,7 @@ contract SetVerifierAddress is Script {
         verifier = vm.envAddress("VERIFIER_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Verifier: ", twineChain.verifier());
 
@@ -139,7 +139,7 @@ contract SetProgramVkey is Script {
         forcedWithdrawalVkey = vm.envBytes32("FORCED_WITHDRAWAL_VKEY");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         console.log("****Previous Vkeys****");
@@ -187,7 +187,7 @@ contract SetGatewayAddress is Script {
         erc20Gateway = vm.envAddress("ERC20_GATEWAY");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Eth Gateway Address: ", twineChain.ethGateway());
         console.log(

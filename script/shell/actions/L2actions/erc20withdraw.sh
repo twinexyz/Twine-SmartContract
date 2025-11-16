@@ -21,7 +21,7 @@ AMOUNT=${AMOUNT:-$DEFAULT_AMOUNT}
 read -p "Chain ID: " CHAIN_ID
 
 # export env variables:
-export PRIVATE_KEY
+export L2_PRIVATE_KEY
 export TOKEN
 export RECEIVER
 export AMOUNT
@@ -30,6 +30,4 @@ export CHAIN_ID
 #Run the forge script with the provided default values
 forge script script/action/L2ActionScripts/L2ActionScripts.s.sol:WithdrawERC20 \
     --fork-url "$L2_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "RECEIVER=$RECEIVER" --env "AMOUNT=$AMOUNT" --env "PRIVATE_KEY=$PRIVATE_KEY" \
-    --env "CHAIN_ID=$CHAIN_ID" --env "TOKEN=$TOKEN"
+    --broadcast 

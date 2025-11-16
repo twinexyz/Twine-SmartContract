@@ -20,7 +20,7 @@ contract UpgradeL2CustomERC20Gateway is Script {
     address l2CustomERC20GatewayAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/twineAddresses.json"
@@ -57,7 +57,7 @@ contract UpgradeL2ETHGateway is Script {
     address l2ETHGatewayAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/twineAddresses.json"
@@ -94,7 +94,7 @@ contract UpgradeL2GatewayRouter is Script {
     address l2GatewayRouterAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/twineAddresses.json"
@@ -131,7 +131,7 @@ contract UpgradeMessageExecutor is Script {
     address l2MsgExecutorAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/twineAddresses.json"
@@ -168,7 +168,7 @@ contract UpgradeL2TwineMessenger is Script {
     address l2TwineMessengerAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/twineAddresses.json"

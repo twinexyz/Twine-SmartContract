@@ -13,10 +13,9 @@ read -p "Refund Proof: " REFUND_PROOF
 # export env variables:
 export PUBLIC_INPUT_FOR_REFUND
 export REFUND_PROOF
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 
 # Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:FinalizeBatch \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "PUBLIC_INPUT_FOR_REFUND=$PUBLIC_INPUT_FOR_REFUND" --env "REFUND_PROOF=$REFUND_PROOF" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    --broadcast 
