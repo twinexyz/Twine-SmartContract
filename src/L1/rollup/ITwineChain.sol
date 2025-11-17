@@ -160,8 +160,8 @@ interface ITwineChain {
     event RefundSuccessful(
         uint64 nonce,
         string l1Address,
-        string L1TokenAddress,
-        uint64 ChainId,
+        string l1TokenAddress,
+        uint64 chainId,
         string amount,
         uint64 blockNumber
     );
@@ -169,7 +169,7 @@ interface ITwineChain {
     event ForcedWithdrawalSuccessful(
         uint64 nonce, 
         string l1Address,
-        string L1TokenAddress,
+        string l1TokenAddress,
         uint64 chainId,
         string amount,
         uint64 blockNumber
