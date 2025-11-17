@@ -49,7 +49,7 @@ contract WithdrawETH is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
         console.log(
             "Messenger balance before deposit",
             address(l2TwineMessenger).balance
@@ -109,7 +109,7 @@ contract WithdrawERC20 is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
         address admin = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerPrivateKey);
@@ -159,7 +159,7 @@ contract GrantRole is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
 
         vm.startBroadcast(deployerPrivateKey);
@@ -195,7 +195,7 @@ contract RevokeRole is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
 
@@ -231,7 +231,7 @@ contract UpdateTokenMapping is Script {
         l1TokenAddress = vm.envString("L1_TOKEN_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         l2CustomERC20Gateway.updateTokenMapping(
@@ -265,7 +265,7 @@ contract RemoveTokenMapping is Script {
         l2ERC20TokenAddress = vm.envAddress("L2_TOKEN_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         l2CustomERC20Gateway.removeTokenMapping(chainId, l2ERC20TokenAddress);

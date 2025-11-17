@@ -21,7 +21,7 @@ contract ViewRoleManagerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Role Manager Address: ", l1GatewayRouter.roleManager());
@@ -45,7 +45,7 @@ contract ViewETHGateway is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("ETH Gateway Address: ", l1GatewayRouter.ethGateway());
@@ -69,7 +69,7 @@ contract ViewDefaultERC20Gateway is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -100,7 +100,7 @@ contract ViewERC20Gateway is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(

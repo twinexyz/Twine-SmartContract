@@ -114,7 +114,7 @@ contract L2andSolSetupScript is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
         twineOperationsHandler = initialOwner;
 

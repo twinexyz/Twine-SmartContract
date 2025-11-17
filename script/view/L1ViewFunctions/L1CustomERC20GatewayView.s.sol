@@ -23,7 +23,7 @@ contract ViewRoleManagerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -54,7 +54,7 @@ contract ViewGatewayRouter is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -81,7 +81,7 @@ contract ViewTwineMessenger is Script {
         );
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Twine Messenger: ", l1CustomERC20Gateway.messenger());
@@ -109,7 +109,7 @@ contract ViewTokenMapping is Script {
         l1ERC20TokenAddress = vm.envAddress("L1_TOKEN_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -142,7 +142,7 @@ contract ViewChainId is Script {
         );
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Chain ID: ", l1CustomERC20Gateway.chainId());

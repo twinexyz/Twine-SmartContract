@@ -10,11 +10,10 @@ fi
 read -p "Role Manager Address: " ROLE_MANAGER_ADDRESS
 
 #export env variables:
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 export ROLE_MANAGER_ADDRESS
 
 #Run the forge script with the provided values
 forge script script/setup/L1SetupScripts/TwineChainSetup.s.sol:SetRoleManagerAddress \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "ROLE_MANAGER_ADDRESS=$ROLE_MANAGER_ADDRESS" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    --broadcast 

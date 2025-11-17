@@ -20,10 +20,9 @@ WITHDRAW_AMOUNT=${DEPOSIT_AMOUNT:-$DEFAULT_AMOUNT}
 # export env variables:
 export RECEIVER
 export WITHDRAW_AMOUNT
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
  
 #Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:ForcedWithdrawETH \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "RECEIVER=$RECEIVER" --env "DEPOSIT_AMOUNT=$WITHDRAW_AMOUNT" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    --broadcast 

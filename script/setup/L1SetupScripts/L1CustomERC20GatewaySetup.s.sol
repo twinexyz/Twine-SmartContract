@@ -25,7 +25,7 @@ contract SetRoleManagerAddress is Script {
         roleManagerAddress = vm.envAddress("ROLE_MANAGER_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -63,7 +63,7 @@ contract SetGatewayRouter is Script {
         l1GatewayRouterAddress = vm.envAddress("GATEWAY_ROUTER_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -101,7 +101,7 @@ contract SetTwineMessenger is Script {
         l1TwineMessengerAddress = vm.envAddress("TWINE_MESSENGER_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -138,7 +138,7 @@ contract UpdateTokenMapping is Script {
         l2ERC20TokenAddress = vm.envAddress("L2_TOKEN_ADDRESS");
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         l1CustomERC20Gateway.updateTokenMapping(
@@ -175,7 +175,7 @@ contract RemoveTokenMapping is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         l1CustomERC20Gateway.removeTokenMapping(
@@ -209,7 +209,7 @@ contract SetChainId is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Chain ID", l1CustomERC20Gateway.chainId());

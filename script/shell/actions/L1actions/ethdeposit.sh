@@ -7,8 +7,8 @@ if [ -f .env ]; then
 fi
 
 # Default values
-DEFAULT_RECEIVER="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-DEFAULT_AMOUNT="2000000000000000000" # 2 ETH in wei
+DEFAULT_RECEIVER="0xf423ea729de0f8f586628d762e8cc2fb873cc689"
+DEFAULT_AMOUNT="1000000000000000000" # 2 ETH in wei
 DEFAULT_DATA="0x"
 
 #prompt the user
@@ -25,11 +25,8 @@ DATA=${DATA:-$DEFAULT_DATA}
 export RECEIVER
 export DEPOSIT_AMOUNT
 export DATA
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
  
 #Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:DepositETH \
-    --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "RECEIVER=$RECEIVER" --env "DEPOSIT_AMOUNT=$DEPOSIT_AMOUNT" \
-    --env "DATA=$DATA" --env "PRIVATE_KEY=$PRIVATE_KEY" 
+    --fork-url "$L1_DEFAULT_FORK_URL"  

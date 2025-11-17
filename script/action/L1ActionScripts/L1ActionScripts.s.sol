@@ -50,7 +50,7 @@ contract DepositETH is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         address admin = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerPrivateKey);
@@ -108,7 +108,7 @@ contract ForcedWithdrawETH is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         console.log(
             "Message Queue's Nonce Before withdrawal",
@@ -172,13 +172,12 @@ contract DepositERC20 is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         address admin = vm.addr(deployerPrivateKey);
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        token.mint(admin, 10 ether);
         token.approve(l1CustomERC20GatewayAddress, 5 ether);
         token.approve(l1GatewayRouterAddress, 5 ether);
 
@@ -210,6 +209,7 @@ contract ForcedWithdrawERC20 is Script {
     address l1GatewayRouterAddress;
     address l1MessageHandlerAddress;
 
+    address token;
     uint256 withdrawAmount;
     address receiver;
 
@@ -249,7 +249,7 @@ contract ForcedWithdrawERC20 is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -293,7 +293,7 @@ contract CommitGenesisBlock is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -329,7 +329,7 @@ contract CommitAndFinalizeBatch is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log(
@@ -372,7 +372,7 @@ contract RefundDeposit is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         console.log(
             "Refund Status Before:",
             twineChain.isRefundExecuted(keccak256(publicValues))
@@ -412,7 +412,7 @@ contract GrantRole is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
 
         vm.startBroadcast(deployerPrivateKey);
@@ -448,7 +448,7 @@ contract RevokeRole is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         bytes32 encodedRole = keccak256(abi.encodePacked(role));
 

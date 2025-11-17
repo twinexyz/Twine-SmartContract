@@ -16,10 +16,9 @@ read -p "Execution Proof: " EXECUTION_PROOF
 export BATCH_NUMBER
 export PUBLIC_INPUT_FOR_EXECUTION
 export EXECUTION_PROOF
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 
 # Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:CommitAndFinalizeBatch \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "BATCH_NUMBER=$BATCH_NUMBER" --env "PUBLIC_INPUT_FOR_EXECUTION=$PUBLIC_INPUT_FOR_EXECUTION" --env "EXECUTION_PROOF=$EXECUTION_PROOF" --env "PRIVATE_KEY=$PRIVATE_KEY"
+    --broadcast

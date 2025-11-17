@@ -18,7 +18,7 @@ read -p "Amount: " AMOUNT
 read -p "Inclusion Proof: " INCLUSION_PROOF
 
 # export env variables:
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 export CHAIN_ID
 export BLOCK_NUMBER
 export NONCE
@@ -33,8 +33,4 @@ export INCLUSION_PROOF
 #Run the forge script with the provided default values
 forge script script/action/L1ActionScripts/L1ActionScripts.s.sol:finalizeWithdrawal \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "CHAIN_ID=$CHAIN_ID" --env "BATCH_NUMBER=$BLOCK_NUMBER" --env "NONCE=$NONCE" --env "IS_FORCED=$IS_FORCED" \
-    --env "RECEIPT_ROOT=$RECEIPT_ROOT" --env "L1_RECEIVER_ADDRESS=$L1_RECEIVER_ADDRESS" --env "L1_TOKEN_ADDRESS=$L1_TOKEN_ADDRESS" \
-    --env "L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS" --env "AMOUNT=$AMOUNT"  --env "PRIVATE_KEY=$PRIVATE_KEY" \
-    --env "INCLUSION_PROOF=$INCLUSION_PROOF"
+    --broadcast 
