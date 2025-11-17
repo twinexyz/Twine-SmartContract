@@ -20,11 +20,11 @@ contract TwineSystemStorage is ITwineSystemStorage {
     /// @notice Mapping to track the number of executed L1 transactions per chain ID and transaction type.
     /// @dev Structure: chainId => L1TxnType => nonce
     ///      This mapping ensures that each transaction type on each chain has its own independent nonce counter.
-    mapping(uint256 => uint256) private l1MessageExecutedCount;
+    mapping(uint256 => uint256) public l1MessageExecutedCount;
 
     /// @notice Mapping to track if a L1 message was executed
     /// @dev The hash of the message sent from L1 is the key
-    mapping(bytes32 => L1MessageStatus) private l1MessageExecuted;
+    mapping(bytes32 => L1MessageStatus) public l1MessageExecuted;
 
     /// @notice Mapping to store the bank hashes for each slot number on each chain.
     /// @notice This is done for solana or solana like chains, not needed for ethereum
