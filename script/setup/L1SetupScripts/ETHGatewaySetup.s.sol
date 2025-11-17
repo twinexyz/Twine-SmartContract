@@ -18,7 +18,7 @@ contract SetRoleManager is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Role Manager Address", l1ETHGateway.roleManager());
@@ -44,7 +44,7 @@ contract setGatewayRouter is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Gateway Router: ", l1ETHGateway.gatewayRouter());
@@ -70,7 +70,7 @@ contract setTwineMessenger is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Twine Messenger: ", l1ETHGateway.messenger());
@@ -96,7 +96,7 @@ contract setL2TokenAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous L2 Token Address", l1ETHGateway.l2TokenAddress());
@@ -124,7 +124,7 @@ contract SetChainId is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
        
         vm.startBroadcast(deployerPrivateKey);
         console.log("Previous Chain ID", l1EthGateway.chainId());

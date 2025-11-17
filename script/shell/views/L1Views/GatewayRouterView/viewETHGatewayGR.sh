@@ -7,10 +7,9 @@ if [ -f .env ]; then
 fi
 
 #export env variables:
-export PRIVATE_KEY
+export L1_PRIVATE_KEY
 
 #Run the forge script with the provided values
 forge script script/view/L1ViewFunctions/L1GatewayRouterView.s.sol:ViewETHGateway \
     --fork-url "$L1_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "PRIVATE_KEY=$PRIVATE_KEY"
+    --broadcast

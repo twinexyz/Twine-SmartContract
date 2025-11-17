@@ -25,7 +25,7 @@ read -p "Chain ID: " CHAIN_ID
 # export env variables:
 export RECEIVER
 export AMOUNT
-export PRIVATE_KEY
+export L2_PRIVATE_KEY
 export CHAIN_ID
 export L2_TOKEN
 export L1_TOKEN
@@ -33,6 +33,4 @@ export L1_TOKEN
 #Run the forge script with the provided default values
 forge script script/action/L2ActionScripts/L2ActionScripts.s.sol:WithdrawETH \
     --fork-url "$L2_DEFAULT_FORK_URL"  \
-    --broadcast \
-    -- --env "RECEIVER=$RECEIVER" --env "AMOUNT=$AMOUNT" --env "CHAIN_ID=$CHAIN_ID" --env "PRIVATE_KEY=$PRIVATE_KEY" \
-    --env "L2_TOKEN=$L2_TOKEN" --env "L1_TOKEN=$L1_TOKEN"
+    --broadcast

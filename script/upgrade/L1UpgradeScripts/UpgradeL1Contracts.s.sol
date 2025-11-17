@@ -14,6 +14,8 @@ import {L1MessageHandler} from "../../../src/L1/rollup/L1MessageHandler.sol";
 import {L1GatewayRouter} from "../../../src/L1/gateways/L1GatewayRouter.sol";
 import {L1CustomERC20Gateway} from "../../../src/L1/gateways/L1CustomERC20Gateway.sol";
 
+import {L1ERC20} from "../../../src/libraries/token/L1ERC20.sol";
+
 contract UpgradeL1CustomERC20Gateway is Script {
     using ProxyAdminLib for address;
 
@@ -21,7 +23,7 @@ contract UpgradeL1CustomERC20Gateway is Script {
     uint256 deployerPrivateKey;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -58,7 +60,7 @@ contract UpgradeL1ETHGateway is Script {
     address l1ETHGatewayAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -95,7 +97,7 @@ contract UpgradeL1GatewayRouter is Script {
     address l1GatewayRouterAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -132,7 +134,7 @@ contract UpgradeL1MessageHandler is Script {
     address l1MessageHandlerAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -169,7 +171,7 @@ contract UpgradeTwineChain is Script {
     address twineChainAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -203,7 +205,7 @@ contract UpgradeL1TwineMessenger is Script {
     address l1TwineMessengerAddress;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         string memory deployedJson = vm.readFile(
             "./script/utils/L1Addresses.json"
@@ -226,6 +228,43 @@ contract UpgradeL1TwineMessenger is Script {
         admin.upgradeAndCall(
             ITransparentUpgradeableProxy(l1TwineMessengerAddress),
             address(newL1TwineMessenger),
+            data
+        );
+
+        vm.stopBroadcast();
+    }
+}
+
+contract UpgradeL1Token is Script {
+    using ProxyAdminLib for address;
+
+    uint256 deployerPrivateKey;
+    address l1TokenAddress;
+
+    function setUp() public {
+        deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
+
+        string memory deployedJson = vm.readFile(
+            "./script/utils/L1Addresses.json"
+        );
+
+        l1TokenAddress = vm.parseJsonAddress(
+            deployedJson,
+            ".L1TwineMessenger"
+        );
+    }
+
+    function run() external {
+        bytes memory data = "";
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        L1ERC20 newtoken = new L1ERC20();
+        ProxyAdmin admin = l1TokenAddress.getProxyAdmin();
+
+        admin.upgradeAndCall(
+            ITransparentUpgradeableProxy(l1TokenAddress),
+            address(newtoken),
             data
         );
 

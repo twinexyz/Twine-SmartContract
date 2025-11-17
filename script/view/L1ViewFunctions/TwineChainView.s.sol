@@ -18,7 +18,7 @@ contract ViewRoleManagerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Role Manager:", twineChain.roleManager());
@@ -39,7 +39,7 @@ contract ViewChainId is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         console.log("Chain ID:", twineChain.chainId());
@@ -59,7 +59,7 @@ contract ViewMessageHandlerAddress is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log(
             "Messenger Handler Address:",
@@ -81,7 +81,7 @@ contract ViewVerifierAddress is Script {
         twineChain = TwineChain(twineChainAddress);
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Verifier: ", twineChain.verifier());
         vm.stopBroadcast();
@@ -100,7 +100,7 @@ contract ViewProgramVkey is Script {
         twineChain = TwineChain(twineChainAddress);
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         console.log(" ********** Vkeys ******** ");
@@ -129,7 +129,7 @@ contract ViewGatewayAddress is Script {
         twineChain = TwineChain(twineChainAddress);
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Eth Gateway Address: ", twineChain.ethGateway());
         console.log("ERC20 Gateway Address: ", twineChain.ERC20Gateway());
@@ -150,7 +150,7 @@ contract ViewLastCommittedBatchNumber is Script {
         twineChain = TwineChain(twineChainAddress);
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Last Committed Batch Number: ", twineChain.lastCommittedBatchNumber());
         vm.stopBroadcast();
@@ -169,7 +169,7 @@ contract ViewLastFinalizedBatchNumber is Script {
         twineChain = TwineChain(twineChainAddress);
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Last Finalized Batch Number: ", twineChain.lastFinalizedBatchNumber());
         vm.stopBroadcast();
@@ -188,7 +188,7 @@ contract ViewLastFinalizedBatchHash is Script {
         twineChain = TwineChain(twineChainAddress);
     }
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         console.log("Last Finalized Batch Hash: ");
         console.logBytes32(twineChain.lastFinalizedBatchHash());

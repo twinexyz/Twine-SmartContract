@@ -31,7 +31,7 @@ contract DeployL1Contracts is Script {
     }
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L1_PRIVATE_KEY");
         string memory defaultAddressPath = "./script/utils/L1Addresses.json";
         string memory exportPath = vm.envOr(
             "ADDRESSES_EXPORT_PATH",

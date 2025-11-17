@@ -15,7 +15,7 @@ import {L2CustomERC20Gateway} from "../../../src/L2/gateways/L2CustomERC20Gatewa
 
 contract DeployL2Contracts is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("L2_PRIVATE_KEY");
         address initialOwner = vm.addr(deployerPrivateKey);
 
         // Start broadcasting transactions

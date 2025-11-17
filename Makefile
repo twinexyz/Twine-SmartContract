@@ -149,11 +149,11 @@ forcedWithdrawETH:
 #<-------------ERC20 GATEWAY ACTIONS------------->
 
 # initiate erc20 deposit
-depositERC20:
+depositFauxCoin:
 	bash script/shell/actions/L1actions/erc20deposit.sh
 
 # initiate forced withdraw of erc20
-forcedWithdrawERC20:
+forcedWithdrawFauxCoin:
 	bash script/shell/actions/L1actions/erc20forcedWithdraw.sh
 
 
