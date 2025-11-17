@@ -178,7 +178,6 @@ contract DepositERC20 is Script {
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        token.mint(admin, 10 ether);
         token.approve(l1CustomERC20GatewayAddress, 5 ether);
         token.approve(l1GatewayRouterAddress, 5 ether);
 
