@@ -26,7 +26,7 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
     uint64 public chainId;
 
     ///@notice total L1 messages Handled On Twine
-    uint256 totalMsgHandledOnTwine;
+    uint256 public totalMsgHandledOnTwine;
 
     /// @notice The latest committed batch number
     uint256 public override lastCommittedBatchNumber;
