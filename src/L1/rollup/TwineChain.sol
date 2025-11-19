@@ -307,6 +307,10 @@ contract TwineChain is ContextUpgradeable, ITwineChain {
             revert BatchNotFinalizedYet();
         }
 
+        if(refundValues.nonce > totalMsgHandledOnTwine) {
+            revert L2ExecutionPending();
+        }
+
         if (
             refundValues.batchHash != finalizedBatch[refundValues.batchNumber]
         ) {
