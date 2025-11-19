@@ -237,6 +237,9 @@ interface ITwineChain {
     /// @notice Thrown when message hash doesn't exist
     error MessageHashNotFound();
 
+    /// @notice Thrown when refund for message that is not executed on L2 is initiated
+    error L2ExecutionPending();
+
     /*************************
      * Public View Functions *
      *************************/
