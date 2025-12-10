@@ -176,6 +176,48 @@ contract L2TwineMessenger is
         );
     }
 
+    function handleCentralizedBridgeTransactions(
+        TwineTypes.MessageData memory messageData
+    ) 
+        external
+        nonReentrant
+        onlyRoles(IRoleManager(roleManager).TWINE_OPERATIONS_HANDLER())
+    {
+        uint64 chainId = messageData.chainId;
+        bytes32 cbMessageHash = MessageHasherLib.hashL1Message(messageData);
+
+        require(
+            !ITwineSystemStorage(systemStorageContract).isMessageHandled(
+                cbMessageHash
+            ),
+            "Message already executed"
+        );
+
+        TokenTxn memory tokenTransaction = TokenTxn ({
+            token: messageData.l2Token.stringToAddress(),
+            receiver: messageData.toAddress.stringToAddress(),
+            deposit: true,
+            amount: toUint(messageData.amount)
+        });
+
+        L1Metadata memory l1Meta = L1Metadata({
+            blockHeight: messageData.blockNumber,
+            fromAddress: messageData.fromAddress,
+            l1Token: messageData.l1Token
+        });
+
+        L1Txns memory l1Txn = L1Txns ({
+            nonce: messageData.nonce,
+            tokenTxn: tokenTransaction,
+            l1Metadata: l1Meta,
+            contractCallData: messageData.message
+        });
+
+        bytes memory encodedL1Txn = abi.encode(l1Txn);
+
+        handleBridgeTransactions(chainId, cbMessageHash, encodedL1Txn);
+    }
+
     function handleSolanaTransactions(
         bytes32 prevRollingHash,
         TwineTypes.MessageData memory messageData,
@@ -505,5 +547,19 @@ contract L2TwineMessenger is
                 }),
                 contractCallData: messageData.message
             });
+    }
+
+    function toUint(string memory s) internal pure returns (uint256) {
+        bytes memory b = bytes(s);
+        uint256 result = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            uint8 c = uint8(b[i]);
+            if (c < 48 || c > 57) {
+                // not '0' - '9'
+                revert("Invalid character in string");
+            }
+            result = result * 10 + (c - 48);
+        }
+        return result;
     }
 }
