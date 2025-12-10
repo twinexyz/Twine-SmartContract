@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -f .env ]; then
+    set -o allexport
+    source .env
+    set +o allexport
+fi
+
+# export env variables:
+export L1_PRIVATE_KEY
+
+#Run the forge script
+forge script script/deploy/CentralizedBridgeDeploymentScripts/DeployBridgeContracts.s.sol:CentralizedBridgeSetupScript \
+    --fork-url "$L1_DEFAULT_FORK_URL"  \
+    --broadcast 

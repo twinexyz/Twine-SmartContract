@@ -130,7 +130,7 @@ contract CentralizedTwineMessenger is TwineL1MessengerBase, ICentralizedTwineMes
      * Internal Functions *
      **********************/
     function _sendMessage(
-        TransactionType txnType,
+        TransactionType ,
         address from,
         address to,
         address l1Token,

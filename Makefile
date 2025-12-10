@@ -99,6 +99,7 @@ updateL2DefaultValues:
 deployEveryL1Contracts:
 	bash script/shell/deployments/L1deployments/deployEveryL1Contracts.sh
 
+
 # deploy L1	standard ERC20 Token
 deployL1ERC20Token:
 	bash script/shell/tokens/deployL1Token.sh
@@ -508,6 +509,19 @@ removeTokenMappingL2:
 #setup every L2 contract
 setupEveryL2Contracts:
 	bash script/shell/setups/L2setups/setupEveryL2Contracts.sh
+
+
+# *************************************************************** 
+# *					Centralized Bridge Scripts					*
+# ***************************************************************
+deployCentralizedBridgeContracts:
+	bash script/shell/deployments/CentralizedBridgeDeployments/deployEveryBridgeContracts.sh
+
+setupCentralizedBridgeContracts:
+	bash script/shell/setups/CentralizedBridgeSetups/setupEveryBridgeContracts.sh
+
+setupL2withBridge:
+	bash script/shell/setups/L2Setups/setupL2withBridge.sh
 
 
 # **************************************
