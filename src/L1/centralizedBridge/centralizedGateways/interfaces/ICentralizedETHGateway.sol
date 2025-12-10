@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+interface ICentralizedETHGateway {
+    /***********
+     * Events  *
+     ***********/
+    /// @notice Emitted when someone deposit ETH from L1 to L2.
+    /// @param from The address of sender in L1.
+    /// @param to The address of recipient in L2.
+    /// @param amount The amount of ETH will be deposited from L1 to L2.
+    event DepositETH(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        uint256 blockNumber
+    );
+
+    /// @notice Emitted when ETH is withdrawn from L2 to L1 and transfer to recipient.
+    /// @param to The address of recipient in L1.
+    /// @param amount The amount of ETH withdrawn from L2 to L1.
+    event FinalizeWithdrawETH(
+        string l1Token,
+        string l2Token,
+        string indexed to,
+        string amount,
+        uint64 nonce,
+        uint64 chainId,
+        uint256 blockNumber
+    );
+
+    /// @notice Emitted when L2TokenAddress is set
+    /// @param l2TokenAddress The L2 address of the token
+    event L2TokenSET(address l2TokenAddress);
+
+    /*****************
+     * Custom Errors *
+     *****************/
+    /// @notice Thrown when wrong L2 token specified
+    error WrongL2Token();
+
+    /// @notice Thrown when contract has insufficient balance
+    error InsufficientContractBalance();
+
+    /// @notice Thrown when ETH transfer fails
+    error ETHTransferFailed();
+
+    /// @notice Thrown when value is less than message value
+    error LessThanMessageValue();
+
+    /*****************************
+     * Public Mutating Functions *
+     *****************************/
+    /// @notice Deposit ETH to some recipient's account in Twine.
+    /// @param to The address of recipient's account on Twine.
+    /// @param amount The amount of ETH to be deposited.
+    /// @param gasLimit Gas limit required to complete the deposit on Twine.
+    function depositETH(
+        address to,
+        uint256 amount,
+        uint256 gasLimit
+    ) external payable;
+
+    /// @notice Deposit ETH to some recipient's account in Twine and call the target contract.
+    /// @param to The address of recipient's account on Twine.
+    /// @param amount The amount of ETH to be deposited.
+    /// @param gasLimit Gas limit required to complete the deposit on Twine.
+    /// @param data message of functions to call
+    function depositETHAndCall(
+        address to,
+        uint256 amount,
+        uint256 gasLimit,
+        bytes memory data
+    ) external payable;
+
+    /// @notice Complete ETH withdraw from L2 to L1 and send fund to recipient's account in L1.
+    /// @dev This function should only be called by Twinechain
+    /// @param to The address of recipient in L1 to receive ETH.
+    function finalizeTokenWithdrawal(
+        string memory l1Token,
+        string memory l2Token,
+        string memory to,
+        string memory amount,
+        uint64 nonce
+    ) external payable;
+}

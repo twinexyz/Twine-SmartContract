@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.24;
 import {ITwineChain} from "../../L1/rollup/ITwineChain.sol";
+import {ICentralizedTwineMessenger} from "../../L1/centralizedBridge/ICentralizedTwineMessenger.sol";
 
 library TwineChainDecoder {
     /// @dev Decode the execution proofs of a batch
@@ -104,6 +105,25 @@ library TwineChainDecoder {
         internal
         pure
         returns (ITwineChain.L2WithdrawValues memory withdrawValues)
+    {
+        require(publicValues.length >= 174, "data too short");
+        withdrawValues.batchNumber = uint64(bytes8(publicValues[0:8]));
+        withdrawValues.nonce = uint64(bytes8(publicValues[8:16]));
+        withdrawValues.batchHash = bytes32(publicValues[16:48]);
+        withdrawValues.to = string(publicValues[48:90]);
+        withdrawValues.l1Token = string(publicValues[90:132]);
+        withdrawValues.l2Token = string(publicValues[132:174]);
+        withdrawValues.amount = string(publicValues[174:]);
+    }
+
+    /// @dev Decode public values for l2 withdrawals zk proof
+    /// @notice It expects address to have `0x` prefix
+    function decodeL2WithdrawValuesForCentralizedBridge(
+        bytes calldata publicValues
+    )
+        internal
+        pure
+        returns (ICentralizedTwineMessenger.L2WithdrawValues memory withdrawValues)
     {
         require(publicValues.length >= 174, "data too short");
         withdrawValues.batchNumber = uint64(bytes8(publicValues[0:8]));
