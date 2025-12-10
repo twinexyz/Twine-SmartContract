@@ -186,7 +186,6 @@ contract CentralizedGatewayRouter is
         uint256 amount,
         uint256 gasLimit
     ) external payable override {
-        address gateway = ethGateway;
         depositETHAndCall(to, amount, gasLimit, new bytes(0));
     }
 

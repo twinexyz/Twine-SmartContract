@@ -88,7 +88,7 @@ contract L1ETHGateway is TwineL1GatewayBase, IL1ETHGateway {
         payable
         override
         nonReentrant
-        onlyMessenger
+        onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
     {
         uint256 amountUint = amount.stringToUint();
         if (amountUint == 0) revert ZeroAmount();

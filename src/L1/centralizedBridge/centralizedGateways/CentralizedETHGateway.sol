@@ -77,7 +77,7 @@ contract CentralizedETHGateway is TwineL1GatewayBase, ICentralizedETHGateway {
         payable
         override
         nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
+        onlyMessenger
     {
         uint256 amountUint = amount.stringToUint();
         if (amountUint == 0) revert ZeroAmount();

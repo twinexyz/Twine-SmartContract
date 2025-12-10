@@ -54,7 +54,7 @@ abstract contract CentralizedERC20Gateway is ICentralizedERC20Gateway, TwineL1Ga
         virtual
         override
         nonReentrant
-        onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
+        onlyMessenger
     {
          if (amount.stringToUint() == 0) revert ZeroAmount();
         _beforeFinalizeWithdrawERC20(

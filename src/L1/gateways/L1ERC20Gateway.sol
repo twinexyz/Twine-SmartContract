@@ -66,7 +66,7 @@ abstract contract L1ERC20Gateway is IL1ERC20Gateway, TwineL1GatewayBase {
         virtual
         override
         nonReentrant
-        onlyMessenger
+        onlyRoles(IRoleManager(roleManager).TWINE_CHAIN())
     {
          if (amount.stringToUint() == 0) revert ZeroAmount();
         _beforeFinalizeWithdrawERC20(
