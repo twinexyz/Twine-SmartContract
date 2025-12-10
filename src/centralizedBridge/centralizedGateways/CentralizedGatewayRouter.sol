@@ -9,7 +9,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 import {ICentralizedETHGateway} from "./interfaces/ICentralizedETHGateway.sol";
 import {ICentralizedERC20Gateway} from "./interfaces/ICentralizedERC20Gateway.sol";
 import {ICentralizedGatewayRouter} from "./interfaces/ICentralizedGatewayRouter.sol";
-import {IRoleManager} from "../../../libraries/access/IRoleManager.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
 
 /// @title CentralizedGatewayRouter
 /// @notice The `CentralizedGatewayRouter` is the main entry for depositing Ether and ERC20 tokens.

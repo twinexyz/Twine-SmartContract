@@ -4,10 +4,10 @@ pragma solidity ^0.8.24;
 import {CentralizedERC20Gateway} from "./CentralizedERC20Gateway.sol";
 import {ICentralizedTwineMessenger} from "../ICentralizedTwineMessenger.sol";
 import {ICentralizedERC20Gateway} from "./interfaces/ICentralizedERC20Gateway.sol";
-import {IRoleManager} from "../../../libraries/access/IRoleManager.sol";
-import {TypeConversionLib} from "../../../libraries/utils/TypeConversionLib.sol";
-import {TwineL1GatewayBase} from "../../../libraries/gateway/TwineL1GatewayBase.sol";
-import {ITwineL1MessengerBase} from "../../../libraries/messenger/ITwineL1MessengerBase.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 /// @title CentralizedCustomERC20Gateway
 /// @notice The `CentralizedERC20Gateway` is used to deposit ERC20 compatible tokens on centralized bridge and

@@ -6,9 +6,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {ICentralizedERC20Gateway} from "./interfaces/ICentralizedERC20Gateway.sol";
 import {ICentralizedGatewayRouter} from "./interfaces/ICentralizedGatewayRouter.sol";
-import {IRoleManager} from "../../../libraries/access/IRoleManager.sol";
-import {TypeConversionLib} from "../../../libraries/utils/TypeConversionLib.sol";
-import {TwineL1GatewayBase} from "../../../libraries/gateway/TwineL1GatewayBase.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
 
 /// @title CentralizedERC20Gateway
 /// @notice The `CentralizedERC20Gateway` as a base contract for ERC20 gateways in centralized bridges.

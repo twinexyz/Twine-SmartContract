@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
-import { TwineTypes } from "../../libraries/types/TwineTypes.sol";
+import {ITwineL1MessengerBase} from "../libraries/messenger/ITwineL1MessengerBase.sol";
+import { TwineTypes } from "../libraries/types/TwineTypes.sol";
 
 interface ICentralizedTwineMessenger is ITwineL1MessengerBase {
     

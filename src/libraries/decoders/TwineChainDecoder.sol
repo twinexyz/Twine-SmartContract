@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.24;
 import {ITwineChain} from "../../L1/rollup/ITwineChain.sol";
-import {ICentralizedTwineMessenger} from "../../L1/centralizedBridge/ICentralizedTwineMessenger.sol";
+import {ICentralizedTwineMessenger} from "../../centralizedBridge/ICentralizedTwineMessenger.sol";
 
 library TwineChainDecoder {
     /// @dev Decode the execution proofs of a batch

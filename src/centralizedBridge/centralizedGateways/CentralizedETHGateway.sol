@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import {ICentralizedTwineMessenger} from "../ICentralizedTwineMessenger.sol";
 import {ICentralizedETHGateway} from "./interfaces/ICentralizedETHGateway.sol";
-import {IRoleManager} from "../../../libraries/access/IRoleManager.sol";
-import {TypeConversionLib} from "../../../libraries/utils/TypeConversionLib.sol";
-import {TwineL1GatewayBase} from "../../../libraries/gateway/TwineL1GatewayBase.sol";
-import {ITwineL1MessengerBase} from "../../../libraries/messenger/ITwineL1MessengerBase.sol";
+import {IRoleManager} from "../../libraries/access/IRoleManager.sol";
+import {TypeConversionLib} from "../../libraries/utils/TypeConversionLib.sol";
+import {TwineL1GatewayBase} from "../../libraries/gateway/TwineL1GatewayBase.sol";
+import {ITwineL1MessengerBase} from "../../libraries/messenger/ITwineL1MessengerBase.sol";
 
 contract CentralizedETHGateway is TwineL1GatewayBase, ICentralizedETHGateway {
     using TypeConversionLib for string;
