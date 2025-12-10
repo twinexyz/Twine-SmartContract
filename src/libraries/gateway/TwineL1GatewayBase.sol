@@ -43,6 +43,13 @@ abstract contract TwineL1GatewayBase is
         _;
     }
 
+    modifier onlyMessenger() {
+        if (_msgSender() != messenger) {
+            revert OnlyMessenger();
+        }
+        _;
+    }
+
     function _initialize(
         address _gatewayRouter,
         address _messenger,

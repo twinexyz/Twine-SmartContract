@@ -43,5 +43,4 @@ interface ITwineL1MessengerBase {
         uint256 amount,
         bytes memory message
     ) external payable;
-    
 }

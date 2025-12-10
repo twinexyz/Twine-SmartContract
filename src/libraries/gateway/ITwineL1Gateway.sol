@@ -14,6 +14,9 @@ interface ITwineL1Gateway {
     /// @notice Thrown when insufficient gas value provided
     error InsufficientGasValue();
 
+    /// @notice Thrown when a function is called by an address other than the authorized messenger
+    error OnlyMessenger();
+
     /*********
      * Events *
      *********/
